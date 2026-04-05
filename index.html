@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#f5f4f0"/>
+<title>Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#f5f4f0; --surface:#fff; --border:#e5e3dc;
+  --text:#1a1a1a; --muted:#888; --subtle:#bbb;
+  --green:#16a34a; --green-bg:#f0fdf4; --green-bd:#86efac;
+  --red:#dc2626;   --red-bg:#fff1f2;   --red-bd:#fecdd3;
+  --amber:#d97706; --amber-bg:#fff8e7; --amber-bd:#fde68a;
+  --blue:#2563eb;  --blue-bg:#eff6ff;  --blue-bd:#bfdbfe;
+  --nav-h:64px; --safe-b:env(safe-area-inset-bottom,0px);
+  --r:14px; --rs:8px; --mono:'DM Mono',monospace; --sans:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden}
+#root{display:flex;flex-direction:column;min-height:100%}
+.page{flex:1;padding:0.8rem 1rem calc(var(--nav-h) + var(--safe-b) + 1rem);max-width:600px;margin:0 auto;width:100%}
+
+/* Nav */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);
+  display:flex;z-index:100;padding-bottom:var(--safe-b);box-shadow:0 -4px 20px rgba(0,0,0,.06)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px 4px 6px;gap:3px;background:none;border:none;cursor:pointer;
+  color:var(--subtle);font-family:var(--mono);font-size:.58rem;letter-spacing:.05em;
+  text-transform:uppercase;transition:color .15s;min-height:56px}
+.nb.on{color:var(--green)}
+.nb svg{width:22px;height:22px;stroke-width:1.8;fill:none;stroke:currentColor}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.9rem 1rem}
+.cl{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);
+  margin-bottom:.2rem;font-family:var(--mono)}
+.cv{font-size:1.4rem;font-weight:700;line-height:1.1;font-family:var(--mono)}
+.cs{font-size:.65rem;color:var(--muted);margin-top:.25rem;font-family:var(--mono)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:.55rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.55rem;margin-bottom:.55rem}
+
+/* Colors */
+.cg{color:var(--green)} .cr{color:var(--red)} .ca{color:var(--amber)} .cm{color:var(--muted)} .cb{color:var(--blue)}
+
+/* Section head */
+.sh{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--subtle);
+  font-family:var(--mono);margin:1.3rem 0 .55rem;border-bottom:1px solid var(--border);padding-bottom:.35rem}
+
+/* Insight */
+.ins{border-radius:10px;padding:.5rem .9rem;font-size:.75rem;font-family:var(--mono);
+  margin-bottom:.4rem;line-height:1.5}
+.ins.gd{background:var(--green-bg);border:1px solid var(--green-bd);border-left:3px solid var(--green);color:#14532d}
+.ins.wn{background:var(--amber-bg);border:1px solid var(--amber-bd);border-left:3px solid var(--amber);color:#92400e}
+.ins.bd{background:var(--red-bg);border:1px solid var(--red-bd);border-left:3px solid var(--red);color:#991b1b}
+.ins.inf{background:var(--blue-bg);border:1px solid var(--blue-bd);border-left:3px solid var(--blue);color:#1e3a8a}
+
+/* Bar */
+.bw{background:#ede9e0;border-radius:3px;height:4px;margin-top:6px;overflow:hidden}
+.bf{height:4px;border-radius:3px;transition:width .3s}
+
+/* Badge */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.6rem;font-family:var(--mono);font-weight:500}
+.bg{background:#dcfce7;color:#15803d;border:1px solid #86efac}
+.br{background:#fee2e2;color:var(--red);border:1px solid #fca5a5}
+.ba{background:#fef9c3;color:var(--amber);border:1px solid #fde047}
+.bm{background:#f3f4f6;color:#9ca3af;border:1px solid #e5e7eb}
+
+/* Inputs */
+input[type=number],input[type=text]{
+  width:100%;background:#fafaf8;border:1px solid #ddd9d0;color:var(--text);
+  border-radius:var(--rs);font-family:var(--mono);font-size:.9rem;
+  padding:.6rem .8rem;outline:none;appearance:none;-moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(22,163,74,.12)}
+input::placeholder{color:var(--subtle)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:.65rem 1.2rem;border-radius:var(--rs);border:none;cursor:pointer;
+  font-family:var(--sans);font-weight:700;font-size:.88rem;transition:all .15s;width:100%}
+.bp{background:var(--green);color:#fff}
+.bp:active{background:#15803d;transform:scale(.98)}
+.bs{background:transparent;border:1px solid #ddd9d0;color:var(--muted)}
+.bdng{background:none;border:none;cursor:pointer;padding:4px;color:var(--red);font-size:.9rem}
+
+/* Toggle */
+.trow{display:flex;align-items:center;justify-content:space-between;padding:.7rem 0;border-bottom:1px solid var(--border)}
+.trow:last-child{border-bottom:none}
+.tgl{position:relative;width:44px;height:26px;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0}
+.tsl{position:absolute;inset:0;background:#ddd9d0;border-radius:13px;cursor:pointer;transition:.2s}
+.tsl:before{content:'';position:absolute;width:20px;height:20px;left:3px;bottom:3px;
+  background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tgl input:checked+.tsl{background:var(--green)}
+.tgl input:checked+.tsl:before{transform:translateX(18px)}
+
+/* Predicted box */
+.pb{background:var(--green-bg);border:1px solid var(--green-bd);border-radius:var(--r);padding:1rem;margin-bottom:.8rem}
+.pl{font-size:.6rem;color:var(--green);font-family:var(--mono);text-transform:uppercase;letter-spacing:.12em;margin-bottom:.2rem}
+.pv{font-size:1.5rem;font-weight:700;font-family:var(--mono);color:#15803d}
+.ps{font-size:.65rem;color:#5ebd82;font-family:var(--mono);margin-top:.2rem;line-height:1.5}
+
+/* Log */
+.le{display:flex;align-items:center;gap:.6rem;padding:.7rem .9rem;
+  background:#fafaf8;border:1px solid var(--border);border-radius:10px;margin-bottom:.4rem}
+.lp{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.lpi{font-size:.62rem;padding:2px 7px;border-radius:10px;font-family:var(--mono);font-weight:500}
+.ld{background:#f3f4f6;color:#374151} .ls{background:#dbeafe;color:#1d4ed8} .ly{background:#ede9fe;color:#6d28d9}
+
+/* Expense row */
+.er{padding:.75rem 0;border-bottom:1px solid var(--border)}
+.er:last-child{border-bottom:none}
+.eh{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.en{font-size:.9rem;font-weight:600;display:flex;align-items:center;gap:6px}
+.chip{font-size:.58rem;padding:1px 6px;border-radius:8px;font-family:var(--mono)}
+.cs_{background:#dbeafe;color:#2563eb} .cy{background:#ede9fe;color:#7c3aed} .cd{background:#f3f4f6;color:#6b7280}
+
+/* Header */
+.ah{display:flex;align-items:flex-start;justify-content:space-between;padding:1rem 0 .4rem}
+.at{font-size:1.55rem;font-weight:800;line-height:1}
+.ad{text-align:right;font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.ad .dy{color:var(--green);font-weight:500;margin-top:2px}
+
+/* Suf card */
+.sfh{background:var(--surface);border:2px solid var(--red);border-radius:var(--r);padding:1rem}
+.sfh.ok{border-color:var(--green)}
+
+/* Misc */
+.loading{display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:1rem}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 12px);left:50%;transform:translateX(-50%);
+  background:#1a1a1a;color:#fff;padding:.6rem 1.2rem;border-radius:20px;
+  font-family:var(--mono);font-size:.78rem;z-index:200;animation:fu .2s ease;white-space:nowrap}
+@keyframes fu{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+hr{border:none;border-top:1px solid var(--border);margin:.9rem 0}
+.row{display:flex;align-items:center;gap:.6rem}
+.f1{flex:1}
+.mono{font-family:var(--mono)}
+.sm{font-size:.75rem}
+.il{font-size:.62rem;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.gap{display:flex;flex-direction:column;gap:.5rem}
+.mb1{margin-bottom:.6rem}
+.tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:.9rem}
+.tab{padding:.5rem 1rem;border:none;background:none;cursor:pointer;
+  font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--subtle);border-bottom:2px solid transparent;transition:all .15s}
+.tab.on{color:var(--text);border-bottom-color:var(--green);font-weight:700}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useCallback,useRef} = React;
+
+const SUPA_URL = 'https://jyacewgyqvrqybeyrcig.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5YWNld2d5cXZycXliZXlyY2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNzUxNTYsImV4cCI6MjA5MDk1MTE1Nn0.yMffM11nwBLiyd3-M4n-Fx5oVirCK4uojkLu2JLw5xU';
+const db = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const DEFAULT = {
+  base_budget:83500,
+  additional_income:[{source:'Bank Interest',amount:69}],
+  fixed:[
+    {category:'Family',        budget:15000,paid:true, spent:15000},
+    {category:'Rent',          budget:21500,paid:true, spent:21500},
+    {category:'Milk',          budget:2940, paid:true, spent:2940 },
+    {category:'Rent_Furniture',budget:2994, paid:true, spent:2994 },
+    {category:'School',        budget:3000, paid:false,spent:0    },
+    {category:'Recharge',      budget:1000, paid:false,spent:0    },
+    {category:'Gas',           budget:531,  paid:false,spent:0    },
+    {category:'Electric',      budget:735,  paid:true, spent:735  },
+    {category:'WIFI',          budget:800,  paid:false,spent:0    },
+  ],
+  variable:[
+    {category:'Instamart',budget:6000,card:'SBI'},
+    {category:'Swiggy',   budget:1000,card:'SBI'},
+    {category:'Amazon',   budget:3000,card:'SBI'},
+    {category:'Other',    budget:8000,card:'YES'},
+    {category:'Mall',     budget:4000,card:'Debit'},
+    {category:'Clothes',  budget:2000,card:'Debit'},
+    {category:'Doctor',   budget:1000,card:'Debit'},
+  ],
+  savings:{budget:10000,done:false},
+  debts:[{name:'Credit Bill',amount:7932,paid:false}],
+  checkin_log:[],
+  accounts:{
+    debit:{balance:83569},
+    sbi:{limit:20000,available:20000},
+    yes:{limit:51000,available:51000},
+  },
+};
+
+// ── Pure computations ─────────────────────────────────────────────────────────
+const fmt      = n => '₹'+Math.round(n).toLocaleString('en-IN');
+const today    = new Date();
+const monthLbl = today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+const lastDay  = new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+const daysLeft = Math.max(1,lastDay-today.getDate());
+const wksLeft  = Math.max(1,Math.round(daysLeft/7));
+
+const income      = s => s.base_budget + s.additional_income.reduce((a,i)=>a+i.amount,0);
+const paidFix     = s => s.fixed.filter(f=>f.paid).reduce((a,f)=>a+f.spent,0);
+const unpaidFix   = s => s.fixed.filter(f=>!f.paid).reduce((a,f)=>a+f.budget,0);
+const totVarBud   = s => s.variable.reduce((a,v)=>a+v.budget,0);
+const totDebts    = s => s.debts.reduce((a,d)=>a+d.amount,0);
+const paidDbt     = s => s.debts.filter(d=>d.paid).reduce((a,d)=>a+d.amount,0);
+const vCard       = (s,c)=> s.checkin_log.reduce((a,e)=>a+(e[c.toLowerCase()]||0),0);
+const vCat        = (s,c)=> s.checkin_log.reduce((a,e)=>a+((e.cats||{})[c]||0),0);
+const totVarSpent = s => vCard(s,'debit')+vCard(s,'sbi')+vCard(s,'yes');
+const predDebit   = s => income(s)-paidFix(s)-(s.savings.done?s.savings.budget:0)-paidDbt(s)-vCard(s,'debit');
+const shortBy     = s => {
+  const sc=s.accounts.sbi.limit-s.accounts.sbi.available, yc=s.accounts.yes.limit-s.accounts.yes.available;
+  const dr=s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+Math.max(0,v.budget-vCat(s,v.category)),0);
+  const sr=s.variable.filter(v=>v.card==='SBI').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
+  const yr=s.variable.filter(v=>v.card==='YES').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
+  const needed=unpaidFix(s)+dr+sc+sr+yc+yr+(totDebts(s)-paidDbt(s));
+  return {needed,sb:needed-s.accounts.debit.balance,sc,yc,sr,yr,dr};
+};
+
+function barClr(sp,bud){const p=bud?sp/bud:0;return p>1?'#dc2626':p>.7?'#d97706':'#16a34a'}
+function badgeCls(sp,bud){if(!sp)return'bm';if(sp>bud)return'br';if(sp/bud>.7)return'ba';return'bg'}
+function badgeTxt(sp,bud){if(!sp)return'not started';if(sp>bud)return`over ${fmt(sp-bud)}`;if(sp/bud>.7)return`${fmt(bud-sp)} left`;return`${fmt(bud-sp)} left`}
+
+// ── Mini components ───────────────────────────────────────────────────────────
+function Bar({sp,bud}){const p=bud?Math.min(100,sp/bud*100):0;return<div className="bw"><div className="bf" style={{width:p+'%',background:barClr(sp,bud)}}/></div>}
+function Tog({v,onChange}){return<label className="tgl"><input type="checkbox" checked={v} onChange={e=>onChange(e.target.checked)}/><span className="tsl"/></label>}
+function Toast({msg}){return msg?<div className="toast">{msg}</div>:null}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OVERVIEW
+// ══════════════════════════════════════════════════════════════════════════════
+function Overview({s}){
+  const inc=income(s),fp=paidFix(s),vs=totVarSpent(s),sv=s.savings.done?s.savings.budget:0,dp=paidDbt(s);
+  const rem=inc-fp-vs-sv-dp,pred=predDebit(s),act=s.accounts.debit.balance;
+  const gap=act-pred,gth=Math.max(500,inc*.01),vr=totVarBud(s)-vs;
+  const {sb,needed}=shortBy(s);
+  return(
+    <div className="page">
+      <div className="ah">
+        <div><div className="at">{monthLbl}</div><div style={{fontSize:'.65rem',color:'var(--muted)',fontFamily:'var(--mono)',marginTop:4}}>budget tracker</div></div>
+        <div className="ad"><div>{today.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</div><div className="dy">{wksLeft}w · {daysLeft}d left</div></div>
+      </div>
+
+      <div className="g2">
+        <div className="card"><div className="cl">Total Budget</div><div className="cv">{fmt(inc)}</div><div className="cs">base {fmt(s.base_budget)}</div></div>
+        <div className="card"><div className="cl">Remaining</div><div className={`cv ${rem>=0?'cg':'cr'}`}>{fmt(rem)}</div><div className="cs">actual so far</div></div>
+        <div className="card"><div className="cl">Fixed Paid</div><div className="cv cm">{fmt(fp)}</div><div className="cs">{fmt(unpaidFix(s))} pending</div></div>
+        <div className="card"><div className="cl">Variable Spent</div><div className={`cv ${vs>totVarBud(s)*.7?'ca':'cm'}`}>{fmt(vs)}</div><div className="cs">of {fmt(totVarBud(s))}</div></div>
+      </div>
+
+      <div className={`sfh mb1 ${sb<=0?'ok':''}`}>
+        <div className="cl">{sb>0?'⚠ Debit Short By':'✓ Debit Surplus'}</div>
+        <div className={`cv ${sb>0?'cr':'cg'}`}>{fmt(Math.abs(sb))}</div>
+        <div className="cs">{sb>0?'debit won\'t cover all obligations':'debit covers all obligations'}</div>
+      </div>
+
+      <div className="sh">Insights</div>
+      <div className="gap">
+        {vr>0?<div className="ins gd">📅 <b>{fmt(vr)}</b> variable left · {wksLeft}w → <b>{fmt(vr/wksLeft)}/week</b> · <b>{fmt(vr/daysLeft)}/day</b></div>
+             :<div className="ins bd">🚨 Variable budget exhausted — <b>{fmt(Math.abs(vr))}</b> over</div>}
+        {Math.abs(gap)<gth?<div className="ins gd">✅ Debit <b>{fmt(act)}</b> matches predicted <b>{fmt(pred)}</b></div>
+          :gap<0?<div className="ins wn">⚠️ Debit <b>{fmt(Math.abs(gap))} lower</b> than predicted {fmt(pred)}</div>
+                :<div className="ins inf">💰 Debit <b>{fmt(gap)} higher</b> than predicted — payments pending</div>}
+        {unpaidFix(s)>0&&<div className="ins wn">🔔 <b>{fmt(unpaidFix(s))}</b> in fixed expenses unpaid</div>}
+        {totDebts(s)-paidDbt(s)>0&&<div className="ins wn">🔔 <b>{fmt(totDebts(s)-paidDbt(s))}</b> in debts unpaid</div>}
+        {s.accounts.sbi.available<s.accounts.sbi.limit*.15&&<div className="ins wn">💳 SBI low — <b>{fmt(s.accounts.sbi.available)}</b> left</div>}
+        {s.accounts.yes.available<s.accounts.yes.limit*.15&&<div className="ins wn">💳 YES low — <b>{fmt(s.accounts.yes.available)}</b> left</div>}
+      </div>
+
+      <div className="sh">Accounts</div>
+      <div className="g3">
+        <div className="card"><div className="cl">Debit</div><div className={`cv ${Math.abs(act-pred)<gth?'cg':'cr'}`} style={{fontSize:'1.05rem'}}>{fmt(act)}</div><div className="cs">pred {fmt(pred)}</div></div>
+        <div className="card"><div className="cl">SBI</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.sbi.available)}</div><div className="cs">avail</div></div>
+        <div className="card"><div className="cl">YES</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.yes.available)}</div><div className="cs">avail</div></div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CHECK-IN
+// ══════════════════════════════════════════════════════════════════════════════
+function CheckIn({s,save,toast}){
+  const pred=predDebit(s);
+  const [dv,setDv]=useState(s.accounts.debit.balance);
+  const [sv,setSv]=useState(s.accounts.sbi.available);
+  const [yv,setYv]=useState(s.accounts.yes.available);
+  const [note,setNote]=useState('');
+  const [busy,setBusy]=useState(false);
+  const ds=Math.max(0,Math.round(pred-dv)),ss=Math.max(0,Math.round(s.accounts.sbi.available-sv)),ys=Math.max(0,Math.round(s.accounts.yes.available-yv));
+
+  async function log(){
+    if(!ds&&!ss&&!ys){toast('No change detected');return}
+    setBusy(true);
+    const cats={};
+    if(ss>0){const cc=s.variable.filter(v=>v.card==='SBI');cc.forEach(v=>cats[v.category]=Math.round(ss/cc.length))}
+    if(ys>0){const cc=s.variable.filter(v=>v.card==='YES');cc.forEach(v=>cats[v.category]=Math.round(ys/cc.length))}
+    if(ds>0){const cc=s.variable.filter(v=>v.card==='Debit');cc.forEach(v=>cats[v.category]=Math.round(ds/cc.length))}
+    const e={ts:new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),debit:ds,sbi:ss,yes:ys,cats,note:note.trim()};
+    await save({...s,checkin_log:[...s.checkin_log,e],accounts:{debit:{balance:dv},sbi:{...s.accounts.sbi,available:sv},yes:{...s.accounts.yes,available:yv}}});
+    toast(`Logged · Debit ${fmt(ds)} · SBI ${fmt(ss)} · YES ${fmt(ys)}`);
+    setNote('');setBusy(false);
+  }
+
+  async function del(i){
+    const e=s.checkin_log[i];
+    await save({...s,checkin_log:s.checkin_log.filter((_,j)=>j!==i),accounts:{
+      debit:{balance:Math.round(s.accounts.debit.balance+e.debit)},
+      sbi:{...s.accounts.sbi,available:Math.min(s.accounts.sbi.limit,Math.round(s.accounts.sbi.available+e.sbi))},
+      yes:{...s.accounts.yes,available:Math.min(s.accounts.yes.limit,Math.round(s.accounts.yes.available+e.yes))},
+    }});
+    toast('Entry deleted');
+  }
+
+  return(
+    <div className="page">
+      <div className="sh" style={{marginTop:'.4rem'}}>Predicted Debit Balance</div>
+      <div className="pb">
+        <div className="pl">📊 Debit should show right now</div>
+        <div className="pv">{fmt(pred)}</div>
+        <div className="ps">Income {fmt(income(s))} − paid fixed {fmt(paidFix(s))}{s.savings.done?` − savings ${fmt(s.savings.budget)}`:''} − paid debts {fmt(paidDbt(s))} − debit var {fmt(vCard(s,'debit'))}</div>
+      </div>
+
+      <div className="sh">Enter Current Balances</div>
+      <div className="card mb1">
+        <div className="mb1">
+          <div className="row mb1"><span style={{fontWeight:600}}>🏦 Debit (BHIM)</span><span className="mono sm cm" style={{marginLeft:'auto'}}>pred: {fmt(pred)}</span></div>
+          <input type="number" value={dv} onChange={e=>setDv(Number(e.target.value))} inputMode="numeric"/>
+          {ds>0&&<div className="mono sm cr" style={{marginTop:4}}>Will log {fmt(ds)} as debit spend</div>}
+        </div>
+        <hr/>
+        <div className="mb1">
+          <div className="row mb1"><span style={{fontWeight:600}}>💳 SBI Credit</span><span className="mono sm cm" style={{marginLeft:'auto'}}>last: {fmt(s.accounts.sbi.available)}</span></div>
+          <input type="number" value={sv} onChange={e=>setSv(Number(e.target.value))} inputMode="numeric" max={s.accounts.sbi.limit}/>
+          {ss>0&&<div className="mono sm ca" style={{marginTop:4}}>Will log {fmt(ss)} on SBI</div>}
+        </div>
+        <hr/>
+        <div>
+          <div className="row mb1"><span style={{fontWeight:600}}>💳 YES RuPay</span><span className="mono sm cm" style={{marginLeft:'auto'}}>last: {fmt(s.accounts.yes.available)}</span></div>
+          <input type="number" value={yv} onChange={e=>setYv(Number(e.target.value))} inputMode="numeric" max={s.accounts.yes.limit}/>
+          {ys>0&&<div className="mono sm ca" style={{marginTop:4}}>Will log {fmt(ys)} on YES</div>}
+        </div>
+      </div>
+
+      <input type="text" placeholder="Note (optional)" value={note} onChange={e=>setNote(e.target.value)} className="mb1" style={{display:'block'}}/>
+      <button className="btn bp mb1" onClick={log} disabled={busy}>{busy?'Saving…':'✓ Log Check-in'}</button>
+
+      {s.checkin_log.length>0&&<>
+        <div className="sh">Log ({s.checkin_log.length} entries)</div>
+        {[...s.checkin_log].reverse().map((e,ri)=>{
+          const idx=s.checkin_log.length-1-ri;
+          return(
+            <div key={idx} className="le">
+              <div style={{flex:1}}>
+                <div className="mono" style={{fontSize:'.62rem',color:'var(--muted)'}}>{e.ts}</div>
+                <div className="lp" style={{marginTop:4}}>
+                  {e.debit>0&&<span className="lpi ld">Debit {fmt(e.debit)}</span>}
+                  {e.sbi>0&&<span className="lpi ls">SBI {fmt(e.sbi)}</span>}
+                  {e.yes>0&&<span className="lpi ly">YES {fmt(e.yes)}</span>}
+                  {e.note&&<span className="mono" style={{fontSize:'.62rem',color:'var(--muted)'}}>{e.note}</span>}
+                </div>
+              </div>
+              <button className="bdng" onClick={()=>del(idx)}>✕</button>
+            </div>
+          );
+        })}
+      </>}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EXPENSES
+// ══════════════════════════════════════════════════════════════════════════════
+function Expenses({s,save,toast}){
+  const [tab,setTab]=useState('fixed');
+
+  return(
+    <div className="page">
+      <div className="tab-bar">
+        {['fixed','variable'].map(t=><button key={t} className={`tab ${tab===t?'on':''}`} onClick={()=>setTab(t)}>{t}</button>)}
+      </div>
+
+      {tab==='fixed'&&(
+        <div>
+          <div className="ins inf mb1">💡 <b>{fmt(paidFix(s))}</b> paid · <b>{fmt(unpaidFix(s))}</b> pending — toggle to update prediction</div>
+          {s.fixed.map((f,i)=>{
+            const rem=f.budget-f.spent;
+            return(
+              <div key={i} className="er">
+                <div className="eh">
+                  <div className="en">{f.paid?'🟢':'⚪'} {f.category}</div>
+                  <div className="row" style={{gap:'0.6rem'}}>
+                    <span className={`badge ${badgeCls(f.spent,f.budget)}`}>{badgeTxt(f.spent,f.budget)}</span>
+                    <Tog v={f.paid} onChange={v=>{const fx=s.fixed.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,fixed:fx})}}/>
+                  </div>
+                </div>
+                <Bar sp={f.spent} bud={f.budget}/>
+                <div className="row" style={{marginTop:6,gap:6}}>
+                  <span className="mono sm cm">bud {fmt(f.budget)}</span>
+                  <span className="mono sm cm">·</span>
+                  <span className="mono sm">spent</span>
+                  <input type="number" value={f.spent} inputMode="numeric"
+                    onChange={e=>{const fx=s.fixed.map((x,j)=>j===i?{...x,spent:Number(e.target.value)}:x);save({...s,fixed:fx})}}
+                    style={{width:100,padding:'4px 8px',fontSize:'.82rem'}}/>
+                  <span className={`mono sm ${rem>=0?'cg':'cr'}`} style={{marginLeft:'auto'}}>{fmt(rem)}</span>
+                </div>
+              </div>
+            );
+          })}
+          <hr/>
+          <div className="mono sm cm">Paid: <b style={{color:'var(--text)'}}>{fmt(paidFix(s))}</b> · Pending: <b style={{color:'var(--amber)'}}>{fmt(unpaidFix(s))}</b></div>
+        </div>
+      )}
+
+      {tab==='variable'&&(
+        <div>
+          <div className="card mb1">
+            <div className="cl">Variable Budget Pulse</div>
+            <div className={`cv ${totVarBud(s)-totVarSpent(s)>=0?'cg':'cr'}`}>{fmt(totVarBud(s)-totVarSpent(s))} remaining</div>
+            <div className="cs">{wksLeft} wks · {daysLeft} days → <b>{fmt((totVarBud(s)-totVarSpent(s))/wksLeft)}/week</b></div>
+          </div>
+          <div className="ins inf mb1">💳 SBI <b>{fmt(vCard(s,'sbi'))}</b> · YES <b>{fmt(vCard(s,'yes'))}</b> · Debit <b>{fmt(vCard(s,'debit'))}</b></div>
+          {s.variable.map((v,i)=>{
+            const sp=vCat(s,v.category),rem=v.budget-sp;
+            const cc=v.card==='SBI'?'cs_':v.card==='YES'?'cy':'cd';
+            return(
+              <div key={i} className="er">
+                <div className="eh">
+                  <div className="en">{v.category}<span className={`chip ${cc}`}>{v.card}</span></div>
+                  <span className={`badge ${badgeCls(sp,v.budget)}`}>{badgeTxt(sp,v.budget)}</span>
+                </div>
+                <Bar sp={sp} bud={v.budget}/>
+                <div className="row" style={{marginTop:4}}>
+                  <span className="mono sm cm">bud {fmt(v.budget)}</span>
+                  <span className="mono sm cm" style={{marginLeft:'auto'}}>logged <b>{fmt(sp)}</b></span>
+                  <span className={`mono sm ${rem>=0?'cg':'cr'}`} style={{marginLeft:8}}>{fmt(rem)}</span>
+                </div>
+              </div>
+            );
+          })}
+          {s.variable.filter(v=>vCat(s,v.category)>v.budget).map(v=>
+            <div key={v.category} className="ins bd">🔴 {v.category} over by <b>{fmt(vCat(s,v.category)-v.budget)}</b></div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DEBTS & SAVINGS
+// ══════════════════════════════════════════════════════════════════════════════
+function SavingsDebts({s,save,toast}){
+  const {sb,needed,sc,yc,sr,yr,dr}=shortBy(s);
+  return(
+    <div className="page">
+      <div className="sh" style={{marginTop:'.4rem'}}>Savings</div>
+      <div className="card mb1">
+        <div className="trow" style={{paddingTop:0}}>
+          <div><div style={{fontWeight:600}}>Monthly Savings</div><div className="mono sm cm">{fmt(s.savings.budget)}</div></div>
+          <Tog v={s.savings.done} onChange={v=>save({...s,savings:{...s.savings,done:v}})}/>
+        </div>
+      </div>
+      {s.savings.done?<div className="ins gd mb1">✅ <b>{fmt(s.savings.budget)}</b> transferred to savings</div>
+                     :<div className="ins wn mb1">⏳ <b>{fmt(s.savings.budget)}</b> pending — toggle when transferred</div>}
+
+      <div className="sh">Debts</div>
+      <div className="ins inf mb1">💡 Debts deducted from prediction only when marked paid — total <b>{fmt(totDebts(s))}</b></div>
+      <div className="gap mb1">
+        {s.debts.map((d,i)=>(
+          <div key={i} className="card">
+            <div className="trow" style={{paddingTop:0}}>
+              <div style={{flex:1,marginRight:'1rem'}}>
+                <input type="text" value={d.name} placeholder="Debt name" className="mb1"
+                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,name:e.target.value}:x);save({...s,debts:dts})}}/>
+                <input type="number" value={d.amount} inputMode="numeric"
+                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,debts:dts})}}/>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+                <Tog v={d.paid||false} onChange={v=>{const dts=s.debts.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,debts:dts})}}/>
+                <span className="mono" style={{fontSize:'.6rem',color:'var(--muted)'}}>{d.paid?'paid':'unpaid'}</span>
+                <button className="bdng" onClick={()=>save({...s,debts:s.debts.filter((_,j)=>j!==i)})}>✕</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button className="btn bs mb1" onClick={()=>save({...s,debts:[...s.debts,{name:'',amount:0,paid:false}]})}>＋ Add Debt</button>
+      <div className="mono sm cm mb1">Total: <b style={{color:'var(--red)'}}>{fmt(totDebts(s))}</b> · Paid: <b style={{color:'var(--green)'}}>{fmt(paidDbt(s))}</b> · Pending: <b style={{color:'var(--amber)'}}>{fmt(totDebts(s)-paidDbt(s))}</b></div>
+
+      <div className="sh">Debit Sufficiency</div>
+      <div className="ins inf mb1">🏦 Unpaid fixed <b>{fmt(unpaidFix(s))}</b> + debit var <b>{fmt(dr)}</b> + SBI bill <b>{fmt(sc+sr)}</b> + YES bill <b>{fmt(yc+yr)}</b> + debts <b>{fmt(totDebts(s)-paidDbt(s))}</b> = <b>{fmt(needed)}</b></div>
+      <div className="g2 mb1">
+        <div className="card"><div className="cl">Debit Balance</div><div className="cv">{fmt(s.accounts.debit.balance)}</div><div className="cs">actual</div></div>
+        <div className="card"><div className="cl">Total Needed</div><div className="cv">{fmt(needed)}</div><div className="cs">all obligations</div></div>
+        <div className="card"><div className="cl">SBI Obligation</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(sc+sr)}</div><div className="cs">{fmt(sc)} used · {fmt(sr)} left</div></div>
+        <div className="card"><div className="cl">YES Obligation</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(yc+yr)}</div><div className="cs">{fmt(yc)} used · {fmt(yr)} left</div></div>
+      </div>
+      <div className={`sfh mb1 ${sb<=0?'ok':''}`}>
+        <div className="cl">{sb>0?'⚠ Short By':'✓ Surplus'}</div>
+        <div className={`cv ${sb>0?'cr':'cg'}`}>{fmt(Math.abs(sb))}</div>
+        <div className="cs">{sb>0?'top up needed':'debit covers everything ✓'}</div>
+      </div>
+      {sb>0?<div className="ins bd">🚨 Debit short by <b>{fmt(sb)}</b> — top up or reduce spending</div>
+           :<div className="ins gd">✅ Debit surplus <b>{fmt(Math.abs(sb))}</b> after all obligations</div>}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════════════════════════════
+function Settings({s,save,toast}){
+  return(
+    <div className="page">
+      <div className="sh" style={{marginTop:'.4rem'}}>Base Budget</div>
+      <div className="card mb1">
+        <div className="il">Monthly Income</div>
+        <input type="number" value={s.base_budget} inputMode="numeric" onChange={e=>save({...s,base_budget:Number(e.target.value)})}/>
+      </div>
+
+      <div className="sh">Additional Income</div>
+      <div className="gap mb1">
+        {s.additional_income.map((inc,i)=>(
+          <div key={i} className="card">
+            <div className="row">
+              <div className="f1 gap">
+                <input type="text" placeholder="Source" value={inc.source} onChange={e=>{const ai=s.additional_income.map((x,j)=>j===i?{...x,source:e.target.value}:x);save({...s,additional_income:ai})}}/>
+                <input type="number" placeholder="Amount" value={inc.amount} inputMode="numeric" onChange={e=>{const ai=s.additional_income.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,additional_income:ai})}}/>
+              </div>
+              <button className="bdng" onClick={()=>save({...s,additional_income:s.additional_income.filter((_,j)=>j!==i)})}>✕</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button className="btn bs mb1" onClick={()=>save({...s,additional_income:[...s.additional_income,{source:'',amount:0}]})}>＋ Add Income Source</button>
+
+      <div className="sh">Savings Target</div>
+      <div className="card mb1">
+        <div className="il">Monthly Savings</div>
+        <input type="number" value={s.savings.budget} inputMode="numeric" onChange={e=>save({...s,savings:{...s.savings,budget:Number(e.target.value)}})}/>
+      </div>
+
+      <div className="sh">Account Limits</div>
+      <div className="card gap mb1">
+        <div><div className="il">SBI Credit Limit</div><input type="number" value={s.accounts.sbi.limit} inputMode="numeric" onChange={e=>save({...s,accounts:{...s.accounts,sbi:{...s.accounts.sbi,limit:Number(e.target.value)}}})}/></div>
+        <div><div className="il">YES RuPay Limit</div><input type="number" value={s.accounts.yes.limit} inputMode="numeric" onChange={e=>save({...s,accounts:{...s.accounts,yes:{...s.accounts.yes,limit:Number(e.target.value)}}})}/></div>
+      </div>
+
+      <div className="sh" style={{color:'var(--red)'}}>Danger Zone</div>
+      <button className="btn" style={{background:'var(--red-bg)',color:'var(--red)',border:'1px solid var(--red-bd)'}}
+        onClick={()=>{if(confirm('Reset ALL data to defaults?'))save(JSON.parse(JSON.stringify(DEFAULT))).then(()=>toast('Reset complete'))}}>
+        Reset to defaults
+      </button>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// APP
+// ══════════════════════════════════════════════════════════════════════════════
+function App(){
+  const [state,setState]=useState(null);
+  const [page,setPage]=useState('overview');
+  const [tmsg,setTmsg]=useState('');
+  const timer=useRef(null);
+
+  function toast(msg){setTmsg(msg);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setTmsg(''),2500)}
+
+  function deepMerge(def,saved){
+    const r={...def};
+    for(const k in saved){
+      if(k in r&&typeof r[k]==='object'&&!Array.isArray(r[k])&&r[k]!==null) r[k]=deepMerge(r[k],saved[k]);
+      else r[k]=saved[k];
+    }
+    return r;
+  }
+
+  useEffect(()=>{
+    (async()=>{
+      const {data}=await db.from('budget_state').select('data').eq('id','main').single();
+      setState(data?.data ? deepMerge(JSON.parse(JSON.stringify(DEFAULT)),data.data) : JSON.parse(JSON.stringify(DEFAULT)));
+    })();
+  },[]);
+
+  const save=useCallback(async ns=>{
+    setState(ns);
+    await db.from('budget_state').upsert({id:'main',data:ns,updated_at:new Date().toISOString()});
+  },[]);
+
+  if(!state) return<div className="loading"><div className="spinner"/><div className="mono sm cm">Loading…</div></div>;
+
+  const nav=[
+    {id:'overview', label:'Home',     icon:<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>},
+    {id:'checkin',  label:'Check-in', icon:<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>},
+    {id:'expenses', label:'Expenses', icon:<><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>},
+    {id:'savings',  label:'Debts',    icon:<><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>},
+    {id:'settings', label:'Settings', icon:<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>},
+  ];
+
+  return(
+    <>
+      {page==='overview'&&<Overview s={state}/>}
+      {page==='checkin' &&<CheckIn  s={state} save={save} toast={toast}/>}
+      {page==='expenses'&&<Expenses s={state} save={save} toast={toast}/>}
+      {page==='savings' &&<SavingsDebts s={state} save={save} toast={toast}/>}
+      {page==='settings'&&<Settings s={state} save={save} toast={toast}/>}
+      <nav className="nav">
+        {nav.map(n=>(
+          <button key={n.id} className={`nb ${page===n.id?'on':''}`} onClick={()=>setPage(n.id)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">{n.icon}</svg>
+            {n.label}
+          </button>
+        ))}
+      </nav>
+      <Toast msg={tmsg}/>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
