@@ -223,7 +223,7 @@ const today    = new Date();
 const monthLbl = today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
 const lastDay  = new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
 const daysLeft = Math.max(1,lastDay-today.getDate());
-const wksLeft  = Math.max(1,Math.round(daysLeft/7));
+const wksLeft  = Math.max(1,Math.ceil(daysLeft/7));
 
 const income      = s => s.base_budget + s.additional_income.reduce((a,i)=>a+i.amount,0);
 const paidFix     = s => s.fixed.filter(f=>f.paid).reduce((a,f)=>a+f.spent,0);
@@ -261,6 +261,18 @@ function Overview({s}){
   const rem=inc-fp-vs-sv-dp,pred=predDebit(s),act=s.accounts.debit.balance;
   const gap=act-pred,gth=Math.max(500,inc*.01),vr=totVarBud(s)-vs;
   const {sb,needed}=shortBy(s);
+
+  // Past 7 days summary from check-in log
+  const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7);
+  const recentLogs = s.checkin_log.filter(e => {
+    // ts format: "06 Apr 2026, 10:30 AM" — parse it
+    try { return new Date(e.ts) > sevenDaysAgo; } catch{ return false; }
+  });
+  const weekDebit = recentLogs.reduce((a,e)=>a+(e.debit||0),0);
+  const weekSBI   = recentLogs.reduce((a,e)=>a+(e.sbi||0),0);
+  const weekYES   = recentLogs.reduce((a,e)=>a+(e.yes||0),0);
+  const weekTotal = weekDebit+weekSBI+weekYES;
+  const hasWeekData = s.checkin_log.length > 0;
   return(
     <div className="page">
       <div className="ah">
@@ -300,6 +312,35 @@ function Overview({s}){
         <div className="card"><div className="cl">SBI</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.sbi.available)}</div><div className="cs">avail</div></div>
         <div className="card"><div className="cl">YES</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.yes.available)}</div><div className="cs">avail</div></div>
       </div>
+
+      {hasWeekData && <>
+        <div className="sh">This Week's Spending</div>
+        {weekTotal===0
+          ? <div className="ins inf">📋 No check-ins in the past 7 days — log a check-in to see weekly spend</div>
+          : <div className="card" style={{marginBottom:'.6rem'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.7rem'}}>
+                <div><div className="cl">Total Spent This Week</div><div className="cv" style={{fontSize:'1.25rem'}}>{fmt(weekTotal)}</div></div>
+                <div style={{fontSize:'0.65rem',fontFamily:'var(--mono)',color:'var(--muted)',textAlign:'right'}}>
+                  <div>last 7 days</div><div style={{color:'var(--accent)',fontWeight:600}}>{recentLogs.length} check-ins</div>
+                </div>
+              </div>
+              <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
+                {weekDebit>0&&<div style={{flex:1,minWidth:80,background:'#F1F5F9',borderRadius:10,padding:'.5rem .7rem'}}>
+                  <div style={{fontSize:'.58rem',fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Debit</div>
+                  <div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'var(--text)'}}>{fmt(weekDebit)}</div>
+                </div>}
+                {weekSBI>0&&<div style={{flex:1,minWidth:80,background:'#DBEAFE',borderRadius:10,padding:'.5rem .7rem'}}>
+                  <div style={{fontSize:'.58rem',fontWeight:700,color:'#1D4ED8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>SBI</div>
+                  <div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'#1E3A8A'}}>{fmt(weekSBI)}</div>
+                </div>}
+                {weekYES>0&&<div style={{flex:1,minWidth:80,background:'#EDE9FE',borderRadius:10,padding:'.5rem .7rem'}}>
+                  <div style={{fontSize:'.58rem',fontWeight:700,color:'#7C3AED',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>YES</div>
+                  <div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'#4C1D95'}}>{fmt(weekYES)}</div>
+                </div>}
+              </div>
+            </div>
+        }
+      </>}
     </div>
   );
 }
@@ -309,12 +350,14 @@ function Overview({s}){
 // ══════════════════════════════════════════════════════════════════════════════
 function CheckIn({s,save,toast}){
   const pred=predDebit(s);
-  const [dv,setDv]=useState(s.accounts.debit.balance);
-  const [sv,setSv]=useState(s.accounts.sbi.available);
-  const [yv,setYv]=useState(s.accounts.yes.available);
+  // Use string state so backspace can clear to empty without staying at 0
+  const [dv,setDv]=useState(String(s.accounts.debit.balance));
+  const [sv,setSv]=useState(String(s.accounts.sbi.available));
+  const [yv,setYv]=useState(String(s.accounts.yes.available));
   const [note,setNote]=useState('');
   const [busy,setBusy]=useState(false);
-  const ds=Math.max(0,Math.round(pred-dv)),ss=Math.max(0,Math.round(s.accounts.sbi.available-sv)),ys=Math.max(0,Math.round(s.accounts.yes.available-yv));
+  const dvN=dv===''?0:Number(dv), svN=sv===''?0:Number(sv), yvN=yv===''?0:Number(yv);
+  const ds=Math.max(0,Math.round(pred-dvN)),ss=Math.max(0,Math.round(s.accounts.sbi.available-svN)),ys=Math.max(0,Math.round(s.accounts.yes.available-yvN));
 
   async function log(){
     if(!ds&&!ss&&!ys){toast('No change detected');return}
@@ -324,7 +367,7 @@ function CheckIn({s,save,toast}){
     if(ys>0){const cc=s.variable.filter(v=>v.card==='YES');cc.forEach(v=>cats[v.category]=Math.round(ys/cc.length))}
     if(ds>0){const cc=s.variable.filter(v=>v.card==='Debit');cc.forEach(v=>cats[v.category]=Math.round(ds/cc.length))}
     const e={ts:new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),debit:ds,sbi:ss,yes:ys,cats,note:note.trim()};
-    await save({...s,checkin_log:[...s.checkin_log,e],accounts:{debit:{balance:dv},sbi:{...s.accounts.sbi,available:sv},yes:{...s.accounts.yes,available:yv}}});
+    await save({...s,checkin_log:[...s.checkin_log,e],accounts:{debit:{balance:dvN},sbi:{...s.accounts.sbi,available:svN},yes:{...s.accounts.yes,available:yvN}}});
     toast(`Logged · Debit ${fmt(ds)} · SBI ${fmt(ss)} · YES ${fmt(ys)}`);
     setNote('');setBusy(false);
   }
@@ -352,19 +395,19 @@ function CheckIn({s,save,toast}){
       <div className="card mb1">
         <div className="mb1">
           <div className="row mb1"><span style={{fontWeight:600}}>🏦 Debit (BHIM)</span><span className="mono sm cm" style={{marginLeft:'auto'}}>pred: {fmt(pred)}</span></div>
-          <input type="number" value={dv} onChange={e=>setDv(Number(e.target.value))} inputMode="numeric"/>
+          <input type="number" value={dv} onChange={e=>setDv(e.target.value)} onBlur={e=>{if(e.target.value==='')setDv('0')}} inputMode="numeric"/>
           {ds>0&&<div className="mono sm cr" style={{marginTop:4}}>Will log {fmt(ds)} as debit spend</div>}
         </div>
         <hr/>
         <div className="mb1">
           <div className="row mb1"><span style={{fontWeight:600}}>💳 SBI Credit</span><span className="mono sm cm" style={{marginLeft:'auto'}}>last: {fmt(s.accounts.sbi.available)}</span></div>
-          <input type="number" value={sv} onChange={e=>setSv(Number(e.target.value))} inputMode="numeric" max={s.accounts.sbi.limit}/>
+          <input type="number" value={sv} onChange={e=>setSv(e.target.value)} onBlur={e=>{if(e.target.value==='')setSv('0')}} inputMode="numeric" max={s.accounts.sbi.limit}/>
           {ss>0&&<div className="mono sm ca" style={{marginTop:4}}>Will log {fmt(ss)} on SBI</div>}
         </div>
         <hr/>
         <div>
           <div className="row mb1"><span style={{fontWeight:600}}>💳 YES RuPay</span><span className="mono sm cm" style={{marginLeft:'auto'}}>last: {fmt(s.accounts.yes.available)}</span></div>
-          <input type="number" value={yv} onChange={e=>setYv(Number(e.target.value))} inputMode="numeric" max={s.accounts.yes.limit}/>
+          <input type="number" value={yv} onChange={e=>setYv(e.target.value)} onBlur={e=>{if(e.target.value==='')setYv('0')}} inputMode="numeric" max={s.accounts.yes.limit}/>
           {ys>0&&<div className="mono sm ca" style={{marginTop:4}}>Will log {fmt(ys)} on YES</div>}
         </div>
       </div>
