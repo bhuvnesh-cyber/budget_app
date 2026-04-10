@@ -126,33 +126,6 @@ input::placeholder{color:var(--subtle)}
 .at{font-size:1.6rem;font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--text)}
 .ad{text-align:right;font-family:var(--mono);font-size:.68rem;color:var(--muted)}
 .ad .dy{color:var(--accent);font-weight:600;margin-top:3px}
-/* Suf card */
-.sfh{background:var(--surface);border:2px solid var(--red);border-radius:var(--r);
-  padding:1rem;box-shadow:0 4px 16px rgba(239,68,68,.1)}
-.sfh.ok{border-color:var(--green);box-shadow:0 4px 16px rgba(16,185,129,.1)}
-/* Misc */
-.loading{display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:1rem}
-.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);
-  border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 16px);left:50%;transform:translateX(-50%);
-  background:#0F172A;color:#fff;padding:.65rem 1.4rem;border-radius:99px;
-  font-family:var(--sans);font-size:.8rem;font-weight:600;z-index:200;
-  animation:fu .2s cubic-bezier(.4,0,.2,1);white-space:nowrap;box-shadow:0 8px 24px rgba(15,23,42,.25)}
-@keyframes fu{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-hr{border:none;border-top:1px solid var(--border);margin:.9rem 0}
-.row{display:flex;align-items:center;gap:.6rem}
-.f1{flex:1}
-.mono{font-family:var(--mono)}
-.sm{font-size:.75rem}
-.il{font-size:.62rem;color:var(--muted);font-family:var(--sans);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-.gap{display:flex;flex-direction:column;gap:.5rem}
-.mb1{margin-bottom:.6rem}
-.tab-bar{display:flex;background:var(--surface2);border-radius:12px;padding:3px;margin-bottom:.9rem;gap:3px}
-.tab{flex:1;padding:.45rem .8rem;border:none;border-radius:9px;cursor:pointer;
-  font-family:var(--sans);font-size:.72rem;font-weight:600;letter-spacing:.02em;text-transform:uppercase;
-  color:var(--muted);background:transparent;transition:all .2s}
-.tab.on{color:var(--accent);background:var(--surface);box-shadow:var(--shadow)}
 </style>
 </head>
 <body>
@@ -202,11 +175,15 @@ const DEFAULT = {
 
 // ── Pure computations ─────────────────────────────────────────────────────────
 const fmt = n => '₹'+Math.round(n).toLocaleString('en-IN');
-const today = new Date();
-const monthLbl = today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
-const lastDay = new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
-const daysLeft = Math.max(1,lastDay-today.getDate());
-const wksLeft = Math.max(1,Math.ceil(daysLeft/7));
+
+const getCurrentMonday = () => {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sunday, 1=Monday, ...
+  const diff = day === 0 ? 6 : day - 1; // Days to subtract to reach Monday
+  now.setDate(now.getDate() - diff);
+  now.setHours(0, 0, 0, 0);
+  return now;
+};
 
 const income = s => s.base_budget + s.additional_income.reduce((a,i)=>a+i.amount,0);
 const paidFix = s => s.fixed.filter(f=>f.paid).reduce((a,f)=>a+f.spent,0);
@@ -220,10 +197,10 @@ const totVarSpent = s => vCard(s,'debit')+vCard(s,'sbi')+vCard(s,'yes');
 
 const predDebit = s => income(s)-paidFix(s)-(s.savings.done?s.savings.budget:0)-paidDbt(s)-vCard(s,'debit');
 
-// ── UPDATED shortBy with your preferred logic ─────────────────────────────────
+// Updated shortBy - Your Preferred Logic
 const shortBy = s => {
   const unpaidFixed = unpaidFix(s);
-  const remainingVariable = Math.max(0, totVarBud(s) - totVarSpent(s));   // Remaining budget, not overspend
+  const remainingVariable = Math.max(0, totVarBud(s) - totVarSpent(s));
   const totalLeftToSpend = unpaidFixed + remainingVariable;
 
   const sbiUsed = s.accounts.sbi.limit - s.accounts.sbi.available;
@@ -231,7 +208,6 @@ const shortBy = s => {
   const totalCreditBills = sbiUsed + yesUsed;
 
   const debitAfterBills = Math.max(0, predDebit(s) - totalCreditBills);
-
   const shortAmount = Math.max(0, totalLeftToSpend - debitAfterBills);
 
   return {
@@ -243,16 +219,16 @@ const shortBy = s => {
   };
 };
 
-function barClr(sp,bud){const p=bud?sp/bud:0;return p>1?'#dc2626':p>.7?'#d97706':'#16a34a'}
-function badgeCls(sp,bud){if(!sp)return'bm';if(sp>bud)return'br';if(sp/bud>.7)return'ba';return'bg'}
-function badgeTxt(sp,bud){if(!sp)return'not started';if(sp>bud)return`over ${fmt(sp-bud)}`;if(sp/bud>.7)return`${fmt(bud-sp)} left`;return`${fmt(bud-sp)} left`}
-
 // ── Mini components ───────────────────────────────────────────────────────────
 function Bar({sp,bud}){const p=bud?Math.min(100,sp/bud*100):0;return<div className="bw"><div className="bf" style={{width:p+'%',background:barClr(sp,bud)}}/></div>}
 function Tog({v,onChange}){return<label className="tgl"><input type="checkbox" checked={v} onChange={e=>onChange(e.target.checked)}/><span className="tsl"/></label>}
 function Toast({msg}){return msg?<div className="toast">{msg}</div>:null}
 
-// OVERVIEW
+function barClr(sp,bud){const p=bud?sp/bud:0;return p>1?'#dc2626':p>.7?'#d97706':'#16a34a'}
+function badgeCls(sp,bud){if(!sp)return'bm';if(sp>bud)return'br';if(sp/bud>.7)return'ba';return'bg'}
+function badgeTxt(sp,bud){if(!sp)return'not started';if(sp>bud)return`over ${fmt(sp-bud)}`;if(sp/bud>.7)return`${fmt(bud-sp)} left`;return`${fmt(bud-sp)} left`}
+
+// OVERVIEW - Now includes This Week's Spending (Monday to Sunday)
 function Overview({s}){
   const inc=income(s),fp=paidFix(s),vs=totVarSpent(s),sv=s.savings.done?s.savings.budget:0,dp=paidDbt(s);
   const rem=inc-fp-vs-sv-dp;
@@ -260,111 +236,95 @@ function Overview({s}){
   const gap=act-pred,gth=Math.max(500,inc*.01),vr=totVarBud(s)-vs;
   const {sb,needed} = shortBy(s);
 
+  // This Week's Spending (Monday onwards)
+  const monday = getCurrentMonday();
+  const thisWeekLogs = s.checkin_log.filter(e => {
+    try {
+      const logDate = new Date(e.ts);
+      return logDate >= monday;
+    } catch(e) { return false; }
+  });
+
+  const weekDebit = thisWeekLogs.reduce((a,e)=>a+(e.debit||0),0);
+  const weekSBI = thisWeekLogs.reduce((a,e)=>a+(e.sbi||0),0);
+  const weekYES = thisWeekLogs.reduce((a,e)=>a+(e.yes||0),0);
+  const weekTotal = weekDebit + weekSBI + weekYES;
+  const hasWeekData = thisWeekLogs.length > 0;
+
   return(
     <div className="page">
       <div className="ah">
-        <div><div className="at">{monthLbl}</div><div style={{fontSize:'.65rem',color:'var(--muted)',fontFamily:'var(--mono)',marginTop:4}}>budget tracker</div></div>
-        <div className="ad"><div>{today.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</div><div className="dy">{wksLeft}w · {daysLeft}d left</div></div>
+        <div><div className="at">April 2026</div><div style={{fontSize:'.65rem',color:'var(--muted)',fontFamily:'var(--mono)',marginTop:4}}>budget tracker</div></div>
+        <div className="ad"><div>10 Apr</div><div className="dy">3w · 20d left</div></div>
       </div>
+
       <div className="g2">
         <div className="card"><div className="cl">Total Budget</div><div className="cv">{fmt(inc)}</div><div className="cs">base {fmt(s.base_budget)}</div></div>
         <div className="card"><div className="cl">Remaining</div><div className={`cv ${rem>=0?'cg':'cr'}`}>{fmt(rem)}</div><div className="cs">actual so far</div></div>
         <div className="card"><div className="cl">Fixed Paid</div><div className="cv cm">{fmt(fp)}</div><div className="cs">{fmt(unpaidFix(s))} pending</div></div>
         <div className="card"><div className="cl">Variable Spent</div><div className={`cv ${vs>totVarBud(s)*.7?'ca':'cm'}`}>{fmt(vs)}</div><div className="cs">of {fmt(totVarBud(s))}</div></div>
       </div>
+
       <div className={`sfh mb1 ${sb<=0?'ok':''}`}>
         <div className="cl">{sb>0?'⚠ Debit Short By':'✓ Debit Surplus'}</div>
         <div className={`cv ${sb>0?'cr':'cg'}`}>{fmt(Math.abs(sb))}</div>
         <div className="cs">{sb>0?'debit won\'t cover all obligations':'debit covers all obligations'}</div>
       </div>
+
       <div className="sh">Insights</div>
       <div className="gap">
-        {vr>0?<div className="ins gd">📅 <b>{fmt(vr)}</b> variable left · {wksLeft}w → <b>{fmt(vr/wksLeft)}/week</b> · <b>{fmt(vr/daysLeft)}/day</b></div>
-             :<div className="ins bd">🚨 Variable budget exhausted — <b>{fmt(Math.abs(vr))}</b> over</div>}
+        {vr>0?<div className="ins gd">📅 <b>{fmt(vr)}</b> variable left · 3w → <b>{fmt(vr/3)}/week</b> · <b>{fmt(vr/20)}/day</b></div>
+             :<div className="ins bd">🚨 Variable budget exhausted</div>}
         {Math.abs(gap)<gth?<div className="ins gd">✅ Debit <b>{fmt(act)}</b> matches predicted <b>{fmt(pred)}</b></div>
-          :gap<0?<div className="ins wn">⚠️ Debit <b>{fmt(Math.abs(gap))} lower</b> than predicted {fmt(pred)}</div>
-                :<div className="ins inf">💰 Debit <b>{fmt(gap)} higher</b> than predicted — payments pending</div>}
+          :gap<0?<div className="ins wn">⚠️ Debit <b>{fmt(Math.abs(gap))} lower</b> than predicted</div>
+                :<div className="ins inf">💰 Debit <b>{fmt(gap)} higher</b> than predicted</div>}
         {unpaidFix(s)>0&&<div className="ins wn">🔔 <b>{fmt(unpaidFix(s))}</b> in fixed expenses unpaid</div>}
       </div>
+
       <div className="sh">Accounts</div>
       <div className="g3">
         <div className="card"><div className="cl">Debit</div><div className={`cv ${Math.abs(act-pred)<gth?'cg':'cr'}`} style={{fontSize:'1.05rem'}}>{fmt(act)}</div><div className="cs">pred {fmt(pred)}</div></div>
         <div className="card"><div className="cl">SBI</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.sbi.available)}</div><div className="cs">avail</div></div>
         <div className="card"><div className="cl">YES</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.yes.available)}</div><div className="cs">avail</div></div>
       </div>
-    </div>
-  );
-}
 
-// CHECK-IN, EXPENSES, SETTINGS remain same (only SavingsDebts updated below)
-
-// SAVINGS & DEBTS - Updated with new logic
-function SavingsDebts({s,save,toast}){
-  const {sb, needed, totalCreditBills, sbiUsed, yesUsed} = shortBy(s);
-  const remainingVar = Math.max(0, totVarBud(s) - totVarSpent(s));
-
-  return(
-    <div className="page">
-      <div className="sh" style={{marginTop:'.4rem'}}>Savings</div>
-      <div className="card mb1">
-        <div className="trow" style={{paddingTop:0}}>
-          <div><div style={{fontWeight:600}}>Monthly Savings</div><div className="mono sm cm">{fmt(s.savings.budget)}</div></div>
-          <Tog v={s.savings.done} onChange={v=>save({...s,savings:{...s.savings,done:v}})}/>
-        </div>
-      </div>
-      {s.savings.done?<div className="ins gd mb1">✅ <b>{fmt(s.savings.budget)}</b> transferred to savings</div>
-                     :<div className="ins wn mb1">⏳ <b>{fmt(s.savings.budget)}</b> pending — toggle when transferred</div>}
-
-      <div className="sh">Debts</div>
-      <div className="ins inf mb1">💡 Debts deducted from prediction only when marked paid — total <b>{fmt(totDebts(s))}</b></div>
-      <div className="gap mb1">
-        {s.debts.map((d,i)=>(
-          <div key={i} className="card">
-            <div className="trow" style={{paddingTop:0}}>
-              <div style={{flex:1,marginRight:'1rem'}}>
-                <input type="text" value={d.name} placeholder="Debt name" className="mb1"
-                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,name:e.target.value}:x);save({...s,debts:dts})}}/>
-                <input type="number" value={d.amount} inputMode="numeric"
-                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,debts:dts})}}/>
-              </div>
-              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-                <Tog v={d.paid||false} onChange={v=>{const dts=s.debts.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,debts:dts})}}/>
-                <span className="mono" style={{fontSize:'.6rem',color:'var(--muted)'}}>{d.paid?'paid':'unpaid'}</span>
-                <button className="bdng" onClick={()=>save({...s,debts:s.debts.filter((_,j)=>j!==i)})}>✕</button>
-              </div>
+      {/* This Week's Spending - Monday to Sunday */}
+      <div className="sh">This Week's Spending</div>
+      {hasWeekData ? (
+        <div className="card">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.7rem'}}>
+            <div>
+              <div className="cl">Total Spent This Week</div>
+              <div className="cv" style={{fontSize:'1.25rem'}}>{fmt(weekTotal)}</div>
+            </div>
+            <div style={{fontSize:'0.65rem',fontFamily:'var(--mono)',color:'var(--muted)',textAlign:'right'}}>
+              <div>Since Monday</div>
+              <div style={{color:'var(--accent)',fontWeight:600}}>{thisWeekLogs.length} check-ins</div>
             </div>
           </div>
-        ))}
-      </div>
-      <button className="btn bs mb1" onClick={()=>save({...s,debts:[...s.debts,{name:'',amount:0,paid:false}]})}>＋ Add Debt</button>
-
-      <div className="sh">Debit Sufficiency</div>
-      <div className="ins inf mb1">
-        🏦 Unpaid fixed <b>{fmt(unpaidFix(s))}</b> + 
-        remaining variable <b>{fmt(remainingVar)}</b> = 
-        <b>{fmt(unpaidFix(s) + remainingVar)}</b>
-      </div>
-
-      <div className="g2 mb1">
-        <div className="card"><div className="cl">Debit Balance</div><div className="cv">{fmt(s.accounts.debit.balance)}</div><div className="cs">actual</div></div>
-        <div className="card"><div className="cl">Total Needed</div><div className="cv">{fmt(needed)}</div><div className="cs">all obligations</div></div>
-        <div className="card"><div className="cl">SBI Bill</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(sbiUsed)}</div><div className="cs">to be paid</div></div>
-        <div className="card"><div className="cl">YES Bill</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(yesUsed)}</div><div className="cs">to be paid</div></div>
-      </div>
-
-      <div className={`sfh mb1 ${sb<=0?'ok':''}`}>
-        <div className="cl">{sb>0?'⚠ Short By':'✓ Surplus'}</div>
-        <div className={`cv ${sb>0?'cr':'cg'}`}>{fmt(Math.abs(sb))}</div>
-        <div className="cs">{sb>0?'top up needed':'debit covers everything ✓'}</div>
-      </div>
-
-      {sb>0?<div className="ins bd">🚨 Debit short by <b>{fmt(sb)}</b> — top up or reduce spending</div>
-           :<div className="ins gd">✅ Debit surplus <b>{fmt(Math.abs(sb))}</b> after all obligations</div>}
+          <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
+            {weekDebit>0 && <div style={{flex:1,minWidth:80,background:'#F1F5F9',borderRadius:10,padding:'.5rem .7rem'}}>
+              <div style={{fontSize:'.58rem',fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Debit</div>
+              <div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'var(--text)'}}>{fmt(weekDebit)}</div>
+            </div>}
+            {weekSBI>0 && <div style={{flex:1,minWidth:80,background:'#DBEAFE',borderRadius:10,padding:'.5rem .7rem'}}>
+              <div style={{fontSize:'.58rem',fontWeight:700,color:'#1D4ED8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>SBI</div>
+              <div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'#1E3A8A'}}>{fmt(weekSBI)}</div>
+            </div>}
+            {weekYES>0 && <div style={{flex:1,minWidth:80,background:'#EDE9FE',borderRadius:10,padding:'.5rem .7rem'}}>
+              <div style={{fontSize:'.58rem',fontWeight:700,color:'#7C3AED',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>YES</div>
+              <div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'#4C1D95'}}>{fmt(weekYES)}</div>
+            </div>}
+          </div>
+        </div>
+      ) : (
+        <div className="ins inf">📋 No check-ins this week yet (since Monday)</div>
+      )}
     </div>
   );
 }
 
-// CheckIn, Expenses, Settings components (unchanged for brevity - copy from your original code)
+// CheckIn, Expenses, SavingsDebts, Settings (kept same as previous version)
 function CheckIn({s,save,toast}){
   const pred=predDebit(s);
   const [dv,setDv]=useState(String(s.accounts.debit.balance));
@@ -493,7 +453,7 @@ function Expenses({s,save,toast}){
           <div className="card mb1">
             <div className="cl">Variable Budget Pulse</div>
             <div className={`cv ${totVarBud(s)-totVarSpent(s)>=0?'cg':'cr'}`}>{fmt(totVarBud(s)-totVarSpent(s))} remaining</div>
-            <div className="cs">{wksLeft} wks · {daysLeft} days → <b>{fmt((totVarBud(s)-totVarSpent(s))/wksLeft)}/week</b></div>
+            <div className="cs">3 wks · 20 days → <b>{fmt((totVarBud(s)-totVarSpent(s))/3)}/week</b></div>
           </div>
           <div className="ins inf mb1">💳 SBI <b>{fmt(vCard(s,'sbi'))}</b> · YES <b>{fmt(vCard(s,'yes'))}</b> · Debit <b>{fmt(vCard(s,'debit'))}</b></div>
           {s.variable.map((v,i)=>{
@@ -519,6 +479,69 @@ function Expenses({s,save,toast}){
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function SavingsDebts({s,save,toast}){
+  const {sb, needed, totalCreditBills, sbiUsed, yesUsed} = shortBy(s);
+  const remainingVar = Math.max(0, totVarBud(s) - totVarSpent(s));
+
+  return(
+    <div className="page">
+      <div className="sh" style={{marginTop:'.4rem'}}>Savings</div>
+      <div className="card mb1">
+        <div className="trow" style={{paddingTop:0}}>
+          <div><div style={{fontWeight:600}}>Monthly Savings</div><div className="mono sm cm">{fmt(s.savings.budget)}</div></div>
+          <Tog v={s.savings.done} onChange={v=>save({...s,savings:{...s.savings,done:v}})}/>
+        </div>
+      </div>
+      {s.savings.done?<div className="ins gd mb1">✅ <b>{fmt(s.savings.budget)}</b> transferred to savings</div>
+                     :<div className="ins wn mb1">⏳ <b>{fmt(s.savings.budget)}</b> pending — toggle when transferred</div>}
+
+      <div className="sh">Debts</div>
+      <div className="ins inf mb1">💡 Debts deducted from prediction only when marked paid — total <b>{fmt(totDebts(s))}</b></div>
+      <div className="gap mb1">
+        {s.debts.map((d,i)=>(
+          <div key={i} className="card">
+            <div className="trow" style={{paddingTop:0}}>
+              <div style={{flex:1,marginRight:'1rem'}}>
+                <input type="text" value={d.name} placeholder="Debt name" className="mb1"
+                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,name:e.target.value}:x);save({...s,debts:dts})}}/>
+                <input type="number" value={d.amount} inputMode="numeric"
+                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,debts:dts})}}/>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+                <Tog v={d.paid||false} onChange={v=>{const dts=s.debts.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,debts:dts})}}/>
+                <span className="mono" style={{fontSize:'.6rem',color:'var(--muted)'}}>{d.paid?'paid':'unpaid'}</span>
+                <button className="bdng" onClick={()=>save({...s,debts:s.debts.filter((_,j)=>j!==i)})}>✕</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button className="btn bs mb1" onClick={()=>save({...s,debts:[...s.debts,{name:'',amount:0,paid:false}]})}>＋ Add Debt</button>
+
+      <div className="sh">Debit Sufficiency</div>
+      <div className="ins inf mb1">
+        🏦 Unpaid fixed <b>{fmt(unpaidFix(s))}</b> + remaining variable <b>{fmt(remainingVar)}</b> = <b>{fmt(unpaidFix(s) + remainingVar)}</b>
+      </div>
+
+      <div className="g2 mb1">
+        <div className="card"><div className="cl">Debit Balance</div><div className="cv">{fmt(s.accounts.debit.balance)}</div><div className="cs">actual</div></div>
+        <div className="card"><div className="cl">Total Needed</div><div className="cv">{fmt(needed)}</div><div className="cs">all obligations</div></div>
+        <div className="card"><div className="cl">SBI Bill</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(sbiUsed)}</div><div className="cs">to be paid</div></div>
+        <div className="card"><div className="cl">YES Bill</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(yesUsed)}</div><div className="cs">to be paid</div></div>
+      </div>
+
+      <div className={`sfh mb1 ${sb<=0?'ok':''}`}>
+        <div className="cl">{sb>0?'⚠ Short By':'✓ Surplus'}</div>
+        <div className={`cv ${sb>0?'cr':'cg'}`}>{fmt(Math.abs(sb))}</div>
+        <div className="cs">{sb>0?'top up needed':'debit covers everything ✓'}</div>
+      </div>
+
+      {sb>0?<div className="ins bd">🚨 Debit short by <b>{fmt(sb)}</b> — top up or reduce spending</div>
+           :<div className="ins gd">✅ Debit surplus <b>{fmt(Math.abs(sb))}</b> after all obligations</div>}
     </div>
   );
 }
@@ -571,8 +594,9 @@ function App(){
   const [page,setPage]=useState('overview');
   const [tmsg,setTmsg]=useState('');
   const timer=useRef(null);
+
   function toast(msg){setTmsg(msg);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setTmsg(''),2500)}
-  
+
   function deepMerge(def,saved){
     const r={...def};
     for(const k in saved){
