@@ -302,6 +302,9 @@ function Overview({s}){
   const weekYES   = recentLogs.reduce((a,e)=>a+(e.yes||0),0);
   const weekTotal = weekDebit+weekSBI+weekYES;
   const hasWeekData = s.checkin_log.length > 0;
+  // Expected spend this week = variable remaining ÷ weeks left
+  const weeklyBudget = Math.round(vr / wksLeft);
+  const weeklyDiff = weekTotal - weeklyBudget; // positive = over, negative = under
 
   // Week label e.g. "Mon 7 Apr – Sun 13 Apr"
   const wkFmt = d => d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
@@ -350,12 +353,27 @@ function Overview({s}){
       {hasWeekData && <>
         <div className="sh">This Week's Spending</div>
         {weekTotal===0
-          ? <div className="ins inf">📋 No check-ins this week ({weekLabel}) — log one to see weekly spend</div>
+          ? <div className="ins inf">📋 No check-ins this week ({weekLabel}) — log one to see weekly spend<br/><span style={{opacity:.8}}>Expected this week: <b>{fmt(weeklyBudget)}</b></span></div>
           : <div className="card" style={{marginBottom:'.6rem'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.7rem'}}>
-                <div><div className="cl">Total Spent This Week</div><div className="cv" style={{fontSize:'1.25rem'}}>{fmt(weekTotal)}</div></div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.5rem'}}>
+                <div><div className="cl">This Week's Spending</div><div className="cv" style={{fontSize:'1.25rem'}}>{fmt(weekTotal)}</div></div>
                 <div style={{fontSize:'0.6rem',fontFamily:'var(--mono)',color:'var(--muted)',textAlign:'right'}}>
                   <div>{weekLabel}</div><div style={{color:'var(--accent)',fontWeight:600,marginTop:2}}>{recentLogs.length} check-in{recentLogs.length!==1?'s':''}</div>
+                </div>
+              </div>
+              {/* Expected vs actual bar */}
+              <div style={{background:'var(--surface2)',borderRadius:10,padding:'.5rem .7rem',marginBottom:'.5rem'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                  <span style={{fontSize:'.6rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em'}}>vs weekly budget</span>
+                  <span style={{fontFamily:'var(--mono)',fontSize:'.7rem',fontWeight:700,color:weeklyDiff>0?'var(--red)':weeklyDiff<0?'var(--green)':'var(--muted)'}}>
+                    {weeklyDiff>0?`+${fmt(weeklyDiff)} over`:weeklyDiff<0?`${fmt(Math.abs(weeklyDiff))} under`:'on track'}
+                  </span>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                  <div style={{flex:1,background:'#E2E8F0',borderRadius:99,height:6,overflow:'hidden'}}>
+                    <div style={{height:6,borderRadius:99,width:`${Math.min(100,weekTotal/weeklyBudget*100)}%`,background:weeklyDiff>0?'#dc2626':weeklyDiff/weeklyBudget<-0.3?'#16a34a':'#d97706',transition:'width .4s'}}/>
+                  </div>
+                  <span style={{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--muted)',whiteSpace:'nowrap'}}>{fmt(weekTotal)} / {fmt(weeklyBudget)}</span>
                 </div>
               </div>
               <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
@@ -396,9 +414,20 @@ function CheckIn({s,save,toast}){
     if(!ds&&!ss&&!ys){toast('No change detected');return}
     setBusy(true);
     const cats={};
-    if(ss>0){const cc=s.variable.filter(v=>v.card==='SBI');cc.forEach(v=>cats[v.category]=Math.round(ss/cc.length))}
-    if(ys>0){const cc=s.variable.filter(v=>v.card==='YES');cc.forEach(v=>cats[v.category]=Math.round(ys/cc.length))}
-    if(ds>0){const cc=s.variable.filter(v=>v.card==='Debit');cc.forEach(v=>cats[v.category]=Math.round(ds/cc.length))}
+    // Only distribute spend among categories that still have budget remaining.
+    // If all are exhausted, fall back to all categories on that card.
+    function distribute(amount, cardName, spendSoFar){
+      const all = s.variable.filter(v=>v.card===cardName);
+      const withBudget = all.filter(v=> (spendSoFar[v.category]||0) < v.budget);
+      const targets = withBudget.length > 0 ? withBudget : all;
+      targets.forEach(v=>{ cats[v.category]=(cats[v.category]||0)+Math.round(amount/targets.length); });
+    }
+    // Build current per-category totals from existing log
+    const currentCats={};
+    s.checkin_log.forEach(e=>{ Object.entries(e.cats||{}).forEach(([c,v])=>{ currentCats[c]=(currentCats[c]||0)+v; }); });
+    if(ss>0) distribute(ss,'SBI',currentCats);
+    if(ys>0) distribute(ys,'YES',currentCats);
+    if(ds>0) distribute(ds,'Debit',currentCats);
     const e={ts:new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),debit:ds,sbi:ss,yes:ys,cats,note:note.trim()};
     await save({...s,checkin_log:[...s.checkin_log,e],accounts:{debit:{balance:dvN},sbi:{...s.accounts.sbi,available:svN},yes:{...s.accounts.yes,available:yvN}}});
     toast(`Logged · Debit ${fmt(ds)} · SBI ${fmt(ss)} · YES ${fmt(ys)}`);
