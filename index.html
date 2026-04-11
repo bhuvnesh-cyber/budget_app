@@ -553,7 +553,7 @@ function Expenses({s,save,toast}){
 // DEBTS & SAVINGS
 // ══════════════════════════════════════════════════════════════════════════════
 function SavingsDebts({s,save,toast}){
-  const {sb,needed,sc,yc,sr,yr,dr,stillToSpend,debitAfterCreditBills}=shortBy(s);
+  const {sb,needed,sc,yc,sr,yr,dr,allVarRem,stillToSpend,debitAfterCreditBills}=shortBy(s);
   return(
     <div className="page">
       <div className="sh" style={{marginTop:'.4rem'}}>Savings</div>
