@@ -235,13 +235,23 @@ const vCard       = (s,c)=> s.checkin_log.reduce((a,e)=>a+(e[c.toLowerCase()]||0
 const vCat        = (s,c)=> s.checkin_log.reduce((a,e)=>a+((e.cats||{})[c]||0),0);
 const totVarSpent = s => vCard(s,'debit')+vCard(s,'sbi')+vCard(s,'yes');
 const predDebit   = s => income(s)-paidFix(s)-(s.savings.done?s.savings.budget:0)-paidDbt(s)-vCard(s,'debit');
-const shortBy     = s => {
-  const sc=s.accounts.sbi.limit-s.accounts.sbi.available, yc=s.accounts.yes.limit-s.accounts.yes.available;
-  const dr=s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+Math.max(0,v.budget-vCat(s,v.category)),0);
-  const sr=s.variable.filter(v=>v.card==='SBI').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
-  const yr=s.variable.filter(v=>v.card==='YES').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
-  const needed=unpaidFix(s)+dr+sc+sr+yc+yr+(totDebts(s)-paidDbt(s));
-  return {needed,sb:needed-s.accounts.debit.balance,sc,yc,sr,yr,dr};
+
+// ── FIX 1: shortBy uses total variable remaining (all cards combined) ─────────
+// No more per-card sr/yr double-counting with credit bill used amounts.
+// needed = unpaid fixed + total var remaining + credit already spent (bills owed) + unpaid debts
+const shortBy = s => {
+  // Credit used = what we already owe to each card (bill to pay)
+  const sc = s.accounts.sbi.limit - s.accounts.sbi.available;
+  const yc = s.accounts.yes.limit - s.accounts.yes.available;
+  // Total remaining variable budget across ALL categories regardless of card
+  const varRem = s.variable.reduce((a,v) => a + Math.max(0, v.budget - vCat(s,v.category)), 0);
+  // Per-card remaining (kept for display in SavingsDebts breakdown)
+  const dr = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+Math.max(0,v.budget-vCat(s,v.category)),0);
+  const sr = s.variable.filter(v=>v.card==='SBI').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
+  const yr = s.variable.filter(v=>v.card==='YES').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
+  // Single "needed" figure — no double-count of over-budget card categories
+  const needed = unpaidFix(s) + varRem + sc + yc + (totDebts(s) - paidDbt(s));
+  return {needed, sb: needed - s.accounts.debit.balance, sc, yc, sr, yr, dr};
 };
 
 function barClr(sp,bud){const p=bud?sp/bud:0;return p>1?'#dc2626':p>.7?'#d97706':'#16a34a'}
@@ -253,6 +263,20 @@ function Bar({sp,bud}){const p=bud?Math.min(100,sp/bud*100):0;return<div classNa
 function Tog({v,onChange}){return<label className="tgl"><input type="checkbox" checked={v} onChange={e=>onChange(e.target.checked)}/><span className="tsl"/></label>}
 function Toast({msg}){return msg?<div className="toast">{msg}</div>:null}
 
+// ── FIX 2: Week boundary helper — Monday 00:00 to Sunday 23:59 of current week
+function getCurrentWeekBounds() {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const diffToMon = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() + diffToMon);
+  weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+  return {weekStart, weekEnd};
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // OVERVIEW
 // ══════════════════════════════════════════════════════════════════════════════
@@ -262,17 +286,21 @@ function Overview({s}){
   const gap=act-pred,gth=Math.max(500,inc*.01),vr=totVarBud(s)-vs;
   const {sb,needed}=shortBy(s);
 
-  // Past 7 days summary from check-in log
-  const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7);
+  // FIX 2: Current week logs (Mon–Sun)
+  const {weekStart, weekEnd} = getCurrentWeekBounds();
   const recentLogs = s.checkin_log.filter(e => {
-    // ts format: "06 Apr 2026, 10:30 AM" — parse it
-    try { return new Date(e.ts) > sevenDaysAgo; } catch{ return false; }
+    try { const d = new Date(e.ts); return d >= weekStart && d <= weekEnd; } catch { return false; }
   });
   const weekDebit = recentLogs.reduce((a,e)=>a+(e.debit||0),0);
   const weekSBI   = recentLogs.reduce((a,e)=>a+(e.sbi||0),0);
   const weekYES   = recentLogs.reduce((a,e)=>a+(e.yes||0),0);
   const weekTotal = weekDebit+weekSBI+weekYES;
   const hasWeekData = s.checkin_log.length > 0;
+
+  // Week label e.g. "Mon 7 Apr – Sun 13 Apr"
+  const wkFmt = d => d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+  const weekLabel = `${wkFmt(weekStart)} – ${wkFmt(weekEnd)}`;
+
   return(
     <div className="page">
       <div className="ah">
@@ -316,12 +344,12 @@ function Overview({s}){
       {hasWeekData && <>
         <div className="sh">This Week's Spending</div>
         {weekTotal===0
-          ? <div className="ins inf">📋 No check-ins in the past 7 days — log a check-in to see weekly spend</div>
+          ? <div className="ins inf">📋 No check-ins this week ({weekLabel}) — log one to see weekly spend</div>
           : <div className="card" style={{marginBottom:'.6rem'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.7rem'}}>
                 <div><div className="cl">Total Spent This Week</div><div className="cv" style={{fontSize:'1.25rem'}}>{fmt(weekTotal)}</div></div>
-                <div style={{fontSize:'0.65rem',fontFamily:'var(--mono)',color:'var(--muted)',textAlign:'right'}}>
-                  <div>last 7 days</div><div style={{color:'var(--accent)',fontWeight:600}}>{recentLogs.length} check-ins</div>
+                <div style={{fontSize:'0.6rem',fontFamily:'var(--mono)',color:'var(--muted)',textAlign:'right'}}>
+                  <div>{weekLabel}</div><div style={{color:'var(--accent)',fontWeight:600,marginTop:2}}>{recentLogs.length} check-in{recentLogs.length!==1?'s':''}</div>
                 </div>
               </div>
               <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
@@ -350,7 +378,6 @@ function Overview({s}){
 // ══════════════════════════════════════════════════════════════════════════════
 function CheckIn({s,save,toast}){
   const pred=predDebit(s);
-  // Use string state so backspace can clear to empty without staying at 0
   const [dv,setDv]=useState(String(s.accounts.debit.balance));
   const [sv,setSv]=useState(String(s.accounts.sbi.available));
   const [yv,setYv]=useState(String(s.accounts.yes.available));
@@ -560,12 +587,12 @@ function SavingsDebts({s,save,toast}){
       <div className="mono sm cm mb1">Total: <b style={{color:'var(--red)'}}>{fmt(totDebts(s))}</b> · Paid: <b style={{color:'var(--green)'}}>{fmt(paidDbt(s))}</b> · Pending: <b style={{color:'var(--amber)'}}>{fmt(totDebts(s)-paidDbt(s))}</b></div>
 
       <div className="sh">Debit Sufficiency</div>
-      <div className="ins inf mb1">🏦 Unpaid fixed <b>{fmt(unpaidFix(s))}</b> + debit var <b>{fmt(dr)}</b> + SBI bill <b>{fmt(sc+sr)}</b> + YES bill <b>{fmt(yc+yr)}</b> + debts <b>{fmt(totDebts(s)-paidDbt(s))}</b> = <b>{fmt(needed)}</b></div>
+      <div className="ins inf mb1">🏦 Unpaid fixed <b>{fmt(unpaidFix(s))}</b> + total var remaining <b>{fmt(s.variable.reduce((a,v)=>a+Math.max(0,v.budget-vCat(s,v.category)),0))}</b> + SBI bill <b>{fmt(sc)}</b> + YES bill <b>{fmt(yc)}</b> + debts <b>{fmt(totDebts(s)-paidDbt(s))}</b> = <b>{fmt(needed)}</b></div>
       <div className="g2 mb1">
         <div className="card"><div className="cl">Debit Balance</div><div className="cv">{fmt(s.accounts.debit.balance)}</div><div className="cs">actual</div></div>
         <div className="card"><div className="cl">Total Needed</div><div className="cv">{fmt(needed)}</div><div className="cs">all obligations</div></div>
-        <div className="card"><div className="cl">SBI Obligation</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(sc+sr)}</div><div className="cs">{fmt(sc)} used · {fmt(sr)} left</div></div>
-        <div className="card"><div className="cl">YES Obligation</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(yc+yr)}</div><div className="cs">{fmt(yc)} used · {fmt(yr)} left</div></div>
+        <div className="card"><div className="cl">SBI Bill Owed</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(sc)}</div><div className="cs">{fmt(sr)} budget still left</div></div>
+        <div className="card"><div className="cl">YES Bill Owed</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(yc)}</div><div className="cs">{fmt(yr)} budget still left</div></div>
       </div>
       <div className={`sfh mb1 ${sb<=0?'ok':''}`}>
         <div className="cl">{sb>0?'⚠ Short By':'✓ Surplus'}</div>
