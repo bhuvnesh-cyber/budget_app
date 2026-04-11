@@ -250,7 +250,9 @@ const shortBy = s => {
   const dr = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+Math.max(0,v.budget-vCat(s,v.category)),0);
   const sr = s.variable.filter(v=>v.card==='SBI').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
   const yr = s.variable.filter(v=>v.card==='YES').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
-  const allVarRem = dr + sr + yr;
+  // Use totVarBud-totVarSpent so over-budget categories correctly reduce remaining
+  // (per-cat Math.max(0,...) floors negatives to 0 and loses the over-spend)
+  const allVarRem = totVarBud(s) - totVarSpent(s);
   const stillToSpend = unpaidFix(s) + allVarRem + (totDebts(s) - paidDbt(s));
   const debitAfterCreditBills = s.accounts.debit.balance - sc - yc;
   const sb = stillToSpend - debitAfterCreditBills;
