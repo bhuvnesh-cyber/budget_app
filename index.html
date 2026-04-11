@@ -236,22 +236,26 @@ const vCat        = (s,c)=> s.checkin_log.reduce((a,e)=>a+((e.cats||{})[c]||0),0
 const totVarSpent = s => vCard(s,'debit')+vCard(s,'sbi')+vCard(s,'yes');
 const predDebit   = s => income(s)-paidFix(s)-(s.savings.done?s.savings.budget:0)-paidDbt(s)-vCard(s,'debit');
 
-// ── FIX 1: shortBy uses total variable remaining (all cards combined) ─────────
-// No more per-card sr/yr double-counting with credit bill used amounts.
-// needed = unpaid fixed + total var remaining + credit already spent (bills owed) + unpaid debts
+// ── shortBy: two-step logic matching user's mental model ─────────────────────
+// Step 1 — total still left to spend (all categories, all cards):
+//   stillToSpend = unpaid fixed + ALL variable remaining + unpaid debts
+// Step 2 — debit available after first settling credit bills already owed:
+//   debitAfterCreditBills = debit balance - sc - yc
+// Short by = stillToSpend - debitAfterCreditBills
+// Rationale: future SBI/YES spending will generate new credit bills paid from debit,
+// so ALL variable remaining ultimately flows through debit at month end.
 const shortBy = s => {
-  // Credit used = what we already owe to each card (bill to pay)
-  const sc = s.accounts.sbi.limit - s.accounts.sbi.available;
-  const yc = s.accounts.yes.limit - s.accounts.yes.available;
-  // Total remaining variable budget across ALL categories regardless of card
-  const varRem = s.variable.reduce((a,v) => a + Math.max(0, v.budget - vCat(s,v.category)), 0);
-  // Per-card remaining (kept for display in SavingsDebts breakdown)
+  const sc = s.accounts.sbi.limit - s.accounts.sbi.available; // SBI already spent (bill owed)
+  const yc = s.accounts.yes.limit - s.accounts.yes.available; // YES already spent (bill owed)
   const dr = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+Math.max(0,v.budget-vCat(s,v.category)),0);
   const sr = s.variable.filter(v=>v.card==='SBI').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
   const yr = s.variable.filter(v=>v.card==='YES').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
-  // Single "needed" figure — no double-count of over-budget card categories
-  const needed = unpaidFix(s) + varRem + sc + yc + (totDebts(s) - paidDbt(s));
-  return {needed, sb: needed - s.accounts.debit.balance, sc, yc, sr, yr, dr};
+  const allVarRem = dr + sr + yr;
+  const stillToSpend = unpaidFix(s) + allVarRem + (totDebts(s) - paidDbt(s));
+  const debitAfterCreditBills = s.accounts.debit.balance - sc - yc;
+  const sb = stillToSpend - debitAfterCreditBills;
+  const needed = stillToSpend; // for display
+  return {needed, sb, sc, yc, sr, yr, dr, allVarRem, stillToSpend, debitAfterCreditBills};
 };
 
 function barClr(sp,bud){const p=bud?sp/bud:0;return p>1?'#dc2626':p>.7?'#d97706':'#16a34a'}
@@ -549,7 +553,7 @@ function Expenses({s,save,toast}){
 // DEBTS & SAVINGS
 // ══════════════════════════════════════════════════════════════════════════════
 function SavingsDebts({s,save,toast}){
-  const {sb,needed,sc,yc,sr,yr,dr}=shortBy(s);
+  const {sb,needed,sc,yc,sr,yr,dr,stillToSpend,debitAfterCreditBills}=shortBy(s);
   return(
     <div className="page">
       <div className="sh" style={{marginTop:'.4rem'}}>Savings</div>
@@ -587,7 +591,7 @@ function SavingsDebts({s,save,toast}){
       <div className="mono sm cm mb1">Total: <b style={{color:'var(--red)'}}>{fmt(totDebts(s))}</b> · Paid: <b style={{color:'var(--green)'}}>{fmt(paidDbt(s))}</b> · Pending: <b style={{color:'var(--amber)'}}>{fmt(totDebts(s)-paidDbt(s))}</b></div>
 
       <div className="sh">Debit Sufficiency</div>
-      <div className="ins inf mb1">🏦 Unpaid fixed <b>{fmt(unpaidFix(s))}</b> + total var remaining <b>{fmt(s.variable.reduce((a,v)=>a+Math.max(0,v.budget-vCat(s,v.category)),0))}</b> + SBI bill <b>{fmt(sc)}</b> + YES bill <b>{fmt(yc)}</b> + debts <b>{fmt(totDebts(s)-paidDbt(s))}</b> = <b>{fmt(needed)}</b></div>
+      <div className="ins inf mb1">🏦 Still to spend: fixed <b>{fmt(unpaidFix(s))}</b> + all var <b>{fmt(allVarRem)}</b> + debts <b>{fmt(totDebts(s)-paidDbt(s))}</b> = <b>{fmt(stillToSpend)}</b> &nbsp;·&nbsp; Debit after credit bills: <b>{fmt(s.accounts.debit.balance)}</b> − SBI <b>{fmt(sc)}</b> − YES <b>{fmt(yc)}</b> = <b>{fmt(debitAfterCreditBills)}</b></div>
       <div className="g2 mb1">
         <div className="card"><div className="cl">Debit Balance</div><div className="cv">{fmt(s.accounts.debit.balance)}</div><div className="cs">actual</div></div>
         <div className="card"><div className="cl">Total Needed</div><div className="cv">{fmt(needed)}</div><div className="cs">all obligations</div></div>
