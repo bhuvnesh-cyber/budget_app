@@ -146,6 +146,13 @@ input::placeholder{color:var(--subtle)}
   padding:1rem;box-shadow:0 4px 16px rgba(239,68,68,.1)}
 .sfh.ok{border-color:var(--green);box-shadow:0 4px 16px rgba(16,185,129,.1)}
 
+/* Split preview box */
+.split-preview{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);
+  padding:.6rem .9rem;margin-bottom:.6rem;font-size:.72rem;line-height:1.7}
+.split-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0}
+.split-card{font-weight:700;font-family:var(--mono)}
+.split-cats{color:var(--muted);font-size:.65rem}
+
 /* Misc */
 .loading{display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:1rem}
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);
@@ -178,137 +185,223 @@ hr{border:none;border-top:1px solid var(--border);margin:.9rem 0}
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script type="text/babel">
-const {useState,useEffect,useCallback,useRef} = React;
+const {useState,useEffect,useCallback,useRef,useMemo} = React;
 
 const SUPA_URL = 'https://jyacewgyqvrqybeyrcig.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5YWNld2d5cXZycXliZXlyY2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNzUxNTYsImV4cCI6MjA5MDk1MTE1Nn0.yMffM11nwBLiyd3-M4n-Fx5oVirCK4uojkLu2JLw5xU';
 const db = supabase.createClient(SUPA_URL, SUPA_KEY);
 
+// ── Constants (no more magic numbers) ────────────────────────────────────────
+const CURRENT_VERSION  = 2;
+const WARN_RATIO       = 0.70;  // amber warning threshold for bar/badge
+const CREDIT_LOW_RATIO = 0.15;  // alert when credit available < 15% of limit
+
 const DEFAULT = {
-  base_budget:83500,
-  additional_income:[{source:'Bank Interest',amount:69}],
-  fixed:[
-    {category:'Family',        budget:15000,paid:true, spent:15000},
-    {category:'Rent',          budget:21500,paid:true, spent:21500},
-    {category:'Milk',          budget:2940, paid:true, spent:2940 },
-    {category:'Rent_Furniture',budget:2994, paid:true, spent:2994 },
-    {category:'School',        budget:3000, paid:false,spent:0    },
-    {category:'Recharge',      budget:1000, paid:false,spent:0    },
-    {category:'Gas',           budget:531,  paid:false,spent:0    },
-    {category:'Electric',      budget:735,  paid:true, spent:735  },
-    {category:'WIFI',          budget:800,  paid:false,spent:0    },
+  version: CURRENT_VERSION,
+  base_budget: 83500,
+  additional_income: [{source:'Bank Interest', amount:69}],
+  fixed: [
+    {category:'Family',         budget:15000, paid:true,  spent:15000},
+    {category:'Rent',           budget:21500, paid:true,  spent:21500},
+    {category:'Milk',           budget:2940,  paid:true,  spent:2940 },
+    {category:'Rent_Furniture', budget:2994,  paid:true,  spent:2994 },
+    {category:'School',         budget:3000,  paid:false, spent:0    },
+    {category:'Recharge',       budget:1000,  paid:false, spent:0    },
+    {category:'Gas',            budget:531,   paid:false, spent:0    },
+    {category:'Electric',       budget:735,   paid:true,  spent:735  },
+    {category:'WIFI',           budget:800,   paid:false, spent:0    },
   ],
-  variable:[
-    {category:'Instamart',budget:6000,card:'SBI'},
-    {category:'Swiggy',   budget:1000,card:'SBI'},
-    {category:'Amazon',   budget:3000,card:'SBI'},
-    {category:'Other',    budget:8000,card:'YES'},
-    {category:'Mall',     budget:4000,card:'Debit'},
-    {category:'Clothes',  budget:2000,card:'Debit'},
-    {category:'Doctor',   budget:1000,card:'Debit'},
+  variable: [
+    {category:'Instamart', budget:6000, card:'SBI'},
+    {category:'Swiggy',    budget:1000, card:'SBI'},
+    {category:'Amazon',    budget:3000, card:'SBI'},
+    {category:'Other',     budget:8000, card:'YES'},
+    {category:'Mall',      budget:4000, card:'Debit'},
+    {category:'Clothes',   budget:2000, card:'Debit'},
+    {category:'Doctor',    budget:1000, card:'Debit'},
   ],
-  savings:{budget:10000,done:false},
-  debts:[{name:'Credit Bill',amount:7932,paid:false}],
-  checkin_log:[],
-  accounts:{
-    debit:{balance:83569},
-    sbi:{limit:20000,available:20000},
-    yes:{limit:51000,available:51000},
+  savings: {budget:10000, done:false},
+  debts: [{name:'Credit Bill', amount:7932, paid:false}],
+  checkin_log: [],
+  accounts: {
+    debit: {balance:83569},
+    sbi:   {limit:20000, available:20000, cashback:0},
+    yes:   {limit:51000, available:51000, cashback:0},
   },
 };
 
-// ── Pure computations ─────────────────────────────────────────────────────────
-const fmt      = n => '₹'+Math.round(n).toLocaleString('en-IN');
-const today    = new Date();
+// ── Migration: old state → v2 ─────────────────────────────────────────────────
+function migrate(saved) {
+  const v = saved.version || 1;
+  if (v < 2) {
+    // Add cashback fields if missing
+    if (saved.accounts?.sbi && saved.accounts.sbi.cashback === undefined)
+      saved.accounts.sbi.cashback = 0;
+    if (saved.accounts?.yes && saved.accounts.yes.cashback === undefined)
+      saved.accounts.yes.cashback = 0;
+    saved.version = 2;
+  }
+  return saved;
+}
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+const today   = new Date();
 const monthLbl = today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
 const lastDay  = new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
 const daysLeft = Math.max(1,lastDay-today.getDate());
 const wksLeft  = Math.max(1,Math.ceil(daysLeft/7));
 
+function getCurrentWeekBounds() {
+  const now = new Date();
+  const dow = now.getDay();
+  const diffToMon = (dow === 0 ? -6 : 1 - dow);
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() + diffToMon);
+  weekStart.setHours(0,0,0,0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23,59,59,999);
+  return {weekStart, weekEnd};
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
+
+function barClr(sp, bud) {
+  const p = bud ? sp/bud : 0;
+  return p > 1 ? '#dc2626' : p > WARN_RATIO ? '#d97706' : '#16a34a';
+}
+function badgeCls(sp, bud) {
+  if (!sp) return 'bm';
+  if (sp > bud) return 'br';
+  if (sp/bud > WARN_RATIO) return 'ba';
+  return 'bg';
+}
+function badgeTxt(sp, bud) {
+  if (!sp) return 'not started';
+  if (sp > bud) return `over ${fmt(sp-bud)}`;
+  return `${fmt(bud-sp)} left`;
+}
+
+// ── Pure aggregators ──────────────────────────────────────────────────────────
 const income      = s => s.base_budget + s.additional_income.reduce((a,i)=>a+i.amount,0);
 const paidFix     = s => s.fixed.filter(f=>f.paid).reduce((a,f)=>a+f.spent,0);
 const unpaidFix   = s => s.fixed.filter(f=>!f.paid).reduce((a,f)=>a+f.budget,0);
 const totVarBud   = s => s.variable.reduce((a,v)=>a+v.budget,0);
 const totDebts    = s => s.debts.reduce((a,d)=>a+d.amount,0);
 const paidDbt     = s => s.debts.filter(d=>d.paid).reduce((a,d)=>a+d.amount,0);
-const vCard       = (s,c)=> s.checkin_log.reduce((a,e)=>a+(e[c.toLowerCase()]||0),0);
-const vCat        = (s,c)=> s.checkin_log.reduce((a,e)=>a+((e.cats||{})[c]||0),0);
+const vCard       = (s,c) => s.checkin_log.reduce((a,e)=>a+(e[c.toLowerCase()]||0),0);
+const vCat        = (s,c) => s.checkin_log.reduce((a,e)=>a+((e.cats||{})[c]||0),0);
 const totVarSpent = s => vCard(s,'debit')+vCard(s,'sbi')+vCard(s,'yes');
 const predDebit   = s => income(s)-paidFix(s)-(s.savings.done?s.savings.budget:0)-paidDbt(s)-vCard(s,'debit');
 
-// ── shortBy: two-step logic matching user's mental model ─────────────────────
-// Step 1 — total still left to spend (all categories, all cards):
-//   stillToSpend = unpaid fixed + ALL variable remaining + unpaid debts
-// Step 2 — debit available after first settling credit bills already owed:
-//   debitAfterCreditBills = debit balance - sc - yc
-// Short by = stillToSpend - debitAfterCreditBills
-// Rationale: future SBI/YES spending will generate new credit bills paid from debit,
-// so ALL variable remaining ultimately flows through debit at month end.
-const shortBy = s => {
-  const sc = s.accounts.sbi.limit - s.accounts.sbi.available; // SBI already spent (bill owed)
-  const yc = s.accounts.yes.limit - s.accounts.yes.available; // YES already spent (bill owed)
-  const dr = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+Math.max(0,v.budget-vCat(s,v.category)),0);
-  const sr = s.variable.filter(v=>v.card==='SBI').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
-  const yr = s.variable.filter(v=>v.card==='YES').reduce((a,v) =>a+Math.max(0,v.budget-vCat(s,v.category)),0);
-  // Use totVarBud-totVarSpent so over-budget categories correctly reduce remaining
-  // (per-cat Math.max(0,...) floors negatives to 0 and loses the over-spend)
-  const allVarRem = totVarBud(s) - totVarSpent(s);
-  const stillToSpend = unpaidFix(s) + allVarRem + (totDebts(s) - paidDbt(s));
-  const debitAfterCreditBills = s.accounts.debit.balance - sc - yc;
-  const sb = stillToSpend - debitAfterCreditBills;
-  const needed = stillToSpend; // for display
-  return {needed, sb, sc, yc, sr, yr, dr, allVarRem, stillToSpend, debitAfterCreditBills};
-};
+// ── Named helper fns for shortBy logic (replaces one big opaque fn) ───────────
+// How much credit has already been billed (limit - available), minus any cashback
+function creditBillOwed(s) {
+  const sbi = (s.accounts.sbi.limit - s.accounts.sbi.available) - (s.accounts.sbi.cashback||0);
+  const yes = (s.accounts.yes.limit - s.accounts.yes.available) - (s.accounts.yes.cashback||0);
+  return { sbi: Math.max(0,sbi), yes: Math.max(0,yes) };
+}
 
-function barClr(sp,bud){const p=bud?sp/bud:0;return p>1?'#dc2626':p>.7?'#d97706':'#16a34a'}
-function badgeCls(sp,bud){if(!sp)return'bm';if(sp>bud)return'br';if(sp/bud>.7)return'ba';return'bg'}
-function badgeTxt(sp,bud){if(!sp)return'not started';if(sp>bud)return`over ${fmt(sp-bud)}`;if(sp/bud>.7)return`${fmt(bud-sp)} left`;return`${fmt(bud-sp)} left`}
+// How much budget still remains per card, from variable categories
+function varRemByCard(s) {
+  const rem = (card) => s.variable
+    .filter(v=>v.card===card)
+    .reduce((a,v)=>a+Math.max(0,v.budget-vCat(s,v.category)),0);
+  return { debit: rem('Debit'), sbi: rem('SBI'), yes: rem('YES') };
+}
+
+// Total still to spend this month (all obligations not yet paid)
+function stillToSpend(s) {
+  const allVarRem = totVarBud(s) - totVarSpent(s); // honours over-spend correctly
+  return unpaidFix(s) + allVarRem + (totDebts(s) - paidDbt(s));
+}
+
+// Debit balance after settling already-accrued credit bills
+function debitNet(s) {
+  const {sbi, yes} = creditBillOwed(s);
+  return s.accounts.debit.balance - sbi - yes;
+}
+
+// Positive = short, negative = surplus
+function shortfall(s) {
+  return stillToSpend(s) - debitNet(s);
+}
+
+// Convenience bundle used by components
+function shortBy(s) {
+  const {sbi:sc, yes:yc} = creditBillOwed(s);
+  const {debit:dr, sbi:sr, yes:yr} = varRemByCard(s);
+  const allVarRem = totVarBud(s) - totVarSpent(s);
+  const needed    = stillToSpend(s);
+  const debitAfterCreditBills = debitNet(s);
+  const sb        = shortfall(s);
+  return {needed, sb, sc, yc, sr, yr, dr, allVarRem, stillToSpend:needed, debitAfterCreditBills};
+}
 
 // ── Mini components ───────────────────────────────────────────────────────────
 function Bar({sp,bud}){const p=bud?Math.min(100,sp/bud*100):0;return<div className="bw"><div className="bf" style={{width:p+'%',background:barClr(sp,bud)}}/></div>}
 function Tog({v,onChange}){return<label className="tgl"><input type="checkbox" checked={v} onChange={e=>onChange(e.target.checked)}/><span className="tsl"/></label>}
 function Toast({msg}){return msg?<div className="toast">{msg}</div>:null}
 
-// ── FIX 2: Week boundary helper — Monday 00:00 to Sunday 23:59 of current week
-function getCurrentWeekBounds() {
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-  const diffToMon = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() + diffToMon);
-  weekStart.setHours(0, 0, 0, 0);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
-  return {weekStart, weekEnd};
+// ── Split preview: shows how a check-in will be distributed ──────────────────
+function SplitPreview({ds, ss, ys, s}) {
+  // Build the same distribution logic as log(), but just for display
+  const currentCats = {};
+  s.checkin_log.forEach(e=>{ Object.entries(e.cats||{}).forEach(([c,v])=>{ currentCats[c]=(currentCats[c]||0)+v; }); });
+
+  function distribute(amount, cardName) {
+    const all = s.variable.filter(v=>v.card===cardName);
+    const withBudget = all.filter(v=>(currentCats[v.category]||0) < v.budget);
+    const targets = withBudget.length > 0 ? withBudget : all;
+    return targets.map(v=>({cat:v.category, amt:Math.round(amount/targets.length)}));
+  }
+
+  const rows = [];
+  if (ss > 0) rows.push({card:'SBI', amt:ss, cats:distribute(ss,'SBI'), cls:'ls'});
+  if (ys > 0) rows.push({card:'YES', amt:ys, cats:distribute(ys,'YES'), cls:'ly'});
+  if (ds > 0) rows.push({card:'Debit', amt:ds, cats:distribute(ds,'Debit'), cls:'ld'});
+
+  if (!rows.length) return null;
+  return (
+    <div className="split-preview">
+      <div style={{fontSize:'.6rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:6}}>
+        How this will be logged
+      </div>
+      {rows.map(r=>(
+        <div key={r.card} className="split-row">
+          <span className={`lpi ${r.cls}`} style={{marginRight:8}}>{r.card} {fmt(r.amt)}</span>
+          <span className="split-cats">→ {r.cats.map(c=>`${c.cat} ${fmt(c.amt)}`).join(' · ')}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // OVERVIEW
 // ══════════════════════════════════════════════════════════════════════════════
-function Overview({s}){
-  const inc=income(s),fp=paidFix(s),vs=totVarSpent(s),sv=s.savings.done?s.savings.budget:0,dp=paidDbt(s);
-  const rem=inc-fp-vs-sv-dp,pred=predDebit(s),act=s.accounts.debit.balance;
-  const gap=act-pred,gth=Math.max(500,inc*.01),vr=totVarBud(s)-vs;
-  const {sb,needed}=shortBy(s);
+function Overview({s}) {
+  const sb_data = useMemo(()=>shortBy(s), [s]);
+  const {sb, needed} = sb_data;
+  const inc=income(s), fp=paidFix(s), vs=totVarSpent(s), sv=s.savings.done?s.savings.budget:0, dp=paidDbt(s);
+  const rem=inc-fp-vs-sv-dp, pred=predDebit(s), act=s.accounts.debit.balance;
+  const gap=act-pred, gth=Math.max(500,inc*.01), vr=totVarBud(s)-vs;
 
-  // FIX 2: Current week logs (Mon–Sun)
-  const {weekStart, weekEnd} = getCurrentWeekBounds();
-  const recentLogs = s.checkin_log.filter(e => {
-    try { const d = new Date(e.ts); return d >= weekStart && d <= weekEnd; } catch { return false; }
-  });
-  const weekDebit = recentLogs.reduce((a,e)=>a+(e.debit||0),0);
-  const weekSBI   = recentLogs.reduce((a,e)=>a+(e.sbi||0),0);
-  const weekYES   = recentLogs.reduce((a,e)=>a+(e.yes||0),0);
-  const weekTotal = weekDebit+weekSBI+weekYES;
-  const hasWeekData = s.checkin_log.length > 0;
-  // Expected spend this week = variable remaining ÷ weeks left
-  const weeklyBudget = Math.round(vr / wksLeft);
-  const weeklyDiff = weekTotal - weeklyBudget; // positive = over, negative = under
+  const {weekStart,weekEnd}=getCurrentWeekBounds();
+  const recentLogs=s.checkin_log.filter(e=>{try{const d=new Date(e.ts);return d>=weekStart&&d<=weekEnd;}catch{return false;}});
+  const weekDebit=recentLogs.reduce((a,e)=>a+(e.debit||0),0);
+  const weekSBI=recentLogs.reduce((a,e)=>a+(e.sbi||0),0);
+  const weekYES=recentLogs.reduce((a,e)=>a+(e.yes||0),0);
+  const weekTotal=weekDebit+weekSBI+weekYES;
+  const hasWeekData=s.checkin_log.length>0;
+  const weeklyBudget=Math.round(vr/wksLeft);
+  const weeklyDiff=weekTotal-weeklyBudget;
+  const wkFmt=d=>d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+  const weekLabel=`${wkFmt(weekStart)} – ${wkFmt(weekEnd)}`;
 
-  // Week label e.g. "Mon 7 Apr – Sun 13 Apr"
-  const wkFmt = d => d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
-  const weekLabel = `${wkFmt(weekStart)} – ${wkFmt(weekEnd)}`;
+  // Total cashback earned
+  const totalCashback=(s.accounts.sbi.cashback||0)+(s.accounts.yes.cashback||0);
 
   return(
     <div className="page">
@@ -321,8 +414,12 @@ function Overview({s}){
         <div className="card"><div className="cl">Total Budget</div><div className="cv">{fmt(inc)}</div><div className="cs">base {fmt(s.base_budget)}</div></div>
         <div className="card"><div className="cl">Remaining</div><div className={`cv ${rem>=0?'cg':'cr'}`}>{fmt(rem)}</div><div className="cs">actual so far</div></div>
         <div className="card"><div className="cl">Fixed Paid</div><div className="cv cm">{fmt(fp)}</div><div className="cs">{fmt(unpaidFix(s))} pending</div></div>
-        <div className="card"><div className="cl">Variable Spent</div><div className={`cv ${vs>totVarBud(s)*.7?'ca':'cm'}`}>{fmt(vs)}</div><div className="cs">of {fmt(totVarBud(s))}</div></div>
+        <div className="card"><div className="cl">Variable Spent</div><div className={`cv ${vs>totVarBud(s)*WARN_RATIO?'ca':'cm'}`}>{fmt(vs)}</div><div className="cs">of {fmt(totVarBud(s))}</div></div>
       </div>
+
+      {totalCashback>0&&(
+        <div className="ins gd mb1">🎁 <b>{fmt(totalCashback)}</b> cashback earned this month — applied to credit bills</div>
+      )}
 
       <div className={`sfh mb1 ${sb<=0?'ok':''}`}>
         <div className="cl">{sb>0?'⚠ Debit Short By':'✓ Debit Surplus'}</div>
@@ -339,58 +436,48 @@ function Overview({s}){
                 :<div className="ins inf">💰 Debit <b>{fmt(gap)} higher</b> than predicted — payments pending</div>}
         {unpaidFix(s)>0&&<div className="ins wn">🔔 <b>{fmt(unpaidFix(s))}</b> in fixed expenses unpaid</div>}
         {totDebts(s)-paidDbt(s)>0&&<div className="ins wn">🔔 <b>{fmt(totDebts(s)-paidDbt(s))}</b> in debts unpaid</div>}
-        {s.accounts.sbi.available<s.accounts.sbi.limit*.15&&<div className="ins wn">💳 SBI low — <b>{fmt(s.accounts.sbi.available)}</b> left</div>}
-        {s.accounts.yes.available<s.accounts.yes.limit*.15&&<div className="ins wn">💳 YES low — <b>{fmt(s.accounts.yes.available)}</b> left</div>}
+        {s.accounts.sbi.available<s.accounts.sbi.limit*CREDIT_LOW_RATIO&&<div className="ins wn">💳 SBI low — <b>{fmt(s.accounts.sbi.available)}</b> left</div>}
+        {s.accounts.yes.available<s.accounts.yes.limit*CREDIT_LOW_RATIO&&<div className="ins wn">💳 YES low — <b>{fmt(s.accounts.yes.available)}</b> left</div>}
       </div>
 
       <div className="sh">Accounts</div>
       <div className="g3">
         <div className="card"><div className="cl">Debit</div><div className={`cv ${Math.abs(act-pred)<gth?'cg':'cr'}`} style={{fontSize:'1.05rem'}}>{fmt(act)}</div><div className="cs">pred {fmt(pred)}</div></div>
-        <div className="card"><div className="cl">SBI</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.sbi.available)}</div><div className="cs">avail</div></div>
-        <div className="card"><div className="cl">YES</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.yes.available)}</div><div className="cs">avail</div></div>
+        <div className="card"><div className="cl">SBI</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.sbi.available)}</div><div className="cs">avail{(s.accounts.sbi.cashback||0)>0?` · cb ${fmt(s.accounts.sbi.cashback)}`:''}</div></div>
+        <div className="card"><div className="cl">YES</div><div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.yes.available)}</div><div className="cs">avail{(s.accounts.yes.cashback||0)>0?` · cb ${fmt(s.accounts.yes.cashback)}`:''}</div></div>
       </div>
 
-      {hasWeekData && <>
+      {hasWeekData&&<>
         <div className="sh">This Week's Spending</div>
         {weekTotal===0
-          ? <div className="ins inf">📋 No check-ins this week ({weekLabel}) — log one to see weekly spend<br/><span style={{opacity:.8}}>Expected this week: <b>{fmt(weeklyBudget)}</b></span></div>
-          : <div className="card" style={{marginBottom:'.6rem'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.5rem'}}>
-                <div><div className="cl">This Week's Spending</div><div className="cv" style={{fontSize:'1.25rem'}}>{fmt(weekTotal)}</div></div>
-                <div style={{fontSize:'0.6rem',fontFamily:'var(--mono)',color:'var(--muted)',textAlign:'right'}}>
-                  <div>{weekLabel}</div><div style={{color:'var(--accent)',fontWeight:600,marginTop:2}}>{recentLogs.length} check-in{recentLogs.length!==1?'s':''}</div>
-                </div>
-              </div>
-              {/* Expected vs actual bar */}
-              <div style={{background:'var(--surface2)',borderRadius:10,padding:'.5rem .7rem',marginBottom:'.5rem'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-                  <span style={{fontSize:'.6rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em'}}>vs weekly budget</span>
-                  <span style={{fontFamily:'var(--mono)',fontSize:'.7rem',fontWeight:700,color:weeklyDiff>0?'var(--red)':weeklyDiff<0?'var(--green)':'var(--muted)'}}>
-                    {weeklyDiff>0?`+${fmt(weeklyDiff)} over`:weeklyDiff<0?`${fmt(Math.abs(weeklyDiff))} under`:'on track'}
-                  </span>
-                </div>
-                <div style={{display:'flex',alignItems:'center',gap:6}}>
-                  <div style={{flex:1,background:'#E2E8F0',borderRadius:99,height:6,overflow:'hidden'}}>
-                    <div style={{height:6,borderRadius:99,width:`${Math.min(100,weekTotal/weeklyBudget*100)}%`,background:weeklyDiff>0?'#dc2626':weeklyDiff/weeklyBudget<-0.3?'#16a34a':'#d97706',transition:'width .4s'}}/>
-                  </div>
-                  <span style={{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--muted)',whiteSpace:'nowrap'}}>{fmt(weekTotal)} / {fmt(weeklyBudget)}</span>
-                </div>
-              </div>
-              <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
-                {weekDebit>0&&<div style={{flex:1,minWidth:80,background:'#F1F5F9',borderRadius:10,padding:'.5rem .7rem'}}>
-                  <div style={{fontSize:'.58rem',fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Debit</div>
-                  <div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'var(--text)'}}>{fmt(weekDebit)}</div>
-                </div>}
-                {weekSBI>0&&<div style={{flex:1,minWidth:80,background:'#DBEAFE',borderRadius:10,padding:'.5rem .7rem'}}>
-                  <div style={{fontSize:'.58rem',fontWeight:700,color:'#1D4ED8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>SBI</div>
-                  <div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'#1E3A8A'}}>{fmt(weekSBI)}</div>
-                </div>}
-                {weekYES>0&&<div style={{flex:1,minWidth:80,background:'#EDE9FE',borderRadius:10,padding:'.5rem .7rem'}}>
-                  <div style={{fontSize:'.58rem',fontWeight:700,color:'#7C3AED',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>YES</div>
-                  <div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'#4C1D95'}}>{fmt(weekYES)}</div>
-                </div>}
+          ?<div className="ins inf">📋 No check-ins this week ({weekLabel})<br/><span style={{opacity:.8}}>Expected: <b>{fmt(weeklyBudget)}</b></span></div>
+          :<div className="card" style={{marginBottom:'.6rem'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.5rem'}}>
+              <div><div className="cl">This Week</div><div className="cv" style={{fontSize:'1.25rem'}}>{fmt(weekTotal)}</div></div>
+              <div style={{fontSize:'0.6rem',fontFamily:'var(--mono)',color:'var(--muted)',textAlign:'right'}}>
+                <div>{weekLabel}</div><div style={{color:'var(--accent)',fontWeight:600,marginTop:2}}>{recentLogs.length} check-in{recentLogs.length!==1?'s':''}</div>
               </div>
             </div>
+            <div style={{background:'var(--surface2)',borderRadius:10,padding:'.5rem .7rem',marginBottom:'.5rem'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                <span style={{fontSize:'.6rem',fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.06em'}}>vs weekly budget</span>
+                <span style={{fontFamily:'var(--mono)',fontSize:'.7rem',fontWeight:700,color:weeklyDiff>0?'var(--red)':weeklyDiff<0?'var(--green)':'var(--muted)'}}>
+                  {weeklyDiff>0?`+${fmt(weeklyDiff)} over`:weeklyDiff<0?`${fmt(Math.abs(weeklyDiff))} under`:'on track'}
+                </span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <div style={{flex:1,background:'#E2E8F0',borderRadius:99,height:6,overflow:'hidden'}}>
+                  <div style={{height:6,borderRadius:99,width:`${Math.min(100,weekTotal/weeklyBudget*100)}%`,background:weeklyDiff>0?'#dc2626':weeklyDiff/weeklyBudget<-0.3?'#16a34a':'#d97706',transition:'width .4s'}}/>
+                </div>
+                <span style={{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--muted)',whiteSpace:'nowrap'}}>{fmt(weekTotal)} / {fmt(weeklyBudget)}</span>
+              </div>
+            </div>
+            <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
+              {weekDebit>0&&<div style={{flex:1,minWidth:80,background:'#F1F5F9',borderRadius:10,padding:'.5rem .7rem'}}><div style={{fontSize:'.58rem',fontWeight:700,color:'#475569',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>Debit</div><div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'var(--text)'}}>{fmt(weekDebit)}</div></div>}
+              {weekSBI>0&&<div style={{flex:1,minWidth:80,background:'#DBEAFE',borderRadius:10,padding:'.5rem .7rem'}}><div style={{fontSize:'.58rem',fontWeight:700,color:'#1D4ED8',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>SBI</div><div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'#1E3A8A'}}>{fmt(weekSBI)}</div></div>}
+              {weekYES>0&&<div style={{flex:1,minWidth:80,background:'#EDE9FE',borderRadius:10,padding:'.5rem .7rem'}}><div style={{fontSize:'.58rem',fontWeight:700,color:'#7C3AED',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:2}}>YES</div><div style={{fontFamily:'var(--mono)',fontWeight:700,fontSize:'1rem',color:'#4C1D95'}}>{fmt(weekYES)}</div></div>}
+            </div>
+          </div>
         }
       </>}
     </div>
@@ -400,7 +487,7 @@ function Overview({s}){
 // ══════════════════════════════════════════════════════════════════════════════
 // CHECK-IN
 // ══════════════════════════════════════════════════════════════════════════════
-function CheckIn({s,save,toast}){
+function CheckIn({s,save,toast}) {
   const pred=predDebit(s);
   const [dv,setDv]=useState(String(s.accounts.debit.balance));
   const [sv,setSv]=useState(String(s.accounts.sbi.available));
@@ -408,39 +495,57 @@ function CheckIn({s,save,toast}){
   const [note,setNote]=useState('');
   const [busy,setBusy]=useState(false);
   const dvN=dv===''?0:Number(dv), svN=sv===''?0:Number(sv), yvN=yv===''?0:Number(yv);
-  const ds=Math.max(0,Math.round(pred-dvN)),ss=Math.max(0,Math.round(s.accounts.sbi.available-svN)),ys=Math.max(0,Math.round(s.accounts.yes.available-yvN));
+  const ds=Math.max(0,Math.round(pred-dvN));
+  const ss=Math.max(0,Math.round(s.accounts.sbi.available-svN));
+  const ys=Math.max(0,Math.round(s.accounts.yes.available-yvN));
+  const hasChange=ds>0||ss>0||ys>0;
 
-  async function log(){
-    if(!ds&&!ss&&!ys){toast('No change detected');return}
-    setBusy(true);
+  function buildCats(ds, ss, ys) {
     const cats={};
-    // Only distribute spend among categories that still have budget remaining.
-    // If all are exhausted, fall back to all categories on that card.
-    function distribute(amount, cardName, spendSoFar){
-      const all = s.variable.filter(v=>v.card===cardName);
-      const withBudget = all.filter(v=> (spendSoFar[v.category]||0) < v.budget);
-      const targets = withBudget.length > 0 ? withBudget : all;
-      targets.forEach(v=>{ cats[v.category]=(cats[v.category]||0)+Math.round(amount/targets.length); });
-    }
-    // Build current per-category totals from existing log
     const currentCats={};
     s.checkin_log.forEach(e=>{ Object.entries(e.cats||{}).forEach(([c,v])=>{ currentCats[c]=(currentCats[c]||0)+v; }); });
-    if(ss>0) distribute(ss,'SBI',currentCats);
-    if(ys>0) distribute(ys,'YES',currentCats);
-    if(ds>0) distribute(ds,'Debit',currentCats);
-    const e={ts:new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),debit:ds,sbi:ss,yes:ys,cats,note:note.trim()};
-    await save({...s,checkin_log:[...s.checkin_log,e],accounts:{debit:{balance:dvN},sbi:{...s.accounts.sbi,available:svN},yes:{...s.accounts.yes,available:yvN}}});
+    function distribute(amount, cardName) {
+      const all=s.variable.filter(v=>v.card===cardName);
+      const withBudget=all.filter(v=>(currentCats[v.category]||0)<v.budget);
+      const targets=withBudget.length>0?withBudget:all;
+      targets.forEach(v=>{ cats[v.category]=(cats[v.category]||0)+Math.round(amount/targets.length); });
+    }
+    if (ss>0) distribute(ss,'SBI');
+    if (ys>0) distribute(ys,'YES');
+    if (ds>0) distribute(ds,'Debit');
+    return cats;
+  }
+
+  async function log() {
+    if (!hasChange){toast('No change detected');return;}
+    setBusy(true);
+    const cats=buildCats(ds,ss,ys);
+    const e={
+      ts: new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+      debit:ds, sbi:ss, yes:ys, cats, note:note.trim()
+    };
+    await save({...s,
+      checkin_log:[...s.checkin_log,e],
+      accounts:{
+        debit:{balance:dvN},
+        sbi:{...s.accounts.sbi,available:svN},
+        yes:{...s.accounts.yes,available:yvN},
+      }
+    });
     toast(`Logged · Debit ${fmt(ds)} · SBI ${fmt(ss)} · YES ${fmt(ys)}`);
     setNote('');setBusy(false);
   }
 
-  async function del(i){
+  async function del(i) {
     const e=s.checkin_log[i];
-    await save({...s,checkin_log:s.checkin_log.filter((_,j)=>j!==i),accounts:{
-      debit:{balance:Math.round(s.accounts.debit.balance+e.debit)},
-      sbi:{...s.accounts.sbi,available:Math.min(s.accounts.sbi.limit,Math.round(s.accounts.sbi.available+e.sbi))},
-      yes:{...s.accounts.yes,available:Math.min(s.accounts.yes.limit,Math.round(s.accounts.yes.available+e.yes))},
-    }});
+    await save({...s,
+      checkin_log:s.checkin_log.filter((_,j)=>j!==i),
+      accounts:{
+        debit:{balance:Math.round(s.accounts.debit.balance+e.debit)},
+        sbi:{...s.accounts.sbi,available:Math.min(s.accounts.sbi.limit,Math.round(s.accounts.sbi.available+e.sbi))},
+        yes:{...s.accounts.yes,available:Math.min(s.accounts.yes.limit,Math.round(s.accounts.yes.available+e.yes))},
+      }
+    });
     toast('Entry deleted');
   }
 
@@ -474,6 +579,9 @@ function CheckIn({s,save,toast}){
         </div>
       </div>
 
+      {/* Split preview — shows distribution BEFORE logging */}
+      {hasChange&&<SplitPreview ds={ds} ss={ss} ys={ys} s={s}/>}
+
       <input type="text" placeholder="Note (optional)" value={note} onChange={e=>setNote(e.target.value)} className="mb1" style={{display:'block'}}/>
       <button className="btn bp mb1" onClick={log} disabled={busy}>{busy?'Saving…':'✓ Log Check-in'}</button>
 
@@ -504,7 +612,7 @@ function CheckIn({s,save,toast}){
 // ══════════════════════════════════════════════════════════════════════════════
 // EXPENSES
 // ══════════════════════════════════════════════════════════════════════════════
-function Expenses({s,save,toast}){
+function Expenses({s,save,toast}) {
   const [tab,setTab]=useState('fixed');
 
   return(
@@ -515,7 +623,7 @@ function Expenses({s,save,toast}){
 
       {tab==='fixed'&&(
         <div>
-          <div className="ins inf mb1">💡 <b>{fmt(paidFix(s))}</b> paid · <b>{fmt(unpaidFix(s))}</b> pending — toggle to update prediction</div>
+          <div className="ins inf mb1">💡 <b>{fmt(paidFix(s))}</b> paid · <b>{fmt(unpaidFix(s))}</b> pending</div>
           {s.fixed.map((f,i)=>{
             const rem=f.budget-f.spent;
             return(
@@ -524,7 +632,7 @@ function Expenses({s,save,toast}){
                   <div className="en">{f.paid?'🟢':'⚪'} {f.category}</div>
                   <div className="row" style={{gap:'0.6rem'}}>
                     <span className={`badge ${badgeCls(f.spent,f.budget)}`}>{badgeTxt(f.spent,f.budget)}</span>
-                    <Tog v={f.paid} onChange={v=>{const fx=s.fixed.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,fixed:fx})}}/>
+                    <Tog v={f.paid} onChange={v=>{const fx=s.fixed.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,fixed:fx});}}/>
                   </div>
                 </div>
                 <Bar sp={f.spent} bud={f.budget}/>
@@ -533,7 +641,7 @@ function Expenses({s,save,toast}){
                   <span className="mono sm cm">·</span>
                   <span className="mono sm">spent</span>
                   <input type="number" value={f.spent} inputMode="numeric"
-                    onChange={e=>{const fx=s.fixed.map((x,j)=>j===i?{...x,spent:Number(e.target.value)}:x);save({...s,fixed:fx})}}
+                    onChange={e=>{const fx=s.fixed.map((x,j)=>j===i?{...x,spent:Number(e.target.value)}:x);save({...s,fixed:fx});}}
                     style={{width:100,padding:'4px 8px',fontSize:'.82rem'}}/>
                   <span className={`mono sm ${rem>=0?'cg':'cr'}`} style={{marginLeft:'auto'}}>{fmt(rem)}</span>
                 </div>
@@ -583,8 +691,10 @@ function Expenses({s,save,toast}){
 // ══════════════════════════════════════════════════════════════════════════════
 // DEBTS & SAVINGS
 // ══════════════════════════════════════════════════════════════════════════════
-function SavingsDebts({s,save,toast}){
-  const {sb,needed,sc,yc,sr,yr,dr,allVarRem,stillToSpend,debitAfterCreditBills}=shortBy(s);
+function SavingsDebts({s,save,toast}) {
+  const sb_data=useMemo(()=>shortBy(s),[s]);
+  const {sb,needed,sc,yc,sr,yr,dr,allVarRem,stillToSpend:sts,debitAfterCreditBills}=sb_data;
+
   return(
     <div className="page">
       <div className="sh" style={{marginTop:'.4rem'}}>Savings</div>
@@ -594,23 +704,24 @@ function SavingsDebts({s,save,toast}){
           <Tog v={s.savings.done} onChange={v=>save({...s,savings:{...s.savings,done:v}})}/>
         </div>
       </div>
-      {s.savings.done?<div className="ins gd mb1">✅ <b>{fmt(s.savings.budget)}</b> transferred to savings</div>
-                     :<div className="ins wn mb1">⏳ <b>{fmt(s.savings.budget)}</b> pending — toggle when transferred</div>}
+      {s.savings.done
+        ?<div className="ins gd mb1">✅ <b>{fmt(s.savings.budget)}</b> transferred to savings</div>
+        :<div className="ins wn mb1">⏳ <b>{fmt(s.savings.budget)}</b> pending — toggle when transferred</div>}
 
       <div className="sh">Debts</div>
-      <div className="ins inf mb1">💡 Debts deducted from prediction only when marked paid — total <b>{fmt(totDebts(s))}</b></div>
+      <div className="ins inf mb1">💡 Debts deducted from prediction only when marked paid · total <b>{fmt(totDebts(s))}</b></div>
       <div className="gap mb1">
         {s.debts.map((d,i)=>(
           <div key={i} className="card">
             <div className="trow" style={{paddingTop:0}}>
               <div style={{flex:1,marginRight:'1rem'}}>
                 <input type="text" value={d.name} placeholder="Debt name" className="mb1"
-                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,name:e.target.value}:x);save({...s,debts:dts})}}/>
+                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,name:e.target.value}:x);save({...s,debts:dts});}}/>
                 <input type="number" value={d.amount} inputMode="numeric"
-                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,debts:dts})}}/>
+                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,debts:dts});}}/>
               </div>
               <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-                <Tog v={d.paid||false} onChange={v=>{const dts=s.debts.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,debts:dts})}}/>
+                <Tog v={d.paid||false} onChange={v=>{const dts=s.debts.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,debts:dts});}}/>
                 <span className="mono" style={{fontSize:'.6rem',color:'var(--muted)'}}>{d.paid?'paid':'unpaid'}</span>
                 <button className="bdng" onClick={()=>save({...s,debts:s.debts.filter((_,j)=>j!==i)})}>✕</button>
               </div>
@@ -622,7 +733,10 @@ function SavingsDebts({s,save,toast}){
       <div className="mono sm cm mb1">Total: <b style={{color:'var(--red)'}}>{fmt(totDebts(s))}</b> · Paid: <b style={{color:'var(--green)'}}>{fmt(paidDbt(s))}</b> · Pending: <b style={{color:'var(--amber)'}}>{fmt(totDebts(s)-paidDbt(s))}</b></div>
 
       <div className="sh">Debit Sufficiency</div>
-      <div className="ins inf mb1">🏦 Still to spend: fixed <b>{fmt(unpaidFix(s))}</b> + all var <b>{fmt(allVarRem)}</b> + debts <b>{fmt(totDebts(s)-paidDbt(s))}</b> = <b>{fmt(stillToSpend)}</b> &nbsp;·&nbsp; Debit after credit bills: <b>{fmt(s.accounts.debit.balance)}</b> − SBI <b>{fmt(sc)}</b> − YES <b>{fmt(yc)}</b> = <b>{fmt(debitAfterCreditBills)}</b></div>
+      <div className="ins inf mb1">
+        🏦 Still to spend: fixed <b>{fmt(unpaidFix(s))}</b> + all var <b>{fmt(allVarRem)}</b> + debts <b>{fmt(totDebts(s)-paidDbt(s))}</b> = <b>{fmt(sts)}</b>
+        &nbsp;·&nbsp; Debit after credit bills: <b>{fmt(s.accounts.debit.balance)}</b> − SBI <b>{fmt(sc)}</b> − YES <b>{fmt(yc)}</b> = <b>{fmt(debitAfterCreditBills)}</b>
+      </div>
       <div className="g2 mb1">
         <div className="card"><div className="cl">Debit Balance</div><div className="cv">{fmt(s.accounts.debit.balance)}</div><div className="cs">actual</div></div>
         <div className="card"><div className="cl">Total Needed</div><div className="cv">{fmt(needed)}</div><div className="cs">all obligations</div></div>
@@ -634,8 +748,9 @@ function SavingsDebts({s,save,toast}){
         <div className={`cv ${sb>0?'cr':'cg'}`}>{fmt(Math.abs(sb))}</div>
         <div className="cs">{sb>0?'top up needed':'debit covers everything ✓'}</div>
       </div>
-      {sb>0?<div className="ins bd">🚨 Debit short by <b>{fmt(sb)}</b> — top up or reduce spending</div>
-           :<div className="ins gd">✅ Debit surplus <b>{fmt(Math.abs(sb))}</b> after all obligations</div>}
+      {sb>0
+        ?<div className="ins bd">🚨 Debit short by <b>{fmt(sb)}</b> — top up or reduce spending</div>
+        :<div className="ins gd">✅ Debit surplus <b>{fmt(Math.abs(sb))}</b> after all obligations</div>}
     </div>
   );
 }
@@ -643,7 +758,7 @@ function SavingsDebts({s,save,toast}){
 // ══════════════════════════════════════════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════════════════════════════════════════
-function Settings({s,save,toast}){
+function Settings({s,save,toast}) {
   return(
     <div className="page">
       <div className="sh" style={{marginTop:'.4rem'}}>Base Budget</div>
@@ -658,8 +773,8 @@ function Settings({s,save,toast}){
           <div key={i} className="card">
             <div className="row">
               <div className="f1 gap">
-                <input type="text" placeholder="Source" value={inc.source} onChange={e=>{const ai=s.additional_income.map((x,j)=>j===i?{...x,source:e.target.value}:x);save({...s,additional_income:ai})}}/>
-                <input type="number" placeholder="Amount" value={inc.amount} inputMode="numeric" onChange={e=>{const ai=s.additional_income.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,additional_income:ai})}}/>
+                <input type="text" placeholder="Source" value={inc.source} onChange={e=>{const ai=s.additional_income.map((x,j)=>j===i?{...x,source:e.target.value}:x);save({...s,additional_income:ai});}}/>
+                <input type="number" placeholder="Amount" value={inc.amount} inputMode="numeric" onChange={e=>{const ai=s.additional_income.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,additional_income:ai});}}/>
               </div>
               <button className="bdng" onClick={()=>save({...s,additional_income:s.additional_income.filter((_,j)=>j!==i)})}>✕</button>
             </div>
@@ -667,6 +782,23 @@ function Settings({s,save,toast}){
         ))}
       </div>
       <button className="btn bs mb1" onClick={()=>save({...s,additional_income:[...s.additional_income,{source:'',amount:0}]})}>＋ Add Income Source</button>
+
+      <div className="sh">Cashback Earned</div>
+      <div className="ins inf mb1">🎁 Enter cashback credited to your card this month. It reduces the bill owed from your debit balance.</div>
+      <div className="card gap mb1">
+        <div>
+          <div className="il">SBI Cashback / Rewards</div>
+          <input type="number" value={s.accounts.sbi.cashback||0} inputMode="numeric"
+            onChange={e=>save({...s,accounts:{...s.accounts,sbi:{...s.accounts.sbi,cashback:Number(e.target.value)}}})}/>
+          {(s.accounts.sbi.cashback||0)>0&&<div className="mono sm cg" style={{marginTop:4}}>Reduces SBI bill by {fmt(s.accounts.sbi.cashback)}</div>}
+        </div>
+        <div>
+          <div className="il">YES RuPay Cashback / Rewards</div>
+          <input type="number" value={s.accounts.yes.cashback||0} inputMode="numeric"
+            onChange={e=>save({...s,accounts:{...s.accounts,yes:{...s.accounts.yes,cashback:Number(e.target.value)}}})}/>
+          {(s.accounts.yes.cashback||0)>0&&<div className="mono sm cg" style={{marginTop:4}}>Reduces YES bill by {fmt(s.accounts.yes.cashback)}</div>}
+        </div>
+      </div>
 
       <div className="sh">Savings Target</div>
       <div className="card mb1">
@@ -682,7 +814,7 @@ function Settings({s,save,toast}){
 
       <div className="sh" style={{color:'var(--red)'}}>Danger Zone</div>
       <button className="btn" style={{background:'var(--red-bg)',color:'var(--red)',border:'1px solid var(--red-bd)'}}
-        onClick={()=>{if(confirm('Reset ALL data to defaults?'))save(JSON.parse(JSON.stringify(DEFAULT))).then(()=>toast('Reset complete'))}}>
+        onClick={()=>{if(confirm('Reset ALL data to defaults?'))save(JSON.parse(JSON.stringify(DEFAULT))).then(()=>toast('Reset complete'));}}>
         Reset to defaults
       </button>
     </div>
@@ -692,15 +824,15 @@ function Settings({s,save,toast}){
 // ══════════════════════════════════════════════════════════════════════════════
 // APP
 // ══════════════════════════════════════════════════════════════════════════════
-function App(){
+function App() {
   const [state,setState]=useState(null);
   const [page,setPage]=useState('overview');
   const [tmsg,setTmsg]=useState('');
   const timer=useRef(null);
 
-  function toast(msg){setTmsg(msg);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setTmsg(''),2500)}
+  function toast(msg){setTmsg(msg);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setTmsg(''),2500);}
 
-  function deepMerge(def,saved){
+  function deepMerge(def,saved) {
     const r={...def};
     for(const k in saved){
       if(k in r&&typeof r[k]==='object'&&!Array.isArray(r[k])&&r[k]!==null) r[k]=deepMerge(r[k],saved[k]);
@@ -712,7 +844,12 @@ function App(){
   useEffect(()=>{
     (async()=>{
       const {data}=await db.from('budget_state').select('data').eq('id','main').single();
-      setState(data?.data ? deepMerge(JSON.parse(JSON.stringify(DEFAULT)),data.data) : JSON.parse(JSON.stringify(DEFAULT)));
+      if (data?.data) {
+        const merged=deepMerge(JSON.parse(JSON.stringify(DEFAULT)),data.data);
+        setState(migrate(merged));
+      } else {
+        setState(JSON.parse(JSON.stringify(DEFAULT)));
+      }
     })();
   },[]);
 
@@ -721,7 +858,7 @@ function App(){
     await db.from('budget_state').upsert({id:'main',data:ns,updated_at:new Date().toISOString()});
   },[]);
 
-  if(!state) return<div className="loading"><div className="spinner"/><div className="mono sm cm">Loading…</div></div>;
+  if (!state) return<div className="loading"><div className="spinner"/><div className="mono sm cm">Loading…</div></div>;
 
   const nav=[
     {id:'overview', label:'Home',     icon:<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>},
