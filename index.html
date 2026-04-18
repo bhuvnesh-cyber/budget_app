@@ -212,10 +212,13 @@ const paidDebts    = s => s.debts.filter(d=>d.paid).reduce((a,d)=>a+d.amount,0);
 const sbiSpent  = s => Math.max(0, s.accounts.sbi.limit  - s.accounts.sbi.available  - (s.accounts.sbi.cashback||0));
 const yesSpent  = s => Math.max(0, s.accounts.yes.limit  - s.accounts.yes.available  - (s.accounts.yes.cashback||0));
 
-// Debit variable spent = debit variable budget total minus what remains in debit after fixed+savings+debts
-const debitFixedPaid  = s => paidFixed(s) + (s.savings.done ? s.savings.budget : 0) + paidDebts(s);
+// Debit variable spent:
+//   Step 1: debit balance - unpaid fixed = amount left for variable
+//   Step 2: debit variable budget - step1 = how much of budget is already spent
+//   If step1 >= debit var budget, nothing spent yet (surplus)
 const debitVarBudget  = s => s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
-const debitVarSpent   = s => Math.max(0, debitFixedPaid(s) + debitVarBudget(s) - s.accounts.debit.balance);
+const debitAvailForVar= s => s.accounts.debit.balance - unpaidFixed(s);
+const debitVarSpent   = s => Math.max(0, debitVarBudget(s) - debitAvailForVar(s));
 const totalVarSpent   = s => sbiSpent(s) + yesSpent(s) + debitVarSpent(s);
 
 // ── Distribute spend by budget ratio ─────────────────────────────────────────
@@ -237,19 +240,18 @@ function varWithSpent(s) {
 
 // ── Short-by logic ────────────────────────────────────────────────────────────
 function calcShortBy(s) {
-  // Credit bills owed (already spent on card, not yet paid from debit)
-  const sbiBill = sbiSpent(s);
-  const yesBill = yesSpent(s);
-  // What debit still needs to cover: unpaid fixed + remaining var (debit card ones) + unpaid debts + credit bills
-  const debitVarRem  = Math.max(0, debitVarBudget(s) - debitVarSpent(s));
-  const sbiVarRem    = Math.max(0, s.variable.filter(v=>v.card==='SBI').reduce((a,v)=>a+v.budget,0) - sbiSpent(s));
-  const yesVarRem    = Math.max(0, s.variable.filter(v=>v.card==='YES').reduce((a,v)=>a+v.budget,0) - yesSpent(s));
-  const unpaidDbt    = totDebts(s) - paidDebts(s);
-  const savingsPend  = s.savings.done ? 0 : s.savings.budget;
-  // Total still needed from debit: unpaid fixed + savings pending + unpaid debts + debit var remaining + credit bills to pay
+  const sbiBill     = sbiSpent(s);
+  const yesBill     = yesSpent(s);
+  const dvSpent     = debitVarSpent(s);
+  const debitVarRem = Math.max(0, debitVarBudget(s) - dvSpent);
+  const sbiVarRem   = Math.max(0, s.variable.filter(v=>v.card==='SBI').reduce((a,v)=>a+v.budget,0) - sbiBill);
+  const yesVarRem   = Math.max(0, s.variable.filter(v=>v.card==='YES').reduce((a,v)=>a+v.budget,0) - yesBill);
+  const unpaidDbt   = totDebts(s) - paidDebts(s);
+  const savingsPend = s.savings.done ? 0 : s.savings.budget;
+  // What debit still needs to cover:
+  // unpaid fixed + savings pending + unpaid debts + debit var still to spend + credit card bills
   const needed = unpaidFixed(s) + savingsPend + unpaidDbt + debitVarRem + sbiBill + yesBill;
-  const debitNow = s.accounts.debit.balance;
-  const sb = needed - debitNow;
+  const sb     = needed - s.accounts.debit.balance;
   return { sb, needed, sbiBill, yesBill, debitVarRem, sbiVarRem, yesVarRem, unpaidDbt, savingsPend };
 }
 
@@ -464,7 +466,7 @@ function Balances({s, save, toast}) {
           <div className="row mb1"><span style={{fontWeight:600}}>🏦 Debit Balance</span></div>
           <input type="number" value={dv} onChange={e=>setDv(e.target.value)} inputMode="numeric"/>
           <div style={{display:'flex',gap:8,marginTop:4,flexWrap:'wrap'}}>
-            <span className="mono sm cm">debit var spent: <b style={{color:'var(--accent)'}}>{fmt(newDebitSpent)}</b></span>
+            <span className="mono sm cm">avail for var: <b style={{color:'var(--accent)'}}>{fmt(debitAvailForVar(previewS))}</b> · var spent: <b style={{color: newDebitSpent>0?'var(--red)':'var(--green)'}}>{fmt(newDebitSpent)}</b></span>
           </div>
         </div>
         <hr/>
