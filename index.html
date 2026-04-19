@@ -229,32 +229,44 @@ const totalCreditBills = s => sbiSpent(s) + yesSpent(s);
 
 function debitWaterfall(s) {
   const balance    = s.accounts.debit.balance;
-  const creditBill = totalCreditBills(s);          // step 1: locked
-  const afterBills = balance - creditBill;          // what's left after paying cards
+  const cash       = s.cash || 0;
+  const totalFunds = balance + cash;
 
-  const fixedPend  = unpaidFixed(s);               // step 2
+  const creditBill = totalCreditBills(s);          // step 1: locked — must pay card bills
+  const afterBills = balance - creditBill;          // debit after paying cards (cash kept separate)
+
+  const fixedPend  = unpaidFixed(s);               // step 2: unpaid fixed
   const afterFixed = afterBills - fixedPend;
 
-  const savPend    = s.savings.done ? 0 : s.savings.budget; // step 3
+  const savPend    = s.savings.done ? 0 : s.savings.budget; // step 3: savings
   const afterSav   = afterFixed - savPend;
 
-  const debtPend   = unpaidDebts(s);               // step 4
+  const debtPend   = unpaidDebts(s);               // step 4: other debts
   const afterDebts = afterSav - debtPend;
 
-  // step 5: what's left is for debit variable spending
+  // ── IMMEDIATE obligations (what you need to arrange RIGHT NOW) ──────────────
+  // = credit bills + unpaid fixed + debts (savings optional, excluded from "urgent")
+  // Variable budget is EXCLUDED — it's future spending, not a current obligation
+  const immediateNeeded  = creditBill + fixedPend + debtPend;
+  const immediateHave    = totalFunds; // debit + cash
+  const immediateShortBy = Math.max(0, immediateNeeded - immediateHave);
+  const immediateSurplus = Math.max(0, immediateHave - immediateNeeded);
+
+  // ── Variable budget headroom (separate from immediate) ─────────────────────
   const debitVarBud   = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
-  // If afterDebts >= debitVarBud → full budget available, nothing "spent" from budget yet
-  // If afterDebts < debitVarBud → debit variable is partially consumed
-  // If afterDebts < 0           → debit variable is fully consumed + we're in deficit
-  const debitVarAvail = Math.max(0, afterDebts);
+  const debitVarAvail = Math.max(0, afterDebts);   // what's left for variable after everything
   const debitVarSpent = Math.max(0, debitVarBud - debitVarAvail);
-  const surplus       = afterDebts - debitVarBud; // positive = true surplus, negative = short
+
+  // ── Full surplus (after ALL obligations including variable budget) ──────────
+  const surplus = afterDebts - debitVarBud;
 
   return {
-    balance, creditBill, afterBills,
+    balance, cash, totalFunds,
+    creditBill, afterBills,
     fixedPend, afterFixed,
     savPend, afterSav,
     debtPend, afterDebts,
+    immediateNeeded, immediateHave, immediateShortBy, immediateSurplus,
     debitVarBud, debitVarAvail, debitVarSpent,
     surplus,
   };
@@ -316,8 +328,6 @@ function DebitWaterfall({s}) {
     {label:'🛒 Debit variable budget',val: -wf.debitVarBud, after: wf.surplus,     show: true},
   ].filter(r=>r.show);
 
-  const isOk = wf.surplus >= 0;
-
   return (
     <div className="waterfall">
       <div className="wf-row total">
@@ -340,11 +350,19 @@ function DebitWaterfall({s}) {
         );
       })}
       <div className="wf-row final">
-        <span className="wf-label" style={{fontWeight:700,color:isOk?'var(--green)':'var(--red)'}}>
-          {isOk ? '✓ True surplus' : '⚠ Short by'}
+        <span className="wf-label" style={{fontWeight:700,color:wf.immediateShortBy>0?'var(--red)':'var(--green)'}}>
+          {wf.immediateShortBy>0 ? '⚠ Need to arrange' : '✓ Obligations covered'}
         </span>
-        <span className="wf-val" style={{fontSize:'1rem',color:isOk?'var(--green)':'var(--red)'}}>{fmt(Math.abs(wf.surplus))}</span>
+        <span className="wf-val" style={{fontSize:'1rem',color:wf.immediateShortBy>0?'var(--red)':'var(--green)'}}>
+          {wf.immediateShortBy>0 ? fmt(wf.immediateShortBy) : fmt(wf.immediateSurplus)}
+        </span>
       </div>
+      {wf.surplus < wf.immediateShortBy*-1 || (wf.immediateShortBy===0 && wf.debitVarAvail < wf.debitVarBud) ? (
+        <div className="wf-row" style={{background:'var(--amber-bg)'}}>
+          <span className="wf-label" style={{color:'var(--amber)'}}>🛒 Debit var headroom</span>
+          <span className="wf-val" style={{color:wf.debitVarAvail>=wf.debitVarBud?'var(--green)':wf.debitVarAvail>0?'var(--amber)':'var(--red)'}}>{fmt(wf.debitVarAvail)} of {fmt(wf.debitVarBud)}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -352,7 +370,8 @@ function DebitWaterfall({s}) {
 // ── Short-by summary banner ───────────────────────────────────────────────────
 function ShortBySummary({s}) {
   const wf = debitWaterfall(s);
-  const isOk = wf.surplus >= 0;
+  const isOk = wf.immediateShortBy === 0;
+  const divClr = isOk ? 'var(--green-bd)' : 'var(--red-bd)';
 
   return (
     <div className="summary-banner" style={{
@@ -360,36 +379,56 @@ function ShortBySummary({s}) {
       borderColor: isOk ? 'var(--green)' : 'var(--red)',
       marginBottom:'.8rem'
     }}>
+      {/* ── Top: Immediate short-by ── */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.5rem'}}>
         <div style={{fontSize:'.6rem',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:isOk?'#065F46':'#7F1D1D'}}>
-          {isOk ? '✓ Debit Surplus' : '⚠ Debit Short By'}
+          {isOk ? '✓ Obligations Covered' : '⚠ Need to Arrange'}
         </div>
         <div style={{fontFamily:'var(--mono)',fontSize:'1.4rem',fontWeight:800,color:isOk?'var(--green)':'var(--red)'}}>
-          {fmt(Math.abs(wf.surplus))}
+          {isOk ? fmt(wf.immediateSurplus) : fmt(wf.immediateShortBy)}
         </div>
       </div>
-      <div style={{borderTop:`1px solid ${isOk?'var(--green-bd)':'var(--red-bd)'}`,paddingTop:'.4rem',display:'flex',flexDirection:'column',gap:2}}>
-        {wf.creditBill>0  && <div className="sb-row"><span className="sb-label">Credit bills (SBI+YES)</span><span className="sb-val cr">{fmt(wf.creditBill)}</span></div>}
-        {wf.fixedPend>0   && <div className="sb-row"><span className="sb-label">Unpaid fixed</span><span className="sb-val cr">{fmt(wf.fixedPend)}</span></div>}
-        {wf.savPend>0     && <div className="sb-row"><span className="sb-label">Savings pending</span><span className="sb-val ca">{fmt(wf.savPend)}</span></div>}
-        {wf.debtPend>0    && <div className="sb-row"><span className="sb-label">Debts unpaid</span><span className="sb-val cr">{fmt(wf.debtPend)}</span></div>}
-        <div className="sb-row"><span className="sb-label">Debit var budget</span><span className="sb-val cm">{fmt(wf.debitVarBud)}</span></div>
-        <div className="sb-row" style={{borderTop:`1px solid ${isOk?'var(--green-bd)':'var(--red-bd)'}`,marginTop:3,paddingTop:4}}>
-          <span className="sb-label" style={{fontWeight:700}}>Debit balance</span>
-          <span className="sb-val">{fmt(wf.balance)}</span>
+
+      {/* ── Obligation breakdown ── */}
+      <div style={{borderTop:`1px solid ${divClr}`,paddingTop:'.4rem',display:'flex',flexDirection:'column',gap:2}}>
+        <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginBottom:2}}>What you owe now</div>
+        {wf.creditBill>0 && <div className="sb-row"><span className="sb-label">Credit bills (SBI+YES)</span><span className="sb-val cr">{fmt(wf.creditBill)}</span></div>}
+        {wf.fixedPend>0  && <div className="sb-row"><span className="sb-label">Unpaid fixed</span><span className="sb-val cr">{fmt(wf.fixedPend)}</span></div>}
+        {wf.debtPend>0   && <div className="sb-row"><span className="sb-label">Debts unpaid</span><span className="sb-val cr">{fmt(wf.debtPend)}</span></div>}
+        <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:2,paddingTop:3}}>
+          <span className="sb-label" style={{fontWeight:700}}>Total obligations</span>
+          <span className="sb-val cr">{fmt(wf.immediateNeeded)}</span>
         </div>
-        {/* Show what debit looks like after paying credit bills — the key insight */}
-        <div className="sb-row">
-          <span className="sb-label">After paying credit bills</span>
-          <span className="sb-val" style={{color:wf.afterBills<0?'var(--red)':wf.afterBills<10000?'var(--amber)':'var(--green)'}}>{fmt(wf.afterBills)}</span>
+
+        <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginTop:6,marginBottom:2}}>What you have</div>
+        <div className="sb-row"><span className="sb-label">Debit balance</span><span className="sb-val">{fmt(wf.balance)}</span></div>
+        {wf.cash>0 && <div className="sb-row"><span className="sb-label">Cash on hand</span><span className="sb-val cg">{fmt(wf.cash)}</span></div>}
+        <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:2,paddingTop:3}}>
+          <span className="sb-label" style={{fontWeight:700}}>Total available</span>
+          <span className="sb-val">{fmt(wf.totalFunds)}</span>
         </div>
-        {s.cash>0 && <>
-          <div className="sb-row"><span className="sb-label">Cash on hand</span><span className="sb-val cg">{fmt(s.cash)}</span></div>
-          <div className="sb-row" style={{borderTop:`1px solid ${isOk?'var(--green-bd)':'var(--red-bd)'}`,marginTop:3,paddingTop:4}}>
-            <span className="sb-label" style={{fontWeight:700}}>After cash top-up</span>
-            <span className="sb-val" style={{color:wf.surplus+s.cash>=0?'var(--green)':'var(--red)'}}>{fmt(Math.abs(wf.surplus - s.cash))}</span>
+
+        {/* ── Result ── */}
+        <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:4,paddingTop:4}}>
+          <span className="sb-label" style={{fontWeight:700}}>{isOk ? '✓ Surplus after obligations' : '⚠ Short by (arrange this)'}</span>
+          <span className="sb-val" style={{fontSize:'.95rem',color:isOk?'var(--green)':'var(--red)'}}>{fmt(isOk?wf.immediateSurplus:wf.immediateShortBy)}</span>
+        </div>
+
+        {/* ── Variable budget — separate section, future spending ── */}
+        {wf.debitVarBud>0 && (
+          <div style={{marginTop:8,borderTop:`1px solid ${divClr}`,paddingTop:6}}>
+            <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginBottom:4}}>Future debit spend (separate)</div>
+            <div className="sb-row">
+              <span className="sb-label">Debit variable budget</span>
+              <span className="sb-val cm">{fmt(wf.debitVarBud)}</span>
+            </div>
+            <div className="sb-row">
+              <span className="sb-label">Available for it (after obligations)</span>
+              <span className="sb-val" style={{color:wf.debitVarAvail>=wf.debitVarBud?'var(--green)':wf.debitVarAvail>0?'var(--amber)':'var(--red)'}}>{fmt(wf.debitVarAvail)}</span>
+            </div>
+            {wf.savPend>0 && <div className="sb-row"><span className="sb-label">Savings still pending</span><span className="sb-val ca">{fmt(wf.savPend)}</span></div>}
           </div>
-        </>}
+        )}
       </div>
     </div>
   );
@@ -416,11 +455,16 @@ function buildInsights(s) {
     insights.push({type:'wn', msg:`💡 After credit bills + fixed, debit variable budget is partially covered. Only <b>${fmt(wf.debitVarAvail)}</b> of <b>${fmt(wf.debitVarBud)}</b> available.`});
   }
 
-  // 2. True surplus / shortfall
-  if (wf.surplus >= 0) {
-    insights.push({type:'gd', msg:`✅ You have a true surplus of <b>${fmt(wf.surplus)}</b> after covering everything — credit bills, fixed, savings, debts, and variable budget.`});
+  // 2. Immediate short / surplus — the number that matters right now
+  if (wf.immediateShortBy > 0) {
+    insights.push({type:'bd', msg:`🔴 You need to arrange <b>${fmt(wf.immediateShortBy)}</b> to cover credit bills + fixed expenses. Variable budget is separate — that's future spending.`});
   } else {
-    insights.push({type:'bd', msg:`🔴 Overall short by <b>${fmt(-wf.surplus)}</b>. You need to either add funds, reduce spending, or defer something.`});
+    insights.push({type:'gd', msg:`✅ All current obligations covered with <b>${fmt(wf.immediateSurplus)}</b> to spare (debit + cash vs bills + fixed + debts).`});
+  }
+
+  // 2b. Variable headroom warning (separate from immediate)
+  if (wf.debitVarAvail < wf.debitVarBud) {
+    insights.push({type:'wn', msg:`🛒 After paying obligations, only <b>${fmt(wf.debitVarAvail)}</b> of <b>${fmt(wf.debitVarBud)}</b> debit variable budget is reachable. Plan card spend accordingly.`});
   }
 
   // 3. Variable spend pace
