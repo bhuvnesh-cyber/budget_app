@@ -226,35 +226,63 @@ const sbiSpent     = s => Math.max(0, s.accounts.sbi.limit  - s.accounts.sbi.ava
 const yesSpent     = s => Math.max(0, s.accounts.yes.limit  - s.accounts.yes.available  - (s.accounts.yes.cashback||0));
 const totalCreditBills = s => sbiSpent(s) + yesSpent(s);
 
+// ── FIXED: debitWaterfall ─────────────────────────────────────────────────────
+// KEY FIX: surplus/shortfall now compares totalFunds vs ALL obligations
+// including debitVarBud so that:
+//   debit=10000, creditBill=3000, debitVarBud=7000 → surplus=0
+//   debit=9000,  creditBill=3000, debitVarBud=7000 → short by 1000
 function debitWaterfall(s) {
   const balance    = s.accounts.debit.balance;
   const cash       = s.cash || 0;
   const totalFunds = balance + cash;
+
   const creditBill = totalCreditBills(s);
-  const afterBills = balance - creditBill;
   const fixedPend  = unpaidFixed(s);
-  const afterFixed = afterBills - fixedPend;
   const savPend    = s.savings.done ? 0 : s.savings.budget;
-  const afterSav   = afterFixed - savPend;
   const debtPend   = unpaidDebts(s);
-  const afterDebts = afterSav - debtPend;
-  const immediateNeeded  = creditBill + fixedPend + debtPend;
-  const immediateHave    = totalFunds;
-  const immediateShortBy = Math.max(0, immediateNeeded - immediateHave);
-  const immediateSurplus = Math.max(0, immediateHave - immediateNeeded);
-  const debitVarBud   = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
+  const debitVarBud = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
+
+  // Waterfall: step through deductions from balance
+  const afterBills  = balance - creditBill;
+  const afterFixed  = afterBills - fixedPend;
+  const afterSav    = afterFixed - savPend;
+  const afterDebts  = afterSav - debtPend;
+  const afterDebitVar = afterDebts - debitVarBud;   // final remainder after ALL debit obligations
+
+  // ── FIX: total obligations include debitVarBud ──
+  // This ensures: if debit=10k, creditBill=3k, debitVarBud=7k → surplus=0
+  //               if debit=9k,  creditBill=3k, debitVarBud=7k → short by 1k
+  const totalObligations = creditBill + fixedPend + savPend + debtPend + debitVarBud;
+  const netPosition      = totalFunds - totalObligations;  // positive = surplus, negative = short
+  const surplusOverBudget = netPosition;                   // signed: + surplus, - short
+  const shortBy          = Math.max(0, -netPosition);
+  const surplus          = Math.max(0,  netPosition);
+
+  // Debit variable: how much of the debitVarBud is actually available after paying bills+fixed+savings+debts
   const debitVarAvail = Math.max(0, afterDebts);
+  // Implied spend on debit variable = budget minus what's left (if avail < budget, that gap = unspendable)
   const debitVarSpent = Math.max(0, debitVarBud - debitVarAvail);
-  const surplus = afterDebts - debitVarBud;
+
   return {
     balance, cash, totalFunds,
     creditBill, afterBills,
     fixedPend, afterFixed,
     savPend, afterSav,
     debtPend, afterDebts,
-    immediateNeeded, immediateHave, immediateShortBy, immediateSurplus,
     debitVarBud, debitVarAvail, debitVarSpent,
+    afterDebitVar,
+    // Renamed for clarity: total obligations (bills + fixed + savings + debts + debit var)
+    totalObligations,
+    // Immediate (bills + fixed + debts only — cash items needed now)
+    immediateNeeded: creditBill + fixedPend + debtPend,
+    immediateHave: totalFunds,
+    // Full budget surplus/shortfall (accounts for debit var budget too)
+    surplusOverBudget,
+    shortBy,
     surplus,
+    // Legacy compat (some UI uses these)
+    immediateShortBy: shortBy,
+    immediateSurplus: surplus,
   };
 }
 
@@ -291,11 +319,11 @@ function InsightPills({s}) {
   const totalCashback = (s.accounts.sbi.cashback||0) + (s.accounts.yes.cashback||0);
   const pills = [];
 
-  // 1. Obligations
-  if (wf.immediateShortBy > 0) {
-    pills.push({t:'bd', icon:'⚠', text:`Arrange ${fmt(wf.immediateShortBy)}`});
+  // 1. Full budget position (surplus or short — includes debit var)
+  if (wf.shortBy > 0) {
+    pills.push({t:'bd', icon:'⚠', text:`Short by ${fmt(wf.shortBy)}`});
   } else {
-    pills.push({t:'gd', icon:'✓', text:`${fmt(wf.immediateSurplus)} surplus`});
+    pills.push({t:'gd', icon:'✓', text:`${fmt(wf.surplus)} surplus over budget`});
   }
 
   // 2. Variable pace
@@ -352,11 +380,11 @@ function InsightPills({s}) {
 function DebitWaterfall({s}) {
   const wf = debitWaterfall(s);
   const rows = [
-    {label:'💳 Pay credit bills (SBI+YES)', val:-wf.creditBill, after:wf.afterBills, show:wf.creditBill>0},
-    {label:'🔔 Unpaid fixed',               val:-wf.fixedPend,  after:wf.afterFixed, show:wf.fixedPend>0},
-    {label:'💰 Savings',                    val:-wf.savPend,    after:wf.afterSav,   show:wf.savPend>0},
-    {label:'📋 Debts',                      val:-wf.debtPend,   after:wf.afterDebts, show:wf.debtPend>0},
-    {label:'🛒 Debit variable budget',      val:-wf.debitVarBud,after:wf.surplus,    show:true},
+    {label:'💳 Pay credit bills (SBI+YES)', val:-wf.creditBill, after:wf.afterBills,   show:wf.creditBill>0},
+    {label:'🔔 Unpaid fixed',               val:-wf.fixedPend,  after:wf.afterFixed,   show:wf.fixedPend>0},
+    {label:'💰 Savings',                    val:-wf.savPend,    after:wf.afterSav,     show:wf.savPend>0},
+    {label:'📋 Debts',                      val:-wf.debtPend,   after:wf.afterDebts,   show:wf.debtPend>0},
+    {label:'🛒 Debit variable budget',      val:-wf.debitVarBud,after:wf.afterDebitVar,show:true},
   ].filter(r=>r.show);
 
   return (
@@ -365,6 +393,12 @@ function DebitWaterfall({s}) {
         <span className="wf-label" style={{fontWeight:700,color:'var(--text)'}}>🏦 Debit balance</span>
         <span className="wf-val">{fmt(wf.balance)}</span>
       </div>
+      {wf.cash > 0 && (
+        <div className="wf-row total">
+          <span className="wf-label" style={{fontWeight:700,color:'var(--text)'}}>💵 Cash on hand</span>
+          <span className="wf-val cg">+ {fmt(wf.cash)}</span>
+        </div>
+      )}
       {rows.map((r,i)=>{
         const color = r.after<0?'var(--red)':r.after<5000?'var(--amber)':'var(--green)';
         return (
@@ -380,14 +414,16 @@ function DebitWaterfall({s}) {
           </div>
         );
       })}
+      {/* ── Final surplus/shortfall row — full budget position ── */}
       <div className="wf-row final">
-        <span className="wf-label" style={{fontWeight:700,color:wf.immediateShortBy>0?'var(--red)':'var(--green)'}}>
-          {wf.immediateShortBy>0?'⚠ Need to arrange':'✓ Obligations covered'}
+        <span className="wf-label" style={{fontWeight:700,color:wf.shortBy>0?'var(--red)':'var(--green)'}}>
+          {wf.shortBy>0?'⚠ Short by (over budget)':'✓ Surplus over budget'}
         </span>
-        <span className="wf-val" style={{fontSize:'1rem',color:wf.immediateShortBy>0?'var(--red)':'var(--green)'}}>
-          {wf.immediateShortBy>0?fmt(wf.immediateShortBy):fmt(wf.immediateSurplus)}
+        <span className="wf-val" style={{fontSize:'1rem',color:wf.shortBy>0?'var(--red)':'var(--green)'}}>
+          {wf.shortBy>0?fmt(wf.shortBy):fmt(wf.surplus)}
         </span>
       </div>
+      {/* Debit var headroom sub-row if constrained */}
       {wf.debitVarAvail < wf.debitVarBud && (
         <div className="wf-row" style={{background:'var(--amber-bg)'}}>
           <span className="wf-label" style={{color:'var(--amber)'}}>🛒 Debit var headroom</span>
@@ -400,10 +436,11 @@ function DebitWaterfall({s}) {
   );
 }
 
-// ── Short-by summary banner (Overview only) ───────────────────────────────────
+// ── Short-by / Surplus summary banner (Overview only) ─────────────────────────
+// FIXED: Now shows full budget position — totalFunds vs ALL obligations (incl. debit var)
 function ShortBySummary({s}) {
   const wf = debitWaterfall(s);
-  const isOk = wf.immediateShortBy === 0;
+  const isOk = wf.shortBy === 0;
   const divClr = isOk ? 'var(--green-bd)' : 'var(--red-bd)';
 
   return (
@@ -414,44 +451,59 @@ function ShortBySummary({s}) {
     }}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.5rem'}}>
         <div style={{fontSize:'.6rem',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:isOk?'#065F46':'#7F1D1D'}}>
-          {isOk?'✓ Obligations Covered':'⚠ Need to Arrange'}
+          {isOk?'✓ Surplus Over Budget':'⚠ Short By'}
         </div>
         <div style={{fontFamily:'var(--mono)',fontSize:'1.4rem',fontWeight:800,color:isOk?'var(--green)':'var(--red)'}}>
-          {isOk?fmt(wf.immediateSurplus):fmt(wf.immediateShortBy)}
+          {isOk?fmt(wf.surplus):fmt(wf.shortBy)}
         </div>
       </div>
       <div style={{borderTop:`1px solid ${divClr}`,paddingTop:'.4rem',display:'flex',flexDirection:'column',gap:2}}>
-        <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginBottom:2}}>What you owe now</div>
-        {wf.creditBill>0 && <div className="sb-row"><span className="sb-label">Credit bills (SBI+YES)</span><span className="sb-val cr">{fmt(wf.creditBill)}</span></div>}
-        {wf.fixedPend>0  && <div className="sb-row"><span className="sb-label">Unpaid fixed</span><span className="sb-val cr">{fmt(wf.fixedPend)}</span></div>}
-        {wf.debtPend>0   && <div className="sb-row"><span className="sb-label">Debts unpaid</span><span className="sb-val cr">{fmt(wf.debtPend)}</span></div>}
-        <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:2,paddingTop:3}}>
-          <span className="sb-label" style={{fontWeight:700}}>Total obligations</span>
-          <span className="sb-val cr">{fmt(wf.immediateNeeded)}</span>
-        </div>
-        <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginTop:6,marginBottom:2}}>What you have</div>
+
+        {/* What you have */}
+        <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginBottom:2}}>What you have</div>
         <div className="sb-row"><span className="sb-label">Debit balance</span><span className="sb-val">{fmt(wf.balance)}</span></div>
         {wf.cash>0 && <div className="sb-row"><span className="sb-label">Cash on hand</span><span className="sb-val cg">{fmt(wf.cash)}</span></div>}
         <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:2,paddingTop:3}}>
-          <span className="sb-label" style={{fontWeight:700}}>Total available</span>
+          <span className="sb-label" style={{fontWeight:700}}>Total funds</span>
           <span className="sb-val">{fmt(wf.totalFunds)}</span>
         </div>
-        <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:4,paddingTop:4}}>
-          <span className="sb-label" style={{fontWeight:700}}>{isOk?'✓ Surplus after obligations':'⚠ Short by (arrange this)'}</span>
-          <span className="sb-val" style={{fontSize:'.95rem',color:isOk?'var(--green)':'var(--red)'}}>{fmt(isOk?wf.immediateSurplus:wf.immediateShortBy)}</span>
+
+        {/* What you owe (full budget) */}
+        <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginTop:6,marginBottom:2}}>Full budget obligations</div>
+        {wf.creditBill>0  && <div className="sb-row"><span className="sb-label">Credit bills (SBI+YES)</span><span className="sb-val cr">{fmt(wf.creditBill)}</span></div>}
+        {wf.fixedPend>0   && <div className="sb-row"><span className="sb-label">Unpaid fixed</span><span className="sb-val cr">{fmt(wf.fixedPend)}</span></div>}
+        {wf.savPend>0     && <div className="sb-row"><span className="sb-label">Savings pending</span><span className="sb-val ca">{fmt(wf.savPend)}</span></div>}
+        {wf.debtPend>0    && <div className="sb-row"><span className="sb-label">Debts unpaid</span><span className="sb-val cr">{fmt(wf.debtPend)}</span></div>}
+        <div className="sb-row"><span className="sb-label">Debit variable budget</span><span className="sb-val cm">{fmt(wf.debitVarBud)}</span></div>
+        <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:2,paddingTop:3}}>
+          <span className="sb-label" style={{fontWeight:700}}>Total obligations</span>
+          <span className="sb-val cr">{fmt(wf.totalObligations)}</span>
         </div>
+
+        {/* Net result */}
+        <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:4,paddingTop:4}}>
+          <span className="sb-label" style={{fontWeight:700}}>{isOk?'✓ Surplus over budget':'⚠ Short by (arrange this)'}</span>
+          <span className="sb-val" style={{fontSize:'.95rem',color:isOk?'var(--green)':'var(--red)'}}>{fmt(isOk?wf.surplus:wf.shortBy)}</span>
+        </div>
+
+        {/* Debit var headroom sub-note */}
         {wf.debitVarBud>0 && (
           <div style={{marginTop:8,borderTop:`1px solid ${divClr}`,paddingTop:6}}>
-            <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginBottom:4}}>Future debit spend</div>
+            <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginBottom:4}}>Debit variable spend check</div>
             <div className="sb-row">
-              <span className="sb-label">Debit variable budget</span>
+              <span className="sb-label">Debit var budget</span>
               <span className="sb-val cm">{fmt(wf.debitVarBud)}</span>
             </div>
             <div className="sb-row">
-              <span className="sb-label">Available (after obligations)</span>
+              <span className="sb-label">Available after bills+fixed+debts</span>
               <span className="sb-val" style={{color:wf.debitVarAvail>=wf.debitVarBud?'var(--green)':wf.debitVarAvail>0?'var(--amber)':'var(--red)'}}>{fmt(wf.debitVarAvail)}</span>
             </div>
-            {wf.savPend>0 && <div className="sb-row"><span className="sb-label">Savings pending</span><span className="sb-val ca">{fmt(wf.savPend)}</span></div>}
+            {wf.debitVarAvail < wf.debitVarBud && (
+              <div className="sb-row">
+                <span className="sb-label" style={{color:'var(--amber)'}}>Debit var shortfall</span>
+                <span className="sb-val ca">{fmt(wf.debitVarBud - wf.debitVarAvail)}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -460,7 +512,7 @@ function ShortBySummary({s}) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// OVERVIEW — full detail, pills instead of text walls
+// OVERVIEW
 // ══════════════════════════════════════════════════════════════════════════════
 function Overview({s}) {
   const wf  = debitWaterfall(s);
@@ -549,7 +601,6 @@ function Overview({s}) {
         </div>
       </div>
 
-      {/* ── Compact pills — ONE place, not repeated on every tab ── */}
       <div className="sh">Insights</div>
       <InsightPills s={s}/>
     </div>
@@ -557,7 +608,7 @@ function Overview({s}) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BALANCES — live waterfall preview stays, no repeated insight text
+// BALANCES
 // ══════════════════════════════════════════════════════════════════════════════
 function Balances({s, save, toast}) {
   const [dv, setDv] = useState(String(s.accounts.debit.balance));
@@ -591,10 +642,10 @@ function Balances({s, save, toast}) {
     setBusy(false);
   }
 
-  // Single contextual note for this tab
-  const wfNote = wfPrev.immediateShortBy > 0
-    ? {t:'bd', msg:`Arrange ${fmt(wfPrev.immediateShortBy)} — credit bills + fixed + debts exceed available funds`}
-    : {t:'gd', msg:`${fmt(wfPrev.immediateSurplus)} surplus · debit var headroom ${fmt(wfPrev.debitVarAvail)} of ${fmt(wfPrev.debitVarBud)}`};
+  // Contextual note using corrected surplus/shortfall
+  const wfNote = wfPrev.shortBy > 0
+    ? {t:'bd', msg:`Short by ${fmt(wfPrev.shortBy)} — funds insufficient for full budget (bills + fixed + debts + debit var)`}
+    : {t:'gd', msg:`${fmt(wfPrev.surplus)} surplus · debit var headroom ${fmt(wfPrev.debitVarAvail)} of ${fmt(wfPrev.debitVarBud)}`};
 
   return (
     <div className="page">
@@ -607,7 +658,11 @@ function Balances({s, save, toast}) {
           <div style={{marginTop:6,display:'flex',flexDirection:'column',gap:3}}>
             <span className="mono sm cm">After credit bills: <b style={{color:wfPrev.afterBills<0?'var(--red)':wfPrev.afterBills<5000?'var(--amber)':'var(--green)'}}>{fmt(wfPrev.afterBills)}</b></span>
             <span className="mono sm cm">After fixed + savings: <b style={{color:wfPrev.afterSav<0?'var(--red)':'var(--muted)'}}>{fmt(wfPrev.afterSav)}</b></span>
+            <span className="mono sm cm">After debts: <b style={{color:wfPrev.afterDebts<0?'var(--red)':'var(--muted)'}}>{fmt(wfPrev.afterDebts)}</b></span>
             <span className="mono sm cm">Debit var available: <b style={{color:wfPrev.debitVarAvail<wfPrev.debitVarBud?'var(--amber)':'var(--green)'}}>{fmt(wfPrev.debitVarAvail)}</b> of <b>{fmt(wfPrev.debitVarBud)}</b></span>
+            <span className="mono sm" style={{color:wfPrev.shortBy>0?'var(--red)':'var(--green)',fontWeight:700}}>
+              {wfPrev.shortBy>0?`⚠ Short by ${fmt(wfPrev.shortBy)}`:`✓ Surplus ${fmt(wfPrev.surplus)}`}
+            </span>
           </div>
         </div>
         <hr/>
@@ -632,10 +687,8 @@ function Balances({s, save, toast}) {
       <div className="sh" style={{marginTop:0}}>Live Breakdown</div>
       <DebitWaterfall s={previewS}/>
 
-      {/* Single contextual note — no repeated insight blocks */}
       <div className={`note ${wfNote.t}`}>{wfNote.t==='gd'?'✓':'⚠'} {wfNote.msg}</div>
 
-      {/* Distribution preview */}
       <div className="sh">Spend distribution</div>
       <div className="card mb1">
         {['SBI','YES','Debit'].map(card=>{
@@ -665,7 +718,7 @@ function Balances({s, save, toast}) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// EXPENSES — one contextual note per tab, no waterfall or short-by repeat
+// EXPENSES
 // ══════════════════════════════════════════════════════════════════════════════
 function Expenses({s, save, toast}) {
   const [tab, setTab] = useState('fixed');
@@ -680,7 +733,6 @@ function Expenses({s, save, toast}) {
 
       {tab==='fixed' && (
         <div>
-          {/* Single compact note */}
           {unpaidFixed(s) > 0
             ? <div className="note wn">🔔 {fmt(unpaidFixed(s))} pending · {fmt(paidFixed(s))} paid</div>
             : <div className="note gd">✓ All fixed expenses paid this month</div>
@@ -721,7 +773,6 @@ function Expenses({s, save, toast}) {
             <div className={`cv ${totVarBud(s)-totalVarSpent(s)>=0?'cg':'cr'}`}>{fmt(totVarBud(s)-totalVarSpent(s))}</div>
             <div className="cs">{wksLeft} wks · {daysLeft} days → <b>{fmt((totVarBud(s)-totalVarSpent(s))/wksLeft)}/week</b></div>
           </div>
-          {/* Single compact note — no paragraph walls */}
           {wf.debitVarAvail < wf.debitVarBud
             ? <div className="note wn">🛒 Debit: {fmt(wf.debitVarAvail)} of {fmt(wf.debitVarBud)} available after obligations</div>
             : <div className="note inf">💳 SBI {fmt(sbiSpent(s))} · YES {fmt(yesSpent(s))} · Debit {fmt(wf.debitVarSpent)}</div>
@@ -751,7 +802,7 @@ function Expenses({s, save, toast}) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// DEBTS & SAVINGS — no waterfall repeat, single status note each
+// DEBTS & SAVINGS
 // ══════════════════════════════════════════════════════════════════════════════
 function SavingsDebts({s, save, toast}) {
   const wf = debitWaterfall(s);
@@ -796,7 +847,6 @@ function SavingsDebts({s, save, toast}) {
       </div>
       <button className="btn bs mb1" onClick={()=>save({...s,debts:[...s.debts,{name:'',amount:0,paid:false}]})}>＋ Add Debt</button>
 
-      {/* Waterfall only on Debts tab — it's the most relevant here for debt management */}
       <div className="sh">Debit Sufficiency</div>
       <DebitWaterfall s={s}/>
     </div>
