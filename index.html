@@ -345,7 +345,7 @@ function WaterfallCard({s}){
   return(
     <div className="wf">
       <div className="wfr hd">
-        <span className="wfl" style={{color:var('--text'),fontWeight:700}}>Debit balance</span>
+        <span className="wfl" style={{color:'var(--text)',fontWeight:700}}>Debit balance</span>
         <span className="wfv">{fmt(wf.balance)}</span>
       </div>
       {wf.cash>0 && (
