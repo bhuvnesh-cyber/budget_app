@@ -3,144 +3,170 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<meta name="theme-color" content="#F0F4FF"/>
+<meta name="theme-color" content="#FAFAFA"/>
 <title>Budget</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg:#F0F4FF; --surface:#ffffff; --surface2:#F7F9FF; --border:#E4E9F5;
-  --text:#0F172A; --muted:#64748B; --subtle:#94A3B8;
-  --accent:#6366F1; --accent-soft:#EEF2FF; --accent-bd:#C7D2FE;
-  --green:#10B981; --green-bg:#ECFDF5; --green-bd:#A7F3D0;
-  --red:#EF4444; --red-bg:#FEF2F2; --red-bd:#FECACA;
-  --amber:#F59E0B; --amber-bg:#FFFBEB; --amber-bd:#FDE68A;
-  --blue:#3B82F6; --blue-bg:#EFF6FF; --blue-bd:#BFDBFE;
-  --nav-h:68px; --safe-b:env(safe-area-inset-bottom,0px);
-  --r:18px; --rs:12px; --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif;
-  --shadow:0 2px 12px rgba(99,102,241,.08);
+  --bg:#F7F7F8; --surface:#fff; --border:#EBEBED; --border2:#F0F0F2;
+  --text:#0D0D0F; --muted:#6B6B72; --subtle:#A8A8B0;
+  --accent:#5B5BD6; --accent-soft:#EFEFFD; --accent-bd:#C4C4F4;
+  --green:#16A34A; --green-bg:#F0FDF4; --green-bd:#BBF7D0;
+  --red:#DC2626;   --red-bg:#FEF2F2;   --red-bd:#FECACA;
+  --amber:#D97706; --amber-bg:#FFFBEB; --amber-bd:#FDE68A;
+  --nav-h:60px; --safe-b:env(safe-area-inset-bottom,0px);
+  --r:14px; --rs:10px;
+  --mono:'DM Mono',monospace; --sans:'DM Sans',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;font-size:15px}
 #root{display:flex;flex-direction:column;min-height:100%}
-.page{flex:1;padding:0.8rem 1rem calc(var(--nav-h) + var(--safe-b) + 1rem);max-width:600px;margin:0 auto;width:100%}
-.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,0.95);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  border-top:1px solid var(--border);display:flex;z-index:100;
-  padding-bottom:var(--safe-b);box-shadow:0 -4px 20px rgba(99,102,241,.06)}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:8px 4px 6px;gap:4px;background:none;border:none;cursor:pointer;
-  color:var(--subtle);font-family:var(--sans);font-size:.58rem;font-weight:600;
-  letter-spacing:.03em;text-transform:uppercase;transition:all .2s;min-height:60px}
+
+/* ── Layout ── */
+.page{flex:1;padding:.75rem 1rem calc(var(--nav-h) + var(--safe-b) + 1.25rem);max-width:540px;margin:0 auto;width:100%}
+
+/* ── Nav ── */
+.nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));
+  background:rgba(255,255,255,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-top:1px solid var(--border);display:flex;align-items:stretch;z-index:100;padding-bottom:var(--safe-b)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:none;border:none;cursor:pointer;color:var(--subtle);font-family:var(--sans);
+  font-size:.6rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;transition:color .15s}
 .nb.on{color:var(--accent)}
-.nb svg{width:22px;height:22px;stroke-width:2;fill:none;stroke:currentColor;transition:stroke .2s}
-.nb-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:0;transition:opacity .2s;margin-top:-2px}
-.nb.on .nb-dot{opacity:1}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.9rem 1rem;box-shadow:var(--shadow)}
-.cl{font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);margin-bottom:.25rem;font-weight:600}
-.cv{font-size:1.45rem;font-weight:800;line-height:1.1;font-family:var(--mono);letter-spacing:-.02em}
-.cs{font-size:.65rem;color:var(--muted);margin-top:.25rem;font-family:var(--mono)}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;margin-bottom:.6rem}
-.cg{color:var(--green)} .cr{color:var(--red)} .ca{color:var(--amber)} .cm{color:var(--muted)} .cb{color:var(--blue)}
-.sh{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--subtle);
-  font-weight:700;margin:1.4rem 0 .6rem;display:flex;align-items:center;gap:.5rem}
+.nb svg{width:20px;height:20px;stroke-width:1.8;fill:none;stroke:currentColor}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.85rem 1rem}
+.card+.card{margin-top:.5rem}
+
+/* ── Section header ── */
+.sh{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);
+  font-weight:700;margin:1.2rem 0 .5rem;display:flex;align-items:center;gap:.5rem}
 .sh::after{content:'';flex:1;height:1px;background:var(--border)}
 
-/* ── Compact insight pills (replaces verbose .ins blocks) ── */
-.pill-row{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.8rem}
-.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:99px;
-  font-size:.68rem;font-weight:600;line-height:1.3;border:1px solid transparent;white-space:nowrap}
-.pill.gd{background:var(--green-bg);border-color:var(--green-bd);color:#065F46}
+/* ── Stat label / value ── */
+.sl{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--subtle);font-weight:600;margin-bottom:3px}
+.sv{font-size:1.35rem;font-weight:700;line-height:1;font-family:var(--mono);letter-spacing:-.02em}
+.ss{font-size:.7rem;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+
+/* ── Grid ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem}
+
+/* ── Colors ── */
+.cg{color:var(--green)} .cr{color:var(--red)} .ca{color:var(--amber)} .cm{color:var(--muted)}
+
+/* ── Pills ── */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:99px;
+  font-size:.67rem;font-weight:600;border:1px solid transparent;white-space:nowrap}
+.pill.gd{background:var(--green-bg);border-color:var(--green-bd);color:#14532D}
 .pill.wn{background:var(--amber-bg);border-color:var(--amber-bd);color:#78350F}
 .pill.bd{background:var(--red-bg);border-color:var(--red-bd);color:#7F1D1D}
-.pill.inf{background:var(--accent-soft);border-color:var(--accent-bd);color:#3730A3}
-/* single-line contextual note (replaces .ins on sub-pages) */
-.note{display:flex;align-items:center;gap:6px;padding:.45rem .75rem;border-radius:10px;
-  font-size:.72rem;font-weight:500;margin-bottom:.55rem;border-left:3px solid}
-.note.gd{background:var(--green-bg);border-color:var(--green);color:#065F46}
+.pill.inf{background:var(--accent-soft);border-color:var(--accent-bd);color:#312E81}
+.pill-row{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.75rem}
+
+/* ── Note bar ── */
+.note{display:flex;align-items:center;gap:6px;padding:.4rem .7rem;border-radius:8px;
+  font-size:.72rem;font-weight:500;margin-bottom:.5rem;border-left:2.5px solid}
+.note.gd{background:var(--green-bg);border-color:var(--green);color:#14532D}
 .note.wn{background:var(--amber-bg);border-color:var(--amber);color:#78350F}
 .note.bd{background:var(--red-bg);border-color:var(--red);color:#7F1D1D}
-.note.inf{background:var(--accent-soft);border-color:var(--accent);color:#3730A3}
+.note.inf{background:var(--accent-soft);border-color:var(--accent);color:#312E81}
 
-.bw{background:#E2E8F0;border-radius:99px;height:5px;margin-top:7px;overflow:hidden}
-.bf{height:5px;border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1)}
-.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:.6rem;font-weight:600;letter-spacing:.02em}
-.bg{background:#D1FAE5;color:#065F46} .br{background:#FEE2E2;color:#7F1D1D}
-.ba{background:#FEF3C7;color:#78350F} .bm{background:#F1F5F9;color:#64748B}
+/* ── Progress bar ── */
+.bw{background:var(--border2);border-radius:99px;height:3px;margin-top:6px;overflow:hidden}
+.bf{height:3px;border-radius:99px;transition:width .35s ease}
+
+/* ── Badge ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:.6rem;font-weight:600}
+.bg-b{background:#DCFCE7;color:#14532D} .br-b{background:#FEE2E2;color:#7F1D1D}
+.ba-b{background:#FEF3C7;color:#78350F} .bm-b{background:var(--border2);color:var(--muted)}
+
+/* ── Inputs ── */
 input[type=number],input[type=text]{
-  width:100%;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);
+  width:100%;background:var(--bg);border:1.5px solid var(--border);color:var(--text);
   border-radius:var(--rs);font-family:var(--mono);font-size:.9rem;font-weight:500;
-  padding:.65rem .9rem;outline:none;appearance:none;-moz-appearance:textfield;transition:border-color .15s}
+  padding:.6rem .85rem;outline:none;appearance:none;-moz-appearance:textfield;transition:border-color .15s,box-shadow .15s}
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.12);background:var(--surface)}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,91,214,.1);background:var(--surface)}
 input::placeholder{color:var(--subtle)}
+
+/* ── Buttons ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  padding:.7rem 1.2rem;border-radius:var(--rs);border:none;cursor:pointer;
-  font-family:var(--sans);font-weight:700;font-size:.9rem;transition:all .15s;width:100%}
-.bp{background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.35)}
-.bp:active{transform:scale(.97)}
+  padding:.65rem 1.1rem;border-radius:var(--rs);border:none;cursor:pointer;
+  font-family:var(--sans);font-weight:600;font-size:.88rem;transition:all .12s;width:100%}
+.bp{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(91,91,214,.3)}
+.bp:active{transform:scale(.97);opacity:.9}
 .bs{background:var(--surface);border:1.5px solid var(--border);color:var(--muted)}
-.bdng{background:none;border:none;cursor:pointer;padding:4px;color:var(--red);font-size:.9rem}
-.trow{display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid var(--border)}
-.trow:last-child{border-bottom:none}
-.tgl{position:relative;width:46px;height:27px;flex-shrink:0}
+.bdng{background:none;border:none;cursor:pointer;padding:4px;color:var(--red);font-size:.88rem;line-height:1}
+
+/* ── Toggle ── */
+.tgl{position:relative;width:42px;height:25px;flex-shrink:0}
 .tgl input{opacity:0;width:0;height:0}
-.tsl{position:absolute;inset:0;background:#CBD5E1;border-radius:14px;cursor:pointer;transition:.25s}
-.tsl:before{content:'';position:absolute;width:21px;height:21px;left:3px;bottom:3px;
-  background:#fff;border-radius:50%;transition:.25s;box-shadow:0 2px 4px rgba(0,0,0,.15)}
-.tgl input:checked+.tsl{background:linear-gradient(135deg,#6366F1,#8B5CF6)}
-.tgl input:checked+.tsl:before{transform:translateX(19px)}
-.er{padding:.8rem 0;border-bottom:1px solid var(--border)}
+.tsl{position:absolute;inset:0;background:#D1D5DB;border-radius:99px;cursor:pointer;transition:.2s}
+.tsl:before{content:'';position:absolute;width:19px;height:19px;left:3px;bottom:3px;
+  background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tgl input:checked+.tsl{background:var(--accent)}
+.tgl input:checked+.tsl:before{transform:translateX(17px)}
+
+/* ── Expense rows ── */
+.er{padding:.7rem 0;border-bottom:1px solid var(--border)}
 .er:last-child{border-bottom:none}
-.eh{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.en{font-size:.92rem;font-weight:600;display:flex;align-items:center;gap:6px}
-.chip{font-size:.58rem;padding:2px 7px;border-radius:99px;font-weight:600}
-.cs_{background:#DBEAFE;color:#1D4ED8} .cy{background:#EDE9FE;color:#7C3AED} .cd{background:#F1F5F9;color:#475569}
-.ah{display:flex;align-items:flex-start;justify-content:space-between;padding:1rem 0 .5rem}
-.at{font-size:1.6rem;font-weight:800;line-height:1;letter-spacing:-.02em}
-.ad{text-align:right;font-family:var(--mono);font-size:.68rem;color:var(--muted)}
-.ad .dy{color:var(--accent);font-weight:600;margin-top:3px}
-.summary-banner{border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:.8rem;border:1.5px solid}
-.sb-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.78rem}
-.sb-label{color:var(--muted);font-weight:500}
-.sb-val{font-family:var(--mono);font-weight:700;font-size:.82rem}
-.week-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.6rem;box-shadow:var(--shadow)}
-.week-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)}
-.week-row:last-child{border-bottom:none}
-.week-cat{font-size:.82rem;font-weight:600}
-.week-amt{font-family:var(--mono);font-size:.82rem;font-weight:700}
-.week-sub{font-size:.65rem;color:var(--muted);font-family:var(--mono)}
-.tab-bar{display:flex;background:var(--surface2);border-radius:12px;padding:3px;margin-bottom:.9rem;gap:3px}
-.tab{flex:1;padding:.45rem .8rem;border:none;border-radius:9px;cursor:pointer;
-  font-family:var(--sans);font-size:.72rem;font-weight:600;letter-spacing:.02em;text-transform:uppercase;
-  color:var(--muted);background:transparent;transition:all .2s}
-.tab.on{color:var(--accent);background:var(--surface);box-shadow:var(--shadow)}
-.loading{display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:1rem}
-.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 16px);left:50%;transform:translateX(-50%);
-  background:#0F172A;color:#fff;padding:.65rem 1.4rem;border-radius:99px;
-  font-family:var(--sans);font-size:.8rem;font-weight:600;z-index:200;
-  animation:fu .2s cubic-bezier(.4,0,.2,1);white-space:nowrap}
-@keyframes fu{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-hr{border:none;border-top:1px solid var(--border);margin:.9rem 0}
-.row{display:flex;align-items:center;gap:.6rem}
+.eh{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.en{font-size:.9rem;font-weight:600;display:flex;align-items:center;gap:5px}
+.chip{font-size:.58rem;padding:2px 6px;border-radius:99px;font-weight:600}
+.cs_{background:#DBEAFE;color:#1E40AF} .cy{background:#EDE9FE;color:#6D28D9} .cd{background:var(--border2);color:var(--muted)}
+
+/* ── Tab bar ── */
+.tab-bar{display:flex;background:var(--border2);border-radius:10px;padding:3px;margin-bottom:.8rem;gap:2px}
+.tab{flex:1;padding:.4rem .6rem;border:none;border-radius:7px;cursor:pointer;
+  font-family:var(--sans);font-size:.7rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
+  color:var(--muted);background:transparent;transition:all .15s}
+.tab.on{color:var(--accent);background:var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+/* ── Divider ── */
+hr{border:none;border-top:1px solid var(--border);margin:.75rem 0}
+.row{display:flex;align-items:center;gap:.5rem}
 .f1{flex:1}
 .mono{font-family:var(--mono)}
 .sm{font-size:.75rem}
-.il{font-size:.62rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-.gap{display:flex;flex-direction:column;gap:.5rem}
-.mb1{margin-bottom:.6rem}
+.il{font-size:.62rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.gap{display:flex;flex-direction:column;gap:.45rem}
+.mb{margin-bottom:.5rem}
 
-/* Debit waterfall */
-.waterfall{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:.6rem}
-.wf-row{display:flex;justify-content:space-between;align-items:center;padding:.55rem 1rem;border-bottom:1px solid var(--border);font-size:.78rem}
-.wf-row:last-child{border-bottom:none}
-.wf-label{color:var(--muted);font-weight:500;display:flex;align-items:center;gap:5px}
-.wf-val{font-family:var(--mono);font-weight:700;font-size:.8rem}
-.wf-row.total{background:var(--surface2)}
-.wf-row.final{background:var(--accent-soft)}
+/* ── Waterfall ── */
+.wf{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem}
+.wfr{display:flex;justify-content:space-between;align-items:center;padding:.5rem .9rem;border-bottom:1px solid var(--border);font-size:.78rem}
+.wfr:last-child{border-bottom:none}
+.wfl{color:var(--muted);font-weight:500;font-size:.75rem}
+.wfv{font-family:var(--mono);font-weight:600;font-size:.78rem}
+.wfr.hd{background:var(--bg)}
+.wfr.fin{background:var(--accent-soft)}
+
+/* ── Hero banner ── */
+.hero{border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:.75rem;border:1px solid}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.6rem}
+.hero-lbl{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.hero-amt{font-family:var(--mono);font-size:1.6rem;font-weight:700;line-height:1;letter-spacing:-.02em}
+.hrow{display:flex;justify-content:space-between;align-items:center;padding:2.5px 0;font-size:.75rem}
+.hlbl{color:var(--muted);font-weight:500}
+.hval{font-family:var(--mono);font-weight:600;font-size:.76rem}
+
+/* ── Loading / Toast ── */
+.loading{display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:.75rem}
+.spinner{width:28px;height:28px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 12px);left:50%;transform:translateX(-50%);
+  background:#0D0D0F;color:#fff;padding:.55rem 1.2rem;border-radius:99px;
+  font-size:.78rem;font-weight:600;z-index:200;animation:fu .18s ease;white-space:nowrap}
+@keyframes fu{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ── Updated badge ── */
+.upd{display:inline-flex;align-items:center;gap:4px;font-size:.62rem;color:var(--subtle);font-family:var(--mono)}
+.upd-dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0}
+.upd-dot.stale{background:var(--amber)}
+.upd-dot.old{background:var(--red)}
 </style>
 </head>
 <body>
@@ -159,353 +185,263 @@ const db = supabase.createClient(SUPA_URL, SUPA_KEY);
 const WARN = 0.75;
 
 const DEFAULT = {
-  version: 4,
-  base_budget: 83500,
-  additional_income: [{source:'Bank Interest', amount:69}],
-  fixed: [
-    {category:'Family',         budget:15000, paid:true,  spent:15000},
-    {category:'Rent',           budget:21500, paid:true,  spent:21500},
-    {category:'Milk',           budget:2940,  paid:true,  spent:2940 },
-    {category:'Rent_Furniture', budget:2994,  paid:true,  spent:2994 },
-    {category:'School',         budget:3000,  paid:false, spent:0    },
-    {category:'Recharge',       budget:1000,  paid:false, spent:0    },
-    {category:'Gas',            budget:531,   paid:false, spent:0    },
-    {category:'Electric',       budget:735,   paid:true,  spent:735  },
-    {category:'WIFI',           budget:800,   paid:false, spent:0    },
+  version:5,
+  base_budget:83500,
+  additional_income:[{source:'Bank Interest',amount:69}],
+  fixed:[
+    {category:'Family',         budget:15000,paid:true, spent:15000},
+    {category:'Rent',           budget:21500,paid:true, spent:21500},
+    {category:'Milk',           budget:2940, paid:true, spent:2940},
+    {category:'Rent_Furniture', budget:2994, paid:true, spent:2994},
+    {category:'School',         budget:3000, paid:false,spent:0},
+    {category:'Recharge',       budget:1000, paid:false,spent:0},
+    {category:'Gas',            budget:531,  paid:false,spent:0},
+    {category:'Electric',       budget:735,  paid:true, spent:735},
+    {category:'WIFI',           budget:800,  paid:false,spent:0},
   ],
-  variable: [
-    {category:'Instamart', budget:6000, card:'SBI'},
-    {category:'Swiggy',    budget:1000, card:'SBI'},
-    {category:'Amazon',    budget:3000, card:'SBI'},
-    {category:'Other',     budget:8000, card:'YES'},
-    {category:'Mall',      budget:4000, card:'Debit'},
-    {category:'Clothes',   budget:2000, card:'Debit'},
-    {category:'Doctor',    budget:1000, card:'Debit'},
+  variable:[
+    {category:'Instamart',budget:6000,card:'SBI'},
+    {category:'Swiggy',   budget:1000,card:'SBI'},
+    {category:'Amazon',   budget:3000,card:'SBI'},
+    {category:'Other',    budget:8000,card:'YES'},
+    {category:'Mall',     budget:4000,card:'Debit'},
+    {category:'Clothes',  budget:2000,card:'Debit'},
+    {category:'Doctor',   budget:1000,card:'Debit'},
   ],
-  savings: {budget:10000, done:false},
-  debts: [{name:'Credit Bill', amount:7932, paid:false}],
-  accounts: {
-    debit: {balance:83569},
-    sbi:   {limit:20000, available:20000, cashback:0},
-    yes:   {limit:51000, available:51000, cashback:0},
+  savings:{budget:10000,done:false},
+  debts:[{name:'Credit Bill',amount:7932,paid:false}],
+  accounts:{
+    debit:{balance:83569},
+    sbi:  {limit:20000,available:20000,cashback:0},
+    yes:  {limit:51000,available:51000,cashback:0},
   },
-  cash: 0,
+  cash:0,
+  updated_at: null,
 };
 
-function migrate(s) {
-  if (!s.accounts?.sbi?.cashback) s.accounts.sbi.cashback = 0;
-  if (!s.accounts?.yes?.cashback) s.accounts.yes.cashback = 0;
-  if (s.cash === undefined) s.cash = 0;
+function migrate(s){
+  if(!s.accounts?.sbi?.cashback) s.accounts.sbi.cashback=0;
+  if(!s.accounts?.yes?.cashback) s.accounts.yes.cashback=0;
+  if(s.cash===undefined) s.cash=0;
+  if(!s.updated_at) s.updated_at=null;
   delete s.checkin_log;
-  s.version = 4;
+  s.version=5;
   return s;
 }
 
-const today    = new Date();
-const monthLbl = today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
-const lastDay  = new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
-const daysLeft = Math.max(1, lastDay - today.getDate());
-const wksLeft  = Math.max(1, Math.ceil(daysLeft / 7));
+const today   = new Date();
+const mLbl    = today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+const lastDay = new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+const dLeft   = Math.max(1, lastDay - today.getDate());
+const wLeft   = Math.max(1, Math.ceil(dLeft/7));
 
-const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
-const pct = (a,b) => b ? Math.round(a/b*100) : 0;
+const fmt  = n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const pct  = (a,b)=>b?Math.round(a/b*100):0;
+const bClr = (sp,bud)=>{const p=bud?sp/bud:0;return p>1?'var(--red)':p>WARN?'var(--amber)':'var(--green)'};
+const bCls = (sp,bud)=>!sp?'bm-b':sp>bud?'br-b':sp/bud>WARN?'ba-b':'bg-b';
+const bTxt = (sp,bud)=>!sp?'—':sp>bud?`+${fmt(sp-bud)}`:`${fmt(bud-sp)} left`;
 
-function barClr(sp,bud){const p=bud?sp/bud:0;return p>1?'#dc2626':p>WARN?'#d97706':'#16a34a'}
-function badgeCls(sp,bud){if(!sp)return 'bm';if(sp>bud)return 'br';if(sp/bud>WARN)return 'ba';return 'bg'}
-function badgeTxt(sp,bud){if(!sp)return 'not started';if(sp>bud)return `over ${fmt(sp-bud)}`;return `${fmt(bud-sp)} left`}
+// ── Time since last update ────────────────────────────────────────────────────
+function timeSince(iso) {
+  if (!iso) return null;
+  const diff = Math.floor((Date.now() - new Date(iso)) / 60000); // minutes
+  if (diff < 60)   return { label: `${diff}m ago`,   cls: 'upd-dot' };
+  if (diff < 1440) return { label: `${Math.floor(diff/60)}h ago`,  cls: 'upd-dot' };
+  const days = Math.floor(diff/1440);
+  if (days <= 4)   return { label: `${days}d ago`,   cls: 'upd-dot stale' };
+  return              { label: `${days}d ago`,        cls: 'upd-dot old' };
+}
 
 // ── Aggregators ───────────────────────────────────────────────────────────────
-const totalIncome  = s => s.base_budget + s.additional_income.reduce((a,i)=>a+i.amount,0);
-const paidFixed    = s => s.fixed.filter(f=>f.paid).reduce((a,f)=>a+f.spent,0);
-const unpaidFixed  = s => s.fixed.filter(f=>!f.paid).reduce((a,f)=>a+f.budget,0);
-const totVarBud    = s => s.variable.reduce((a,v)=>a+v.budget,0);
-const totDebts     = s => s.debts.reduce((a,d)=>a+d.amount,0);
-const paidDebts    = s => s.debts.filter(d=>d.paid).reduce((a,d)=>a+d.amount,0);
-const unpaidDebts  = s => totDebts(s) - paidDebts(s);
-const sbiSpent     = s => Math.max(0, s.accounts.sbi.limit  - s.accounts.sbi.available  - (s.accounts.sbi.cashback||0));
-const yesSpent     = s => Math.max(0, s.accounts.yes.limit  - s.accounts.yes.available  - (s.accounts.yes.cashback||0));
-const totalCreditBills = s => sbiSpent(s) + yesSpent(s);
+const totIncome    = s=>s.base_budget+s.additional_income.reduce((a,i)=>a+i.amount,0);
+const paidFixed    = s=>s.fixed.filter(f=>f.paid).reduce((a,f)=>a+f.spent,0);
+const unpaidFixed  = s=>s.fixed.filter(f=>!f.paid).reduce((a,f)=>a+f.budget,0);
+const totVarBud    = s=>s.variable.reduce((a,v)=>a+v.budget,0);
+const totDebts     = s=>s.debts.reduce((a,d)=>a+d.amount,0);
+const paidDebts    = s=>s.debts.filter(d=>d.paid).reduce((a,d)=>a+d.amount,0);
+const unpaidDebts  = s=>totDebts(s)-paidDebts(s);
+const sbiSpent     = s=>Math.max(0,s.accounts.sbi.limit -s.accounts.sbi.available -(s.accounts.sbi.cashback||0));
+const yesSpent     = s=>Math.max(0,s.accounts.yes.limit -s.accounts.yes.available -(s.accounts.yes.cashback||0));
+const totCreditBills = s=>sbiSpent(s)+yesSpent(s);
 
-// ── FIXED: debitWaterfall ─────────────────────────────────────────────────────
-// KEY FIX: surplus/shortfall now compares totalFunds vs ALL obligations
-// including debitVarBud so that:
-//   debit=10000, creditBill=3000, debitVarBud=7000 → surplus=0
-//   debit=9000,  creditBill=3000, debitVarBud=7000 → short by 1000
-function debitWaterfall(s) {
+// ── Waterfall ─────────────────────────────────────────────────────────────────
+// surplus/shortBy driven purely by afterDebts vs debitVarBud:
+//   afterDebts >= debitVarBud → surplus = afterDebts - debitVarBud
+//   afterDebts <  debitVarBud → shortBy = debitVarBud - afterDebts
+function waterfall(s){
   const balance    = s.accounts.debit.balance;
-  const cash       = s.cash || 0;
-  const totalFunds = balance + cash;
-
-  const creditBill = totalCreditBills(s);
+  const cash       = s.cash||0;
+  const totalFunds = balance+cash;
+  const creditBill = totCreditBills(s);
   const fixedPend  = unpaidFixed(s);
-  const savPend    = s.savings.done ? 0 : s.savings.budget;
+  const savPend    = s.savings.done?0:s.savings.budget;
   const debtPend   = unpaidDebts(s);
-  const debitVarBud = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
+  const dVarBud    = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
 
-  // Waterfall: step through deductions from balance
   const afterBills  = balance - creditBill;
   const afterFixed  = afterBills - fixedPend;
   const afterSav    = afterFixed - savPend;
   const afterDebts  = afterSav - debtPend;
-  const afterDebitVar = afterDebts - debitVarBud;   // final remainder after ALL debit obligations
 
-  // ── FIX: total obligations include debitVarBud ──
-  // This ensures: if debit=10k, creditBill=3k, debitVarBud=7k → surplus=0
-  //               if debit=9k,  creditBill=3k, debitVarBud=7k → short by 1k
-  const totalObligations = creditBill + fixedPend + savPend + debtPend + debitVarBud;
-  const netPosition      = totalFunds - totalObligations;  // positive = surplus, negative = short
-  const surplusOverBudget = netPosition;                   // signed: + surplus, - short
-  const shortBy          = Math.max(0, -netPosition);
-  const surplus          = Math.max(0,  netPosition);
-
-  // Debit variable: how much of the debitVarBud is actually available after paying bills+fixed+savings+debts
-  const debitVarAvail = Math.max(0, afterDebts);
-  // Implied spend on debit variable = budget minus what's left (if avail < budget, that gap = unspendable)
-  const debitVarSpent = Math.max(0, debitVarBud - debitVarAvail);
+  const dVarAvail = Math.max(0, afterDebts);
+  const dVarSpent = Math.max(0, dVarBud - afterDebts);
+  const shortBy   = Math.max(0, dVarBud - afterDebts);
+  const surplus   = Math.max(0, afterDebts - dVarBud);
 
   return {
-    balance, cash, totalFunds,
-    creditBill, afterBills,
-    fixedPend, afterFixed,
-    savPend, afterSav,
-    debtPend, afterDebts,
-    debitVarBud, debitVarAvail, debitVarSpent,
-    afterDebitVar,
-    // Renamed for clarity: total obligations (bills + fixed + savings + debts + debit var)
-    totalObligations,
-    // Immediate (bills + fixed + debts only — cash items needed now)
-    immediateNeeded: creditBill + fixedPend + debtPend,
-    immediateHave: totalFunds,
-    // Full budget surplus/shortfall (accounts for debit var budget too)
-    surplusOverBudget,
-    shortBy,
-    surplus,
-    // Legacy compat (some UI uses these)
-    immediateShortBy: shortBy,
-    immediateSurplus: surplus,
+    balance,cash,totalFunds,
+    creditBill,afterBills,
+    fixedPend,afterFixed,
+    savPend,afterSav,
+    debtPend,afterDebts,
+    dVarBud,dVarAvail,dVarSpent,
+    shortBy,surplus,
   };
 }
 
-function distributeByRatio(amount, categories) {
-  const total = categories.reduce((a,c)=>a+c.budget,0);
-  if (!total) return categories.map(c=>({...c, spent:0}));
-  return categories.map(c=>({...c, spent: Math.round(amount * c.budget / total)}));
+function distByRatio(amount,cats){
+  const tot=cats.reduce((a,c)=>a+c.budget,0);
+  if(!tot) return cats.map(c=>({...c,spent:0}));
+  return cats.map(c=>({...c,spent:Math.round(amount*c.budget/tot)}));
 }
 
-function varWithSpent(s) {
-  const wf = debitWaterfall(s);
-  return [
-    ...distributeByRatio(sbiSpent(s),      s.variable.filter(v=>v.card==='SBI')),
-    ...distributeByRatio(yesSpent(s),      s.variable.filter(v=>v.card==='YES')),
-    ...distributeByRatio(wf.debitVarSpent, s.variable.filter(v=>v.card==='Debit')),
+function varWithSpent(s){
+  const wf=waterfall(s);
+  return[
+    ...distByRatio(sbiSpent(s),      s.variable.filter(v=>v.card==='SBI')),
+    ...distByRatio(yesSpent(s),      s.variable.filter(v=>v.card==='YES')),
+    ...distByRatio(wf.dVarSpent,     s.variable.filter(v=>v.card==='Debit')),
   ];
 }
-
-const totalVarSpent = s => { const wf = debitWaterfall(s); return sbiSpent(s) + yesSpent(s) + wf.debitVarSpent; };
+const totVarSpent = s=>{const wf=waterfall(s);return sbiSpent(s)+yesSpent(s)+wf.dVarSpent};
 
 // ── Mini components ───────────────────────────────────────────────────────────
-function Bar({sp,bud}){const p=bud?Math.min(100,sp/bud*100):0;return<div className="bw"><div className="bf" style={{width:p+'%',background:barClr(sp,bud)}}/></div>}
-function Tog({v,onChange}){return<label className="tgl"><input type="checkbox" checked={v} onChange={e=>onChange(e.target.checked)}/><span className="tsl"/></label>}
+function Bar({sp,bud}){
+  const p=bud?Math.min(100,sp/bud*100):0;
+  return <div className="bw"><div className="bf" style={{width:p+'%',background:bClr(sp,bud)}}/></div>;
+}
+function Tog({v,onChange}){
+  return <label className="tgl"><input type="checkbox" checked={v} onChange={e=>onChange(e.target.checked)}/><span className="tsl"/></label>;
+}
 function Toast({msg}){return msg?<div className="toast">{msg}</div>:null}
 
-// ── Compact insight pills for Overview only ───────────────────────────────────
-function InsightPills({s}) {
-  const wf = debitWaterfall(s);
-  const tvs = totalVarSpent(s);
-  const tvb = totVarBud(s);
-  const varRem = tvb - tvs;
-  const sbiS = sbiSpent(s);
-  const yesS = yesSpent(s);
-  const totalCashback = (s.accounts.sbi.cashback||0) + (s.accounts.yes.cashback||0);
-  const pills = [];
-
-  // 1. Full budget position (surplus or short — includes debit var)
-  if (wf.shortBy > 0) {
-    pills.push({t:'bd', icon:'⚠', text:`Short by ${fmt(wf.shortBy)}`});
-  } else {
-    pills.push({t:'gd', icon:'✓', text:`${fmt(wf.surplus)} surplus over budget`});
-  }
-
-  // 2. Variable pace
-  if (varRem > 0) {
-    pills.push({t:'inf', icon:'📅', text:`${fmt(Math.round(varRem/wksLeft))}/wk · ${fmt(Math.round(varRem/daysLeft))}/day`});
-  } else if (varRem < 0) {
-    pills.push({t:'bd', icon:'🚨', text:`Over ${fmt(-varRem)}`});
-  }
-
-  // 3. Debit var headroom warning
-  if (wf.debitVarAvail < wf.debitVarBud) {
-    pills.push({t:'wn', icon:'🛒', text:`Debit: ${fmt(wf.debitVarAvail)} of ${fmt(wf.debitVarBud)}`});
-  }
-
-  // 4. Unpaid fixed
-  if (wf.fixedPend > 0) {
-    pills.push({t:'wn', icon:'🔔', text:`${fmt(wf.fixedPend)} unpaid fixed`});
-  }
-
-  // 5. Savings pending
-  if (!s.savings.done) {
-    pills.push({t:'wn', icon:'💰', text:`Savings pending`});
-  }
-
-  // 6. Card utilisation
-  const sbiUtil = pct(sbiS, s.accounts.sbi.limit);
-  const yesUtil = pct(yesS, s.accounts.yes.limit);
-  if (sbiUtil > 75) pills.push({t:'wn', icon:'💳', text:`SBI ${sbiUtil}%`});
-  if (yesUtil > 75) pills.push({t:'wn', icon:'💳', text:`YES ${yesUtil}%`});
-
-  // 7. Cashback
-  if (totalCashback > 0) {
-    pills.push({t:'gd', icon:'🎁', text:`${fmt(totalCashback)} cashback`});
-  }
-
-  // 8. Best card
-  const sbiAvail = s.accounts.sbi.available;
-  const yesAvail = s.accounts.yes.available;
-  if (Math.abs(sbiAvail - yesAvail) > 2000) {
-    const better = sbiAvail > yesAvail ? 'SBI' : 'YES';
-    pills.push({t:'inf', icon:'💡', text:`Use ${better} (more headroom)`});
-  }
-
-  return (
-    <div className="pill-row">
-      {pills.map((p,i)=>(
-        <span key={i} className={`pill ${p.t}`}>{p.icon} {p.text}</span>
-      ))}
-    </div>
-  );
+function UpdatedAt({ts}){
+  const info = timeSince(ts);
+  if(!info) return <span className="upd"><span className="upd-dot old"/>never updated</span>;
+  return <span className="upd"><span className={info.cls}/>{info.label}</span>;
 }
 
-// ── Debit Waterfall visual ────────────────────────────────────────────────────
-function DebitWaterfall({s}) {
-  const wf = debitWaterfall(s);
-  const rows = [
-    {label:'💳 Pay credit bills (SBI+YES)', val:-wf.creditBill, after:wf.afterBills,   show:wf.creditBill>0},
-    {label:'🔔 Unpaid fixed',               val:-wf.fixedPend,  after:wf.afterFixed,   show:wf.fixedPend>0},
-    {label:'💰 Savings',                    val:-wf.savPend,    after:wf.afterSav,     show:wf.savPend>0},
-    {label:'📋 Debts',                      val:-wf.debtPend,   after:wf.afterDebts,   show:wf.debtPend>0},
-    {label:'🛒 Debit variable budget',      val:-wf.debitVarBud,after:wf.afterDebitVar,show:true},
+// ── Waterfall UI ─────────────────────────────────────────────────────────────
+function WaterfallCard({s}){
+  const wf=waterfall(s);
+  const rows=[
+    {label:'Credit bills (SBI + YES)', val:-wf.creditBill, after:wf.afterBills, show:wf.creditBill>0},
+    {label:'Unpaid fixed',             val:-wf.fixedPend,  after:wf.afterFixed,  show:wf.fixedPend>0},
+    {label:'Savings',                  val:-wf.savPend,    after:wf.afterSav,    show:wf.savPend>0},
+    {label:'Debts',                    val:-wf.debtPend,   after:wf.afterDebts,  show:wf.debtPend>0},
+    {label:'Debit variable budget',    val:-wf.dVarBud,    after:wf.afterDebts-wf.dVarBud, show:true},
   ].filter(r=>r.show);
 
-  return (
-    <div className="waterfall">
-      <div className="wf-row total">
-        <span className="wf-label" style={{fontWeight:700,color:'var(--text)'}}>🏦 Debit balance</span>
-        <span className="wf-val">{fmt(wf.balance)}</span>
+  return(
+    <div className="wf">
+      <div className="wfr hd">
+        <span className="wfl" style={{color:var('--text'),fontWeight:700}}>Debit balance</span>
+        <span className="wfv">{fmt(wf.balance)}</span>
       </div>
-      {wf.cash > 0 && (
-        <div className="wf-row total">
-          <span className="wf-label" style={{fontWeight:700,color:'var(--text)'}}>💵 Cash on hand</span>
-          <span className="wf-val cg">+ {fmt(wf.cash)}</span>
+      {wf.cash>0 && (
+        <div className="wfr hd">
+          <span className="wfl">+ Cash on hand</span>
+          <span className="wfv cg">{fmt(wf.cash)}</span>
         </div>
       )}
       {rows.map((r,i)=>{
-        const color = r.after<0?'var(--red)':r.after<5000?'var(--amber)':'var(--green)';
-        return (
-          <div key={i} className="wf-row">
+        const col=r.after<0?'var(--red)':r.after<3000?'var(--amber)':'var(--green)';
+        return(
+          <div key={i} className="wfr">
             <div>
-              <div className="wf-label">{r.label}</div>
+              <div className="wfl">{r.label}</div>
               <div style={{fontFamily:'var(--mono)',fontSize:'.65rem',color:'var(--red)',marginTop:1}}>{fmt(r.val)}</div>
             </div>
             <div style={{textAlign:'right'}}>
-              <div style={{fontSize:'.58rem',color:'var(--subtle)'}}>remaining</div>
-              <div className="wf-val" style={{color}}>{fmt(r.after)}</div>
+              <div style={{fontSize:'.58rem',color:'var(--subtle)'}}>left</div>
+              <div className="wfv" style={{color:col}}>{fmt(r.after)}</div>
             </div>
           </div>
         );
       })}
-      {/* ── Final surplus/shortfall row — full budget position ── */}
-      <div className="wf-row final">
-        <span className="wf-label" style={{fontWeight:700,color:wf.shortBy>0?'var(--red)':'var(--green)'}}>
-          {wf.shortBy>0?'⚠ Short by (over budget)':'✓ Surplus over budget'}
+      <div className="wfr fin">
+        <span className="wfl" style={{fontWeight:700,color:wf.shortBy>0?'var(--red)':'var(--green)'}}>
+          {wf.shortBy>0?'⚠ Short by':'✓ Surplus'}
         </span>
-        <span className="wf-val" style={{fontSize:'1rem',color:wf.shortBy>0?'var(--red)':'var(--green)'}}>
-          {wf.shortBy>0?fmt(wf.shortBy):fmt(wf.surplus)}
+        <span className="wfv" style={{fontSize:'.95rem',color:wf.shortBy>0?'var(--red)':'var(--green)'}}>
+          {fmt(wf.shortBy>0?wf.shortBy:wf.surplus)}
         </span>
       </div>
-      {/* Debit var headroom sub-row if constrained */}
-      {wf.debitVarAvail < wf.debitVarBud && (
-        <div className="wf-row" style={{background:'var(--amber-bg)'}}>
-          <span className="wf-label" style={{color:'var(--amber)'}}>🛒 Debit var headroom</span>
-          <span className="wf-val" style={{color:wf.debitVarAvail>=wf.debitVarBud?'var(--green)':wf.debitVarAvail>0?'var(--amber)':'var(--red)'}}>
-            {fmt(wf.debitVarAvail)} of {fmt(wf.debitVarBud)}
-          </span>
+      {wf.dVarAvail<wf.dVarBud&&(
+        <div className="wfr" style={{background:'var(--amber-bg)'}}>
+          <span className="wfl" style={{color:'var(--amber)'}}>Debit var headroom</span>
+          <span className="wfv" style={{color:'var(--amber)'}}>{fmt(wf.dVarAvail)} of {fmt(wf.dVarBud)}</span>
         </div>
       )}
     </div>
   );
 }
 
-// ── Short-by / Surplus summary banner (Overview only) ─────────────────────────
-// FIXED: Now shows full budget position — totalFunds vs ALL obligations (incl. debit var)
-function ShortBySummary({s}) {
-  const wf = debitWaterfall(s);
-  const isOk = wf.shortBy === 0;
-  const divClr = isOk ? 'var(--green-bd)' : 'var(--red-bd)';
+// ── Insight pills ─────────────────────────────────────────────────────────────
+function Insights({s}){
+  const wf=waterfall(s);
+  const tvs=totVarSpent(s);
+  const tvb=totVarBud(s);
+  const varRem=tvb-tvs;
+  const pills=[];
 
-  return (
-    <div className="summary-banner" style={{
-      background:isOk?'var(--green-bg)':'var(--red-bg)',
-      borderColor:isOk?'var(--green)':'var(--red)',
-      marginBottom:'.8rem'
-    }}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.5rem'}}>
-        <div style={{fontSize:'.6rem',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:isOk?'#065F46':'#7F1D1D'}}>
-          {isOk?'✓ Surplus Over Budget':'⚠ Short By'}
+  if(wf.shortBy>0) pills.push({t:'bd',text:`Short by ${fmt(wf.shortBy)}`});
+  else              pills.push({t:'gd',text:`${fmt(wf.surplus)} surplus`});
+
+  if(varRem>0)  pills.push({t:'inf',text:`${fmt(Math.round(varRem/wLeft))}/wk left`});
+  else if(varRem<0) pills.push({t:'bd',text:`Over ${fmt(-varRem)}`});
+
+  if(wf.dVarAvail<wf.dVarBud) pills.push({t:'wn',text:`Debit ${fmt(wf.dVarAvail)} of ${fmt(wf.dVarBud)}`});
+  if(wf.fixedPend>0)           pills.push({t:'wn',text:`${fmt(wf.fixedPend)} fixed pending`});
+  if(!s.savings.done)          pills.push({t:'wn',text:'Savings pending'});
+
+  const sbiUtil=pct(sbiSpent(s),s.accounts.sbi.limit);
+  const yesUtil=pct(yesSpent(s),s.accounts.yes.limit);
+  if(sbiUtil>75) pills.push({t:'wn',text:`SBI ${sbiUtil}% used`});
+  if(yesUtil>75) pills.push({t:'wn',text:`YES ${yesUtil}% used`});
+
+  const cb=(s.accounts.sbi.cashback||0)+(s.accounts.yes.cashback||0);
+  if(cb>0) pills.push({t:'gd',text:`${fmt(cb)} cashback`});
+
+  return <div className="pill-row">{pills.map((p,i)=><span key={i} className={`pill ${p.t}`}>{p.text}</span>)}</div>;
+}
+
+// ── Hero banner ───────────────────────────────────────────────────────────────
+function Hero({s}){
+  const wf=waterfall(s);
+  const isOk=wf.shortBy===0;
+  const divClr=isOk?'var(--green-bd)':'var(--red-bd)';
+
+  return(
+    <div className="hero" style={{background:isOk?'var(--green-bg)':'var(--red-bg)',borderColor:isOk?'var(--green-bd)':'var(--red-bd)'}}>
+      <div className="hero-top">
+        <div>
+          <div className="hero-lbl" style={{color:isOk?'#14532D':'#7F1D1D'}}>{isOk?'Surplus':'Short by'}</div>
+          <div className="hero-amt" style={{color:isOk?'var(--green)':'var(--red)'}}>{fmt(isOk?wf.surplus:wf.shortBy)}</div>
         </div>
-        <div style={{fontFamily:'var(--mono)',fontSize:'1.4rem',fontWeight:800,color:isOk?'var(--green)':'var(--red)'}}>
-          {isOk?fmt(wf.surplus):fmt(wf.shortBy)}
+        <div style={{textAlign:'right',display:'flex',flexDirection:'column',gap:3}}>
+          {wf.creditBill>0&&<span className="pill bd" style={{fontSize:'.6rem'}}>Bills {fmt(wf.creditBill)}</span>}
+          {wf.fixedPend>0&&<span className="pill wn" style={{fontSize:'.6rem'}}>Fixed {fmt(wf.fixedPend)}</span>}
+          {!isOk&&<span className="pill bd" style={{fontSize:'.6rem'}}>Debit var {fmt(wf.dVarBud)}</span>}
         </div>
       </div>
-      <div style={{borderTop:`1px solid ${divClr}`,paddingTop:'.4rem',display:'flex',flexDirection:'column',gap:2}}>
-
-        {/* What you have */}
-        <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginBottom:2}}>What you have</div>
-        <div className="sb-row"><span className="sb-label">Debit balance</span><span className="sb-val">{fmt(wf.balance)}</span></div>
-        {wf.cash>0 && <div className="sb-row"><span className="sb-label">Cash on hand</span><span className="sb-val cg">{fmt(wf.cash)}</span></div>}
-        <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:2,paddingTop:3}}>
-          <span className="sb-label" style={{fontWeight:700}}>Total funds</span>
-          <span className="sb-val">{fmt(wf.totalFunds)}</span>
+      <div style={{borderTop:`1px solid ${divClr}`,paddingTop:'.45rem',display:'flex',flexDirection:'column',gap:1}}>
+        <div className="hrow"><span className="hlbl">Debit balance</span><span className="hval">{fmt(wf.balance)}</span></div>
+        {wf.cash>0&&<div className="hrow"><span className="hlbl">Cash</span><span className="hval cg">{fmt(wf.cash)}</span></div>}
+        <div className="hrow" style={{borderTop:`1px solid ${divClr}`,marginTop:2,paddingTop:3}}>
+          <span className="hlbl" style={{fontWeight:600}}>Debit var budget</span>
+          <span className="hval" style={{color:wf.dVarAvail>=wf.dVarBud?'var(--green)':wf.dVarAvail>0?'var(--amber)':'var(--red)'}}>{fmt(wf.dVarAvail)} / {fmt(wf.dVarBud)}</span>
         </div>
-
-        {/* What you owe (full budget) */}
-        <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginTop:6,marginBottom:2}}>Full budget obligations</div>
-        {wf.creditBill>0  && <div className="sb-row"><span className="sb-label">Credit bills (SBI+YES)</span><span className="sb-val cr">{fmt(wf.creditBill)}</span></div>}
-        {wf.fixedPend>0   && <div className="sb-row"><span className="sb-label">Unpaid fixed</span><span className="sb-val cr">{fmt(wf.fixedPend)}</span></div>}
-        {wf.savPend>0     && <div className="sb-row"><span className="sb-label">Savings pending</span><span className="sb-val ca">{fmt(wf.savPend)}</span></div>}
-        {wf.debtPend>0    && <div className="sb-row"><span className="sb-label">Debts unpaid</span><span className="sb-val cr">{fmt(wf.debtPend)}</span></div>}
-        <div className="sb-row"><span className="sb-label">Debit variable budget</span><span className="sb-val cm">{fmt(wf.debitVarBud)}</span></div>
-        <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:2,paddingTop:3}}>
-          <span className="sb-label" style={{fontWeight:700}}>Total obligations</span>
-          <span className="sb-val cr">{fmt(wf.totalObligations)}</span>
-        </div>
-
-        {/* Net result */}
-        <div className="sb-row" style={{borderTop:`1px solid ${divClr}`,marginTop:4,paddingTop:4}}>
-          <span className="sb-label" style={{fontWeight:700}}>{isOk?'✓ Surplus over budget':'⚠ Short by (arrange this)'}</span>
-          <span className="sb-val" style={{fontSize:'.95rem',color:isOk?'var(--green)':'var(--red)'}}>{fmt(isOk?wf.surplus:wf.shortBy)}</span>
-        </div>
-
-        {/* Debit var headroom sub-note */}
-        {wf.debitVarBud>0 && (
-          <div style={{marginTop:8,borderTop:`1px solid ${divClr}`,paddingTop:6}}>
-            <div style={{fontSize:'.58rem',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'var(--muted)',marginBottom:4}}>Debit variable spend check</div>
-            <div className="sb-row">
-              <span className="sb-label">Debit var budget</span>
-              <span className="sb-val cm">{fmt(wf.debitVarBud)}</span>
-            </div>
-            <div className="sb-row">
-              <span className="sb-label">Available after bills+fixed+debts</span>
-              <span className="sb-val" style={{color:wf.debitVarAvail>=wf.debitVarBud?'var(--green)':wf.debitVarAvail>0?'var(--amber)':'var(--red)'}}>{fmt(wf.debitVarAvail)}</span>
-            </div>
-            {wf.debitVarAvail < wf.debitVarBud && (
-              <div className="sb-row">
-                <span className="sb-label" style={{color:'var(--amber)'}}>Debit var shortfall</span>
-                <span className="sb-val ca">{fmt(wf.debitVarBud - wf.debitVarAvail)}</span>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -514,205 +450,200 @@ function ShortBySummary({s}) {
 // ══════════════════════════════════════════════════════════════════════════════
 // OVERVIEW
 // ══════════════════════════════════════════════════════════════════════════════
-function Overview({s}) {
-  const wf  = debitWaterfall(s);
-  const tvs = totalVarSpent(s);
+function Overview({s}){
+  const wf  = waterfall(s);
+  const tvs = totVarSpent(s);
   const tvb = totVarBud(s);
-  const varRem = tvb - tvs;
-  const weeklyBudget = Math.round(varRem / wksLeft);
-  const dailyBudget  = Math.round(varRem / daysLeft);
+  const varRem = tvb-tvs;
 
-  return (
+  return(
     <div className="page">
-      <div className="ah">
+      {/* Header */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'.5rem 0 .75rem'}}>
         <div>
-          <div className="at">{monthLbl}</div>
-          <div style={{fontSize:'.65rem',color:'var(--muted)',fontFamily:'var(--mono)',marginTop:4}}>budget tracker</div>
+          <div style={{fontSize:'1.1rem',fontWeight:700,letterSpacing:'-.01em'}}>{mLbl}</div>
+          <div style={{fontSize:'.68rem',color:'var(--muted)',marginTop:2}}>{wLeft}w · {dLeft}d left</div>
         </div>
-        <div className="ad">
-          <div>{today.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</div>
-          <div className="dy">{wksLeft}w · {daysLeft}d left</div>
-        </div>
+        <UpdatedAt ts={s.updated_at}/>
       </div>
 
-      <ShortBySummary s={s}/>
+      <Hero s={s}/>
 
+      {/* Quick stats */}
       <div className="g2">
-        <div className="card"><div className="cl">Total Budget</div><div className="cv">{fmt(totalIncome(s))}</div><div className="cs">base {fmt(s.base_budget)}</div></div>
-        <div className="card"><div className="cl">Fixed Paid</div><div className="cv cm">{fmt(paidFixed(s))}</div><div className="cs">{fmt(unpaidFixed(s))} pending</div></div>
-        <div className="card"><div className="cl">Var Spent</div><div className={`cv ${tvs>tvb*WARN?'ca':'cm'}`}>{fmt(tvs)}</div><div className="cs">of {fmt(tvb)}</div></div>
-        <div className="card"><div className="cl">Var Remaining</div><div className={`cv ${varRem<0?'cr':'cg'}`}>{fmt(varRem)}</div><div className="cs">{fmt(weeklyBudget)}/week</div></div>
-      </div>
-
-      <div className="sh">Weekly Budget Left</div>
-      <div className="week-card">
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.6rem'}}>
-          <div>
-            <div className="cl">Per week (remaining)</div>
-            <div style={{fontFamily:'var(--mono)',fontSize:'1.3rem',fontWeight:800,color:varRem<0?'var(--red)':'var(--accent)'}}>{fmt(weeklyBudget)}</div>
-          </div>
-          <div style={{textAlign:'right'}}>
-            <div className="cl">Per day</div>
-            <div style={{fontFamily:'var(--mono)',fontSize:'1.1rem',fontWeight:700,color:'var(--muted)'}}>{fmt(dailyBudget)}</div>
-          </div>
+        <div className="card">
+          <div className="sl">Var Remaining</div>
+          <div className="sv" style={{color:varRem<0?'var(--red)':varRem<5000?'var(--amber)':'var(--text)'}}>{fmt(varRem)}</div>
+          <div className="ss">{fmt(Math.round(varRem/wLeft))}/wk</div>
         </div>
-        {['SBI','YES','Debit'].map(card=>{
-          const cats = s.variable.filter(v=>v.card===card);
-          const cardBud = cats.reduce((a,v)=>a+v.budget,0);
-          const cardSpent = card==='SBI'?sbiSpent(s):card==='YES'?yesSpent(s):wf.debitVarSpent;
-          const cardRem = Math.max(0, cardBud - cardSpent);
-          const cardWeekly = Math.round(cardRem / wksLeft);
-          if (!cardBud) return null;
-          const col = card==='SBI'?'#1E3A8A':card==='YES'?'#4C1D95':'#475569';
-          return (
-            <div key={card} className="week-row">
-              <div>
-                <span className={`chip ${card==='SBI'?'cs_':card==='YES'?'cy':'cd'}`}>{card}</span>
-                <span className="week-sub" style={{marginLeft:6}}>spent {fmt(cardSpent)} of {fmt(cardBud)}</span>
-              </div>
-              <div style={{textAlign:'right'}}>
-                <div className="week-amt" style={{color:col}}>{fmt(cardWeekly)}/wk</div>
-                <div className="week-sub">{fmt(cardRem)} left</div>
-              </div>
-            </div>
-          );
-        })}
+        <div className="card">
+          <div className="sl">Var Spent</div>
+          <div className="sv cm">{fmt(tvs)}</div>
+          <div className="ss">of {fmt(tvb)}</div>
+        </div>
+        <div className="card">
+          <div className="sl">Fixed Paid</div>
+          <div className="sv cm">{fmt(paidFixed(s))}</div>
+          <div className="ss">{unpaidFixed(s)>0?fmt(unpaidFixed(s))+' pending':'all paid'}</div>
+        </div>
+        <div className="card">
+          <div className="sl">Total Budget</div>
+          <div className="sv cm">{fmt(totIncome(s))}</div>
+          <div className="ss">base {fmt(s.base_budget)}</div>
+        </div>
       </div>
 
-      <div className="sh">Debit Breakdown</div>
-      <DebitWaterfall s={s}/>
-
+      {/* Cards */}
       <div className="sh">Accounts</div>
       <div className="g3">
         <div className="card">
-          <div className="cl">Debit</div>
-          <div className="cv" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.debit.balance)}</div>
-          <div className="cs">balance</div>
+          <div className="sl">Debit</div>
+          <div style={{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700}}>{fmt(s.accounts.debit.balance)}</div>
+          <div className="ss">balance</div>
         </div>
         <div className="card">
-          <div className="cl">SBI</div>
-          <div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.sbi.available)}</div>
-          <div className="cs">avail · {fmt(sbiSpent(s))} spent</div>
+          <div className="sl">SBI</div>
+          <div style={{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700,color:'var(--muted)'}}>{fmt(s.accounts.sbi.available)}</div>
+          <div className="ss">{fmt(sbiSpent(s))} spent</div>
         </div>
         <div className="card">
-          <div className="cl">YES</div>
-          <div className="cv cm" style={{fontSize:'1.05rem'}}>{fmt(s.accounts.yes.available)}</div>
-          <div className="cs">avail · {fmt(yesSpent(s))} spent</div>
+          <div className="sl">YES</div>
+          <div style={{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700,color:'var(--muted)'}}>{fmt(s.accounts.yes.available)}</div>
+          <div className="ss">{fmt(yesSpent(s))} spent</div>
         </div>
       </div>
 
+      {/* Card spend breakdown */}
+      <div className="sh">Spend by card</div>
+      <div className="card">
+        {['SBI','YES','Debit'].map(card=>{
+          const cats=s.variable.filter(v=>v.card===card);
+          const bud=cats.reduce((a,v)=>a+v.budget,0);
+          const spent=card==='SBI'?sbiSpent(s):card==='YES'?yesSpent(s):waterfall(s).dVarSpent;
+          const rem=Math.max(0,bud-spent);
+          if(!bud) return null;
+          return(
+            <div key={card} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'.45rem 0',borderBottom:'1px solid var(--border)'}}>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <span className={`chip ${card==='SBI'?'cs_':card==='YES'?'cy':'cd'}`}>{card}</span>
+                <span style={{fontSize:'.75rem',color:'var(--muted)',fontFamily:'var(--mono)'}}>{fmt(spent)} spent</span>
+              </div>
+              <span style={{fontSize:'.75rem',fontFamily:'var(--mono)',fontWeight:600,color:rem<bud*0.2?'var(--amber)':'var(--text)'}}>{fmt(rem)} left</span>
+            </div>
+          );
+        })}
+        <div style={{paddingTop:'.35rem'}}/>
+      </div>
+
+      <div className="sh">Debit breakdown</div>
+      <WaterfallCard s={s}/>
+
       <div className="sh">Insights</div>
-      <InsightPills s={s}/>
+      <Insights s={s}/>
     </div>
   );
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BALANCES
+// BALANCES  — primary action screen, kept clean
 // ══════════════════════════════════════════════════════════════════════════════
-function Balances({s, save, toast}) {
-  const [dv, setDv] = useState(String(s.accounts.debit.balance));
-  const [sv, setSv] = useState(String(s.accounts.sbi.available));
-  const [yv, setYv] = useState(String(s.accounts.yes.available));
-  const [cv, setCv] = useState(String(s.cash||0));
-  const [busy, setBusy] = useState(false);
+function Balances({s,save,toast}){
+  const [dv,setDv]=useState(String(s.accounts.debit.balance));
+  const [sv,setSv]=useState(String(s.accounts.sbi.available));
+  const [yv,setYv]=useState(String(s.accounts.yes.available));
+  const [cv,setCv]=useState(String(s.cash||0));
+  const [busy,setBusy]=useState(false);
 
-  const dvN = dv===''?0:Number(dv);
-  const svN = sv===''?0:Number(sv);
-  const yvN = yv===''?0:Number(yv);
-  const cvN = cv===''?0:Number(cv);
+  const dvN=dv===''?0:Number(dv);
+  const svN=sv===''?0:Number(sv);
+  const yvN=yv===''?0:Number(yv);
+  const cvN=cv===''?0:Number(cv);
 
-  const previewS = useMemo(()=>({
+  const prev=useMemo(()=>({
     ...s,
     accounts:{debit:{balance:dvN},sbi:{...s.accounts.sbi,available:svN},yes:{...s.accounts.yes,available:yvN}},
     cash:cvN
   }),[dvN,svN,yvN,cvN,s]);
 
-  const wfPrev = debitWaterfall(previewS);
-  const newSbiSpent = sbiSpent(previewS);
-  const newYesSpent = yesSpent(previewS);
+  const wf=waterfall(prev);
 
-  async function save_balances() {
+  async function doSave(){
     setBusy(true);
-    await save({...s,
-      cash:cvN,
+    const now=new Date().toISOString();
+    await save({...s,cash:cvN,updated_at:now,
       accounts:{debit:{balance:dvN},sbi:{...s.accounts.sbi,available:svN},yes:{...s.accounts.yes,available:yvN}}
     });
-    toast('Balances updated');
+    toast('Balances saved');
     setBusy(false);
   }
 
-  // Contextual note using corrected surplus/shortfall
-  const wfNote = wfPrev.shortBy > 0
-    ? {t:'bd', msg:`Short by ${fmt(wfPrev.shortBy)} — funds insufficient for full budget (bills + fixed + debts + debit var)`}
-    : {t:'gd', msg:`${fmt(wfPrev.surplus)} surplus · debit var headroom ${fmt(wfPrev.debitVarAvail)} of ${fmt(wfPrev.debitVarBud)}`};
+  const newSbi=sbiSpent(prev);
+  const newYes=yesSpent(prev);
 
-  return (
+  return(
     <div className="page">
-      <div className="sh" style={{marginTop:'.4rem'}}>Update Balances</div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'.5rem 0 .75rem'}}>
+        <div style={{fontSize:'1.1rem',fontWeight:700}}>Update Balances</div>
+        <UpdatedAt ts={s.updated_at}/>
+      </div>
 
-      <div className="card mb1">
-        <div className="mb1">
-          <div className="row mb1"><span style={{fontWeight:600}}>🏦 Debit Balance</span></div>
+      <div className="card mb">
+        {/* Debit */}
+        <div className="mb">
+          <div className="il">🏦 Debit Balance</div>
           <input type="number" value={dv} onChange={e=>setDv(e.target.value)} inputMode="numeric"/>
-          <div style={{marginTop:6,display:'flex',flexDirection:'column',gap:3}}>
-            <span className="mono sm cm">After credit bills: <b style={{color:wfPrev.afterBills<0?'var(--red)':wfPrev.afterBills<5000?'var(--amber)':'var(--green)'}}>{fmt(wfPrev.afterBills)}</b></span>
-            <span className="mono sm cm">After fixed + savings: <b style={{color:wfPrev.afterSav<0?'var(--red)':'var(--muted)'}}>{fmt(wfPrev.afterSav)}</b></span>
-            <span className="mono sm cm">After debts: <b style={{color:wfPrev.afterDebts<0?'var(--red)':'var(--muted)'}}>{fmt(wfPrev.afterDebts)}</b></span>
-            <span className="mono sm cm">Debit var available: <b style={{color:wfPrev.debitVarAvail<wfPrev.debitVarBud?'var(--amber)':'var(--green)'}}>{fmt(wfPrev.debitVarAvail)}</b> of <b>{fmt(wfPrev.debitVarBud)}</b></span>
-            <span className="mono sm" style={{color:wfPrev.shortBy>0?'var(--red)':'var(--green)',fontWeight:700}}>
-              {wfPrev.shortBy>0?`⚠ Short by ${fmt(wfPrev.shortBy)}`:`✓ Surplus ${fmt(wfPrev.surplus)}`}
-            </span>
+          <div style={{marginTop:5,display:'flex',flexDirection:'column',gap:2}}>
+            <div style={{display:'flex',justifyContent:'space-between'}}>
+              <span style={{fontSize:'.7rem',color:'var(--muted)',fontFamily:'var(--mono)'}}>After bills</span>
+              <span style={{fontSize:'.7rem',fontFamily:'var(--mono)',fontWeight:600,color:wf.afterBills<0?'var(--red)':wf.afterBills<5000?'var(--amber)':'var(--green)'}}>{fmt(wf.afterBills)}</span>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between'}}>
+              <span style={{fontSize:'.7rem',color:'var(--muted)',fontFamily:'var(--mono)'}}>After fixed + savings</span>
+              <span style={{fontSize:'.7rem',fontFamily:'var(--mono)',fontWeight:600,color:wf.afterSav<0?'var(--red)':'var(--muted)'}}>{fmt(wf.afterSav)}</span>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between'}}>
+              <span style={{fontSize:'.7rem',color:'var(--muted)',fontFamily:'var(--mono)'}}>Debit var available</span>
+              <span style={{fontSize:'.7rem',fontFamily:'var(--mono)',fontWeight:600,color:wf.dVarAvail<wf.dVarBud?'var(--amber)':'var(--green)'}}>{fmt(wf.dVarAvail)} of {fmt(wf.dVarBud)}</span>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',borderTop:'1px solid var(--border)',paddingTop:4,marginTop:2}}>
+              <span style={{fontSize:'.7rem',color:'var(--muted)',fontFamily:'var(--mono)',fontWeight:600}}>{wf.shortBy>0?'Short by':'Surplus'}</span>
+              <span style={{fontSize:'.75rem',fontFamily:'var(--mono)',fontWeight:700,color:wf.shortBy>0?'var(--red)':'var(--green)'}}>{fmt(wf.shortBy>0?wf.shortBy:wf.surplus)}</span>
+            </div>
           </div>
         </div>
         <hr/>
-        <div className="mb1">
-          <div className="row mb1"><span style={{fontWeight:600}}>💳 SBI Available</span><span className="mono sm cm" style={{marginLeft:'auto'}}>limit {fmt(s.accounts.sbi.limit)}</span></div>
+        {/* SBI */}
+        <div className="mb">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+            <div className="il" style={{marginBottom:0}}>💳 SBI Available</div>
+            <span style={{fontSize:'.65rem',color:'var(--muted)',fontFamily:'var(--mono)'}}>limit {fmt(s.accounts.sbi.limit)}</span>
+          </div>
           <input type="number" value={sv} onChange={e=>setSv(e.target.value)} inputMode="numeric"/>
-          <div style={{marginTop:4}}><span className="mono sm ca">Bill: {fmt(newSbiSpent)}</span></div>
+          {newSbi>0&&<div style={{marginTop:3,fontSize:'.68rem',color:'var(--amber)',fontFamily:'var(--mono)'}}>Bill: {fmt(newSbi)}</div>}
         </div>
         <hr/>
-        <div className="mb1">
-          <div className="row mb1"><span style={{fontWeight:600}}>💳 YES Available</span><span className="mono sm cm" style={{marginLeft:'auto'}}>limit {fmt(s.accounts.yes.limit)}</span></div>
+        {/* YES */}
+        <div className="mb">
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+            <div className="il" style={{marginBottom:0}}>💳 YES Available</div>
+            <span style={{fontSize:'.65rem',color:'var(--muted)',fontFamily:'var(--mono)'}}>limit {fmt(s.accounts.yes.limit)}</span>
+          </div>
           <input type="number" value={yv} onChange={e=>setYv(e.target.value)} inputMode="numeric"/>
-          <div style={{marginTop:4}}><span className="mono sm ca">Bill: {fmt(newYesSpent)}</span></div>
+          {newYes>0&&<div style={{marginTop:3,fontSize:'.68rem',color:'var(--amber)',fontFamily:'var(--mono)'}}>Bill: {fmt(newYes)}</div>}
         </div>
         <hr/>
+        {/* Cash */}
         <div>
-          <div className="row mb1"><span style={{fontWeight:600}}>💵 Cash on Hand</span></div>
+          <div className="il">💵 Cash on Hand</div>
           <input type="number" value={cv} onChange={e=>setCv(e.target.value)} inputMode="numeric"/>
         </div>
       </div>
 
-      <div className="sh" style={{marginTop:0}}>Live Breakdown</div>
-      <DebitWaterfall s={previewS}/>
+      {/* Live waterfall preview */}
+      <div className="sh">Live preview</div>
+      <WaterfallCard s={prev}/>
 
-      <div className={`note ${wfNote.t}`}>{wfNote.t==='gd'?'✓':'⚠'} {wfNote.msg}</div>
-
-      <div className="sh">Spend distribution</div>
-      <div className="card mb1">
-        {['SBI','YES','Debit'].map(card=>{
-          const spent = card==='SBI'?newSbiSpent:card==='YES'?newYesSpent:wfPrev.debitVarSpent;
-          const cats  = distributeByRatio(spent, previewS.variable.filter(v=>v.card===card));
-          if (!cats.length) return null;
-          return (
-            <div key={card} style={{marginBottom:'.5rem'}}>
-              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-                <span className={`chip ${card==='SBI'?'cs_':card==='YES'?'cy':'cd'}`}>{card}</span>
-                <span className="mono sm" style={{fontWeight:700}}>{fmt(spent)} spent</span>
-              </div>
-              {cats.map(c=>(
-                <div key={c.category} style={{display:'flex',justifyContent:'space-between',padding:'2px 0',paddingLeft:8}}>
-                  <span className="sm" style={{color:'var(--muted)'}}>{c.category}</span>
-                  <span className="mono sm">{fmt(c.spent)} <span style={{color:'var(--subtle)',fontSize:'.6rem'}}>({Math.round(c.budget/cats.reduce((a,x)=>a+x.budget,0)*100)}%)</span></span>
-                </div>
-              ))}
-            </div>
-          );
-        })}
-      </div>
-
-      <button className="btn bp" onClick={save_balances} disabled={busy}>{busy?'Saving…':'✓ Save Balances'}</button>
+      <button className="btn bp" onClick={doSave} disabled={busy} style={{marginTop:'.25rem'}}>{busy?'Saving…':'✓ Save Balances'}</button>
     </div>
   );
 }
@@ -720,77 +651,76 @@ function Balances({s, save, toast}) {
 // ══════════════════════════════════════════════════════════════════════════════
 // EXPENSES
 // ══════════════════════════════════════════════════════════════════════════════
-function Expenses({s, save, toast}) {
-  const [tab, setTab] = useState('fixed');
-  const vws = useMemo(()=>varWithSpent(s),[s]);
-  const wf  = debitWaterfall(s);
+function Expenses({s,save,toast}){
+  const [tab,setTab]=useState('fixed');
+  const vws=useMemo(()=>varWithSpent(s),[s]);
+  const wf=waterfall(s);
 
-  return (
+  return(
     <div className="page">
+      <div style={{fontSize:'1.1rem',fontWeight:700,padding:'.5rem 0 .75rem'}}>Expenses</div>
       <div className="tab-bar">
         {['fixed','variable'].map(t=><button key={t} className={`tab ${tab===t?'on':''}`} onClick={()=>setTab(t)}>{t}</button>)}
       </div>
 
-      {tab==='fixed' && (
+      {tab==='fixed'&&(
         <div>
-          {unpaidFixed(s) > 0
-            ? <div className="note wn">🔔 {fmt(unpaidFixed(s))} pending · {fmt(paidFixed(s))} paid</div>
-            : <div className="note gd">✓ All fixed expenses paid this month</div>
+          {unpaidFixed(s)>0
+            ?<div className="note wn">🔔 {fmt(unpaidFixed(s))} pending</div>
+            :<div className="note gd">✓ All fixed paid</div>
           }
           {s.fixed.map((f,i)=>{
-            const rem = f.budget - f.spent;
-            return (
+            const rem=f.budget-f.spent;
+            return(
               <div key={i} className="er">
                 <div className="eh">
                   <div className="en">{f.paid?'🟢':'⚪'} {f.category}</div>
-                  <div className="row" style={{gap:'0.6rem'}}>
-                    <span className={`badge ${badgeCls(f.spent,f.budget)}`}>{badgeTxt(f.spent,f.budget)}</span>
-                    <Tog v={f.paid} onChange={v=>{const fx=s.fixed.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,fixed:fx});}}/>
+                  <div className="row" style={{gap:8}}>
+                    <span className={`badge ${bCls(f.spent,f.budget)}`}>{bTxt(f.spent,f.budget)}</span>
+                    <Tog v={f.paid} onChange={v=>{const fx=s.fixed.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,fixed:fx})}}/>
                   </div>
                 </div>
                 <Bar sp={f.spent} bud={f.budget}/>
-                <div className="row" style={{marginTop:6,gap:6}}>
-                  <span className="mono sm cm">bud {fmt(f.budget)}</span>
-                  <span className="mono sm">·</span>
-                  <span className="mono sm">spent</span>
+                <div className="row" style={{marginTop:5,gap:5}}>
+                  <span style={{fontSize:'.7rem',color:'var(--muted)',fontFamily:'var(--mono)'}}>bud {fmt(f.budget)}</span>
+                  <span style={{fontSize:'.7rem',color:'var(--subtle)'}}>·</span>
                   <input type="number" value={f.spent} inputMode="numeric"
-                    onChange={e=>{const fx=s.fixed.map((x,j)=>j===i?{...x,spent:Number(e.target.value)}:x);save({...s,fixed:fx});}}
-                    style={{width:100,padding:'4px 8px',fontSize:'.82rem'}}/>
-                  <span className={`mono sm ${rem>=0?'cg':'cr'}`} style={{marginLeft:'auto'}}>{fmt(rem)}</span>
+                    onChange={e=>{const fx=s.fixed.map((x,j)=>j===i?{...x,spent:Number(e.target.value)}:x);save({...s,fixed:fx})}}
+                    style={{width:95,padding:'3px 7px',fontSize:'.78rem'}}/>
+                  <span style={{fontFamily:'var(--mono)',fontSize:'.72rem',marginLeft:'auto',color:rem>=0?'var(--green)':'var(--red)',fontWeight:600}}>{fmt(rem)}</span>
                 </div>
               </div>
             );
           })}
-          <hr/>
-          <div className="mono sm cm">Paid: <b style={{color:'var(--text)'}}>{fmt(paidFixed(s))}</b> · Pending: <b style={{color:'var(--amber)'}}>{fmt(unpaidFixed(s))}</b></div>
+          <div style={{paddingTop:'.5rem',fontSize:'.7rem',color:'var(--muted)',fontFamily:'var(--mono)'}}>
+            Paid {fmt(paidFixed(s))} · Pending {fmt(unpaidFixed(s))}
+          </div>
         </div>
       )}
 
-      {tab==='variable' && (
+      {tab==='variable'&&(
         <div>
-          <div className="card mb1">
-            <div className="cl">Variable Remaining</div>
-            <div className={`cv ${totVarBud(s)-totalVarSpent(s)>=0?'cg':'cr'}`}>{fmt(totVarBud(s)-totalVarSpent(s))}</div>
-            <div className="cs">{wksLeft} wks · {daysLeft} days → <b>{fmt((totVarBud(s)-totalVarSpent(s))/wksLeft)}/week</b></div>
+          <div className="card mb">
+            <div className="sl">Variable Remaining</div>
+            <div className="sv" style={{color:totVarBud(s)-totVarSpent(s)<0?'var(--red)':'var(--text)'}}>{fmt(totVarBud(s)-totVarSpent(s))}</div>
+            <div className="ss">{fmt(Math.round((totVarBud(s)-totVarSpent(s))/wLeft))}/wk · {wLeft} wks left</div>
           </div>
-          {wf.debitVarAvail < wf.debitVarBud
-            ? <div className="note wn">🛒 Debit: {fmt(wf.debitVarAvail)} of {fmt(wf.debitVarBud)} available after obligations</div>
-            : <div className="note inf">💳 SBI {fmt(sbiSpent(s))} · YES {fmt(yesSpent(s))} · Debit {fmt(wf.debitVarSpent)}</div>
+          {wf.dVarAvail<wf.dVarBud
+            ?<div className="note wn">Debit: {fmt(wf.dVarAvail)} of {fmt(wf.dVarBud)} available</div>
+            :<div className="note inf">SBI {fmt(sbiSpent(s))} · YES {fmt(yesSpent(s))} · Debit {fmt(wf.dVarSpent)}</div>
           }
           {vws.map((v,i)=>{
-            const rem = v.budget - v.spent;
-            const cc  = v.card==='SBI'?'cs_':v.card==='YES'?'cy':'cd';
-            return (
+            const rem=v.budget-v.spent;
+            return(
               <div key={i} className="er">
                 <div className="eh">
-                  <div className="en">{v.category}<span className={`chip ${cc}`}>{v.card}</span></div>
-                  <span className={`badge ${badgeCls(v.spent,v.budget)}`}>{badgeTxt(v.spent,v.budget)}</span>
+                  <div className="en">{v.category}<span className={`chip ${v.card==='SBI'?'cs_':v.card==='YES'?'cy':'cd'}`}>{v.card}</span></div>
+                  <span className={`badge ${bCls(v.spent,v.budget)}`}>{bTxt(v.spent,v.budget)}</span>
                 </div>
                 <Bar sp={v.spent} bud={v.budget}/>
-                <div className="row" style={{marginTop:4}}>
-                  <span className="mono sm cm">bud {fmt(v.budget)}</span>
-                  <span className="mono sm cm" style={{marginLeft:'auto'}}>spent <b>{fmt(v.spent)}</b></span>
-                  <span className={`mono sm ${rem>=0?'cg':'cr'}`} style={{marginLeft:8}}>{fmt(rem)}</span>
+                <div className="row" style={{marginTop:3}}>
+                  <span style={{fontSize:'.7rem',color:'var(--muted)',fontFamily:'var(--mono)'}}>bud {fmt(v.budget)}</span>
+                  <span style={{fontFamily:'var(--mono)',fontSize:'.7rem',marginLeft:'auto',color:rem>=0?'var(--green)':'var(--red)',fontWeight:600}}>{fmt(rem)}</span>
                 </div>
               </div>
             );
@@ -804,51 +734,54 @@ function Expenses({s, save, toast}) {
 // ══════════════════════════════════════════════════════════════════════════════
 // DEBTS & SAVINGS
 // ══════════════════════════════════════════════════════════════════════════════
-function SavingsDebts({s, save, toast}) {
-  const wf = debitWaterfall(s);
-
-  return (
+function SavingsDebts({s,save,toast}){
+  return(
     <div className="page">
-      <div className="sh" style={{marginTop:'.4rem'}}>Savings</div>
+      <div style={{fontSize:'1.1rem',fontWeight:700,padding:'.5rem 0 .75rem'}}>Savings & Debts</div>
+
+      <div className="sh">Savings</div>
       {s.savings.done
-        ? <div className="note gd mb1">✓ {fmt(s.savings.budget)} transferred</div>
-        : <div className="note wn mb1">⏳ {fmt(s.savings.budget)} pending — toggle when done</div>
+        ?<div className="note gd mb">✓ {fmt(s.savings.budget)} transferred</div>
+        :<div className="note wn mb">⏳ {fmt(s.savings.budget)} pending</div>
       }
-      <div className="card mb1">
-        <div className="trow" style={{paddingTop:0}}>
-          <div><div style={{fontWeight:600}}>Monthly Savings</div><div className="mono sm cm">{fmt(s.savings.budget)}</div></div>
+      <div className="card mb">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <div style={{fontWeight:600,fontSize:'.88rem'}}>Monthly Savings</div>
+            <div style={{fontSize:'.72rem',color:'var(--muted)',fontFamily:'var(--mono)',marginTop:2}}>{fmt(s.savings.budget)}</div>
+          </div>
           <Tog v={s.savings.done} onChange={v=>save({...s,savings:{...s.savings,done:v}})}/>
         </div>
       </div>
 
       <div className="sh">Debts</div>
-      {unpaidDebts(s) > 0
-        ? <div className="note wn mb1">📋 {fmt(unpaidDebts(s))} unpaid of {fmt(totDebts(s))} total</div>
-        : <div className="note gd mb1">✓ All debts settled</div>
+      {unpaidDebts(s)>0
+        ?<div className="note wn mb">📋 {fmt(unpaidDebts(s))} unpaid</div>
+        :<div className="note gd mb">✓ All settled</div>
       }
-      <div className="gap mb1">
+      <div className="gap mb">
         {s.debts.map((d,i)=>(
           <div key={i} className="card">
-            <div className="trow" style={{paddingTop:0}}>
-              <div style={{flex:1,marginRight:'1rem'}}>
-                <input type="text" value={d.name} placeholder="Debt name" className="mb1"
-                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,name:e.target.value}:x);save({...s,debts:dts});}}/>
+            <div className="row">
+              <div className="f1 gap">
+                <input type="text" value={d.name} placeholder="Debt name"
+                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,name:e.target.value}:x);save({...s,debts:dts})}}/>
                 <input type="number" value={d.amount} inputMode="numeric"
-                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,debts:dts});}}/>
+                  onChange={e=>{const dts=s.debts.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,debts:dts})}}/>
               </div>
-              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-                <Tog v={d.paid||false} onChange={v=>{const dts=s.debts.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,debts:dts});}}/>
-                <span className="mono" style={{fontSize:'.6rem',color:'var(--muted)'}}>{d.paid?'paid':'unpaid'}</span>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+                <Tog v={d.paid||false} onChange={v=>{const dts=s.debts.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,debts:dts})}}/>
+                <span style={{fontSize:'.6rem',color:'var(--muted)'}}>{d.paid?'paid':'unpaid'}</span>
                 <button className="bdng" onClick={()=>save({...s,debts:s.debts.filter((_,j)=>j!==i)})}>✕</button>
               </div>
             </div>
           </div>
         ))}
       </div>
-      <button className="btn bs mb1" onClick={()=>save({...s,debts:[...s.debts,{name:'',amount:0,paid:false}]})}>＋ Add Debt</button>
+      <button className="btn bs mb" onClick={()=>save({...s,debts:[...s.debts,{name:'',amount:0,paid:false}]})}>＋ Add Debt</button>
 
-      <div className="sh">Debit Sufficiency</div>
-      <DebitWaterfall s={s}/>
+      <div className="sh">Debit sufficiency</div>
+      <WaterfallCard s={s}/>
     </div>
   );
 }
@@ -856,63 +789,65 @@ function SavingsDebts({s, save, toast}) {
 // ══════════════════════════════════════════════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════════════════════════════════════════════
-function Settings({s, save, toast}) {
-  return (
+function Settings({s,save,toast}){
+  return(
     <div className="page">
-      <div className="sh" style={{marginTop:'.4rem'}}>Base Budget</div>
-      <div className="card mb1">
+      <div style={{fontSize:'1.1rem',fontWeight:700,padding:'.5rem 0 .75rem'}}>Settings</div>
+
+      <div className="sh">Budget</div>
+      <div className="card mb">
         <div className="il">Monthly Income</div>
         <input type="number" value={s.base_budget} inputMode="numeric" onChange={e=>save({...s,base_budget:Number(e.target.value)})}/>
       </div>
 
       <div className="sh">Additional Income</div>
-      <div className="gap mb1">
+      <div className="gap mb">
         {s.additional_income.map((inc,i)=>(
           <div key={i} className="card">
             <div className="row">
               <div className="f1 gap">
-                <input type="text" placeholder="Source" value={inc.source} onChange={e=>{const ai=s.additional_income.map((x,j)=>j===i?{...x,source:e.target.value}:x);save({...s,additional_income:ai});}}/>
-                <input type="number" placeholder="Amount" value={inc.amount} inputMode="numeric" onChange={e=>{const ai=s.additional_income.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,additional_income:ai});}}/>
+                <input type="text" placeholder="Source" value={inc.source} onChange={e=>{const ai=s.additional_income.map((x,j)=>j===i?{...x,source:e.target.value}:x);save({...s,additional_income:ai})}}/>
+                <input type="number" placeholder="Amount" value={inc.amount} inputMode="numeric" onChange={e=>{const ai=s.additional_income.map((x,j)=>j===i?{...x,amount:Number(e.target.value)}:x);save({...s,additional_income:ai})}}/>
               </div>
               <button className="bdng" onClick={()=>save({...s,additional_income:s.additional_income.filter((_,j)=>j!==i)})}>✕</button>
             </div>
           </div>
         ))}
       </div>
-      <button className="btn bs mb1" onClick={()=>save({...s,additional_income:[...s.additional_income,{source:'',amount:0}]})}>＋ Add Income Source</button>
+      <button className="btn bs mb" onClick={()=>save({...s,additional_income:[...s.additional_income,{source:'',amount:0}]})}>＋ Add Income</button>
 
-      <div className="sh">Cashback Earned</div>
-      <div className="note inf mb1">🎁 Deducted from card bill before debit calculation</div>
-      <div className="card gap mb1">
-        <div>
-          <div className="il">SBI Cashback</div>
+      <div className="sh">Cashback</div>
+      <div className="note inf mb">🎁 Deducted from card bill automatically</div>
+      <div className="card gap mb">
+        <div><div className="il">SBI Cashback</div>
           <input type="number" value={s.accounts.sbi.cashback||0} inputMode="numeric"
             onChange={e=>save({...s,accounts:{...s.accounts,sbi:{...s.accounts.sbi,cashback:Number(e.target.value)}}})}/>
         </div>
-        <div>
-          <div className="il">YES Cashback</div>
+        <div><div className="il">YES Cashback</div>
           <input type="number" value={s.accounts.yes.cashback||0} inputMode="numeric"
             onChange={e=>save({...s,accounts:{...s.accounts,yes:{...s.accounts.yes,cashback:Number(e.target.value)}}})}/>
         </div>
       </div>
 
-      <div className="sh">Savings Target</div>
-      <div className="card mb1">
+      <div className="sh">Savings target</div>
+      <div className="card mb">
         <div className="il">Monthly Savings</div>
         <input type="number" value={s.savings.budget} inputMode="numeric" onChange={e=>save({...s,savings:{...s.savings,budget:Number(e.target.value)}})}/>
       </div>
 
-      <div className="sh">Account Limits</div>
-      <div className="card gap mb1">
-        <div><div className="il">SBI Credit Limit</div><input type="number" value={s.accounts.sbi.limit} inputMode="numeric" onChange={e=>save({...s,accounts:{...s.accounts,sbi:{...s.accounts.sbi,limit:Number(e.target.value)}}})}/>
+      <div className="sh">Credit limits</div>
+      <div className="card gap mb">
+        <div><div className="il">SBI Credit Limit</div>
+          <input type="number" value={s.accounts.sbi.limit} inputMode="numeric" onChange={e=>save({...s,accounts:{...s.accounts,sbi:{...s.accounts.sbi,limit:Number(e.target.value)}}})}/>
         </div>
-        <div><div className="il">YES RuPay Limit</div><input type="number" value={s.accounts.yes.limit} inputMode="numeric" onChange={e=>save({...s,accounts:{...s.accounts,yes:{...s.accounts.yes,limit:Number(e.target.value)}}})}/>
+        <div><div className="il">YES RuPay Limit</div>
+          <input type="number" value={s.accounts.yes.limit} inputMode="numeric" onChange={e=>save({...s,accounts:{...s.accounts,yes:{...s.accounts.yes,limit:Number(e.target.value)}}})}/>
         </div>
       </div>
 
-      <div className="sh" style={{color:'var(--red)'}}>Danger Zone</div>
+      <div className="sh" style={{color:'var(--red)'}}>Danger</div>
       <button className="btn" style={{background:'var(--red-bg)',color:'var(--red)',border:'1px solid var(--red-bd)'}}
-        onClick={()=>{if(confirm('Reset ALL data to defaults?'))save(JSON.parse(JSON.stringify(DEFAULT))).then(()=>toast('Reset complete'));}}>
+        onClick={()=>{if(confirm('Reset ALL data?'))save(JSON.parse(JSON.stringify(DEFAULT))).then(()=>toast('Reset'))}}>
         Reset to defaults
       </button>
     </div>
@@ -922,13 +857,13 @@ function Settings({s, save, toast}) {
 // ══════════════════════════════════════════════════════════════════════════════
 // APP
 // ══════════════════════════════════════════════════════════════════════════════
-function App() {
-  const [state, setState] = useState(null);
-  const [page,  setPage]  = useState('overview');
-  const [tmsg,  setTmsg]  = useState('');
-  const timer = useRef(null);
+function App(){
+  const [state,setState]=useState(null);
+  const [page,setPage]=useState('overview');
+  const [tmsg,setTmsg]=useState('');
+  const timer=useRef(null);
 
-  function toast(msg){setTmsg(msg);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setTmsg(''),2500);}
+  function toast(msg){setTmsg(msg);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>setTmsg(''),2200)}
 
   function deepMerge(def,saved){
     const r={...def};
@@ -942,8 +877,8 @@ function App() {
   useEffect(()=>{
     (async()=>{
       const {data}=await db.from('budget_state').select('data').eq('id','main').single();
-      if (data?.data) {
-        const merged = deepMerge(JSON.parse(JSON.stringify(DEFAULT)), data.data);
+      if(data?.data){
+        const merged=deepMerge(JSON.parse(JSON.stringify(DEFAULT)),data.data);
         setState(migrate(merged));
       } else {
         setState(JSON.parse(JSON.stringify(DEFAULT)));
@@ -951,39 +886,38 @@ function App() {
     })();
   },[]);
 
-  const save = useCallback(async ns=>{
+  const save=useCallback(async ns=>{
     setState(ns);
     await db.from('budget_state').upsert({id:'main',data:ns,updated_at:new Date().toISOString()});
   },[]);
 
-  if (!state) return(
+  if(!state) return(
     <div className="loading">
       <div className="spinner"/>
-      <div className="mono sm cm">Loading…</div>
+      <div style={{fontSize:'.75rem',color:'var(--muted)',fontFamily:'var(--mono)'}}>Loading…</div>
     </div>
   );
 
-  const nav = [
-    {id:'overview', label:'Home',     icon:<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>},
-    {id:'balances', label:'Balances', icon:<><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></>},
-    {id:'expenses', label:'Expenses', icon:<><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>},
-    {id:'savings',  label:'Debts',    icon:<><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>},
-    {id:'settings', label:'Settings', icon:<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>},
+  const nav=[
+    {id:'overview',label:'Home',icon:<><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></>},
+    {id:'balances',label:'Balances',icon:<><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></>},
+    {id:'expenses',label:'Expenses',icon:<><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>},
+    {id:'savings',label:'Debts',icon:<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>},
+    {id:'settings',label:'Settings',icon:<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>},
   ];
 
-  return (
+  return(
     <>
-      {page==='overview' && <Overview    s={state}/>}
-      {page==='balances' && <Balances    s={state} save={save} toast={toast}/>}
-      {page==='expenses' && <Expenses    s={state} save={save} toast={toast}/>}
-      {page==='savings'  && <SavingsDebts s={state} save={save} toast={toast}/>}
-      {page==='settings' && <Settings    s={state} save={save} toast={toast}/>}
+      {page==='overview'&&<Overview s={state}/>}
+      {page==='balances'&&<Balances s={state} save={save} toast={toast}/>}
+      {page==='expenses'&&<Expenses s={state} save={save} toast={toast}/>}
+      {page==='savings' &&<SavingsDebts s={state} save={save} toast={toast}/>}
+      {page==='settings'&&<Settings s={state} save={save} toast={toast}/>}
       <nav className="nav">
         {nav.map(n=>(
           <button key={n.id} className={`nb ${page===n.id?'on':''}`} onClick={()=>setPage(n.id)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{n.icon}</svg>
+            <svg viewBox="0 0 24 24">{n.icon}</svg>
             {n.label}
-            <div className="nb-dot"/>
           </button>
         ))}
       </nav>
