@@ -280,23 +280,29 @@ function waterfall(s){
   const debtPend   = unpaidDebts(s);
   const dVarBud    = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
 
-  // Use totalFunds so cash is included from the start
+  // Waterfall from totalFunds. Savings only counted if funds remain after bills+fixed+debts.
   const afterBills  = totalFunds - creditBill;
   const afterFixed  = afterBills  - fixedPend;
-  const afterSav    = afterFixed  - savPend;
-  const afterDebts  = afterSav    - debtPend;
+  const afterDebts  = afterFixed  - debtPend;
+  // Only deduct savings if we actually have money left (don't inflate shortfall with savings)
+  const afterSav    = afterDebts  - (afterDebts > 0 ? savPend : 0);
 
-  const dVarAvail = Math.max(0, afterDebts);
-  const dVarSpent = Math.max(0, dVarBud - afterDebts);
-  const shortBy   = Math.max(0, -(afterDebts - dVarBud));
-  const surplus   = Math.max(0,   afterDebts - dVarBud);
+  const dVarAvail = Math.max(0, afterSav);
+  const dVarSpent = Math.max(0, dVarBud - afterSav);
+  // shortBy: if afterSav < 0 → short by that amount (debit var gone)
+  //          if 0 <= afterSav < dVarBud → short on debit var portion
+  //          if afterSav >= dVarBud → surplus
+  const shortBy   = afterSav < 0
+    ? Math.abs(afterSav)
+    : Math.max(0, dVarBud - afterSav);
+  const surplus   = Math.max(0, afterSav - dVarBud);
 
   return {
     balance,cash,totalFunds,
     creditBill,afterBills,
     fixedPend,afterFixed,
-    savPend,afterSav,
     debtPend,afterDebts,
+    savPend,afterSav,
     dVarBud,dVarAvail,dVarSpent,
     shortBy,surplus,
   };
