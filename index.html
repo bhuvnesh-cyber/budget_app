@@ -265,9 +265,11 @@ const yesSpent     = s=>Math.max(0,s.accounts.yes.limit -s.accounts.yes.availabl
 const totCreditBills = s=>sbiSpent(s)+yesSpent(s);
 
 // ── Waterfall ─────────────────────────────────────────────────────────────────
-// surplus/shortBy driven purely by afterDebts vs debitVarBud:
-//   afterDebts >= debitVarBud → surplus = afterDebts - debitVarBud
-//   afterDebts <  debitVarBud → shortBy = debitVarBud - afterDebts
+// KEY FIX: use totalFunds (debit + cash) as starting point, not just balance.
+// afterDebts vs dVarBud = single source of truth for surplus/shortBy:
+//   afterDebts >= dVarBud → surplus, dVarSpent = 0
+//   afterDebts < dVarBud  → shortBy = dVarBud - afterDebts (debit var partially/fully consumed)
+//   afterDebts < 0        → fully short, shortBy = -afterDebts (dVarBud already gone)
 function waterfall(s){
   const balance    = s.accounts.debit.balance;
   const cash       = s.cash||0;
@@ -278,15 +280,16 @@ function waterfall(s){
   const debtPend   = unpaidDebts(s);
   const dVarBud    = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
 
-  const afterBills  = balance - creditBill;
-  const afterFixed  = afterBills - fixedPend;
-  const afterSav    = afterFixed - savPend;
-  const afterDebts  = afterSav - debtPend;
+  // Use totalFunds so cash is included from the start
+  const afterBills  = totalFunds - creditBill;
+  const afterFixed  = afterBills  - fixedPend;
+  const afterSav    = afterFixed  - savPend;
+  const afterDebts  = afterSav    - debtPend;
 
   const dVarAvail = Math.max(0, afterDebts);
   const dVarSpent = Math.max(0, dVarBud - afterDebts);
-  const shortBy   = Math.max(0, dVarBud - afterDebts);
-  const surplus   = Math.max(0, afterDebts - dVarBud);
+  const shortBy   = Math.max(0, -(afterDebts - dVarBud));
+  const surplus   = Math.max(0,   afterDebts - dVarBud);
 
   return {
     balance,cash,totalFunds,
