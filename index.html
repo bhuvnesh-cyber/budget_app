@@ -256,7 +256,7 @@ const wLeft   = Math.max(1, Math.ceil(dLeft/7));
 const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
 const pct = (a,b) => b ? Math.round(a/b*100) : 0;
 const bClr = (sp,bud) => { const p=bud?sp/bud:0; return p>1?'var(--red)':p>WARN?'var(--amb)':'var(--grn)' };
-const bCls = (sp,bud) => !sp?'':'bd' in {bd:1} ? '' : sp>bud?'bd':sp/bud>WARN?'wn':'gd';
+const bCls = (sp,bud) => !sp?'':sp>bud?'bd':sp/bud>WARN?'wn':'gd';
 
 function timeSince(iso) {
   if (!iso) return {label:'never', dot:'var(--red)'};
@@ -366,7 +366,7 @@ function WaterfallCard({s}) {
   return (
     <div className="wf">
       <div className="wfr hd">
-        <span className="wfl" style={{color:var(--tx),fontWeight:700}}>Debit balance</span>
+        <span className="wfl" style={{color:'var(--tx)',fontWeight:700}}>Debit balance</span>
         <span className="wfv">{fmt(wf.balance)}</span>
       </div>
       {wf.cash>0 && (
