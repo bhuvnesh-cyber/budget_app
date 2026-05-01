@@ -512,19 +512,17 @@ function Hero(props){
 }
 
 function Insights(props){
-  var s=props.s,wf=waterfall(s),tvs=totVarSpent(s),tvb=totVarBud(s),rem=tvb-tvs,pills=[];
+  var s=props.s,wf=waterfall(s),pills=[];
   if(wf.short>0) pills.push({t:'bd',txt:'Short '+fmt(wf.short)});
   else pills.push({t:'gd',txt:fmt(wf.surplus)+' surplus'});
-  if(rem>0) pills.push({t:'inf',txt:fmt(Math.round(rem/wLeft))+'/wk left'});
-  else if(rem<0) pills.push({t:'bd',txt:'Over budget '+fmt(-rem)});
+  // Per week based on surplus (not var budget)
+  if(wf.surplus>0) pills.push({t:'inf',txt:fmt(Math.round(wf.surplus/wLeft))+'/wk free'});
   if(prevBillTotal(s)>0&&!s.prev_bill_paid) pills.push({t:'pk',txt:'Prev bill '+fmt(prevBillTotal(s))+' unpaid'});
   if(unpaidFixedAmt(s)>0) pills.push({t:'wn',txt:fmt(unpaidFixedAmt(s))+' fixed pending'});
   if(!s.savings.done) pills.push({t:'pk',txt:'Savings pending'});
   var su=pct(sbiSpent(s),s.accounts.sbi.limit),yu=pct(yesSpent(s),s.accounts.yes.limit);
   if(su>75) pills.push({t:'wn',txt:'SBI '+su+'% used'});
   if(yu>75) pills.push({t:'wn',txt:'YES '+yu+'% used'});
-  var cb=(s.accounts.sbi.cashback||0)+(s.accounts.yes.cashback||0);
-  if(cb>0) pills.push({t:'ac',txt:fmt(cb)+' cashback'});
   return h('div',{className:'pill-row'},pills.map(function(p,i){return h('span',{key:i,className:'pill '+p.t},p.txt);}));
 }
 
@@ -559,10 +557,16 @@ function Overview(props){
 
     // 4 stat cards
     h('div',{className:'g2'},
-      h('div',{className:'card sc-grn'},
-        h('div',{className:'sl',style:{color:'var(--grn)'}},'Per Week'),
-        h('div',{className:'sv',style:{color:perWeek<0?'var(--red)':perWeek<2000?'var(--amb)':'var(--grn)'}},fmt(perWeek)),
-        h('div',{className:'ss'},fmt(perDay)+'/day \u00B7 '+wLeft+'w left')
+      h('div',{className:'card '+(wf.short>0?'sc-pnk':'sc-grn')},
+        h('div',{className:'sl',style:{color:wf.short>0?'var(--pnk)':'var(--grn)'}},wf.short>0?'Short / Week':'Free / Week'),
+        h('div',{className:'sv',style:{color:wf.short>0?'var(--pnk)':'var(--grn)'}},
+          wf.short>0?('−'+fmt(Math.round(wf.short/wLeft))):fmt(perWeek)
+        ),
+        h('div',{className:'ss'},
+          wf.short>0
+            ?(fmt(Math.round(wf.short/dLeft))+'/day over')
+            :(fmt(perDay)+'/day \u00B7 '+wLeft+'w left')
+        )
       ),
       h('div',{className:'card sc-pnk'},
         h('div',{className:'sl',style:{color:'var(--pnk)'}},'Credit Spent'),
