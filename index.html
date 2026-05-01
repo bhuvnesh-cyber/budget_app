@@ -3,47 +3,48 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<meta name="theme-color" content="#0A0A0B"/>
+<meta name="theme-color" content="#F7F7F5"/>
 <title>Budget</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg:#0A0A0B; --s1:#111113; --s2:#18181B; --s3:#222226;
-  --bd:#2A2A2F; --bd2:#333338;
-  --tx:#F2F2F4; --m1:#9898A6; --m2:#55555F;
-  --acc:#E8FF47; --acc2:#B8CC2A; --acc-dim:rgba(232,255,71,.08);
-  --red:#FF4F4F; --red-bg:rgba(255,79,79,.08); --red-bd:rgba(255,79,79,.2);
-  --grn:#4FD98E; --grn-bg:rgba(79,217,142,.08); --grn-bd:rgba(79,217,142,.2);
-  --amb:#FFB347; --amb-bg:rgba(255,179,71,.08); --amb-bd:rgba(255,179,71,.2);
-  --blu:#7EB8FF; --blu-bg:rgba(126,184,255,.08); --blu-bd:rgba(126,184,255,.2);
+  --bg:#F7F7F5; --s1:#FFFFFF; --s2:#F0F0ED; --s3:#E8E8E4;
+  --bd:#E2E2DC; --bd2:#D4D4CC;
+  --tx:#1A1A18; --m1:#6B6B62; --m2:#9B9B90;
+  --acc:#1A6B3C; --acc-bg:#EBF5EF; --acc-bd:#C3DFD0;
+  --red:#C0392B; --red-bg:#FDEDEC; --red-bd:#F5C6C2;
+  --grn:#1A6B3C; --grn-bg:#EBF5EF; --grn-bd:#C3DFD0;
+  --amb:#9A5B00; --amb-bg:#FEF6E7; --amb-bd:#F8DFA8;
+  --blu:#1A4A8A; --blu-bg:#EBF0FA; --blu-bd:#C3D3F0;
   --nav-h:64px; --safe-b:env(safe-area-inset-bottom,0px);
-  --r:14px; --rs:10px;
-  --mono:'JetBrains Mono',monospace;
-  --sans:'Syne',sans-serif;
+  --r:12px; --rs:8px;
+  --mono:'DM Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+  --shadow:0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--sans);overflow-x:hidden;font-size:15px}
 #root{display:flex;flex-direction:column;min-height:100%}
 
-/* Layout */
 .page{flex:1;padding:.75rem 1rem calc(var(--nav-h) + var(--safe-b) + 1.5rem);max-width:520px;margin:0 auto;width:100%}
 
 /* Nav */
 .nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));
-  background:rgba(10,10,11,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  background:rgba(247,247,245,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-top:1px solid var(--bd);display:flex;align-items:stretch;z-index:100;padding-bottom:var(--safe-b)}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   background:none;border:none;cursor:pointer;color:var(--m2);font-family:var(--sans);
-  font-size:.55rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;transition:color .15s}
+  font-size:.52rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;transition:color .15s}
 .nb.on{color:var(--acc)}
 .nb svg{width:18px;height:18px;stroke-width:1.8;fill:none;stroke:currentColor}
 
 /* Cards */
-.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:.9rem 1rem}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:.9rem 1rem;box-shadow:var(--shadow)}
 .card+.card{margin-top:.5rem}
 
 /* Section header */
-.sh{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--m2);
+.sh{font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--m2);
   font-weight:700;margin:1.4rem 0 .6rem;display:flex;align-items:center;gap:.6rem}
 .sh::after{content:'';flex:1;height:1px;background:var(--bd)}
 
@@ -58,12 +59,12 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--san
 
 /* Pills */
 .pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;
-  font-size:.6rem;font-weight:700;border:1px solid transparent;white-space:nowrap;font-family:var(--sans);letter-spacing:.04em}
+  font-size:.6rem;font-weight:600;border:1px solid transparent;white-space:nowrap;font-family:var(--sans);letter-spacing:.02em}
 .pill.gd{background:var(--grn-bg);border-color:var(--grn-bd);color:var(--grn)}
 .pill.wn{background:var(--amb-bg);border-color:var(--amb-bd);color:var(--amb)}
 .pill.bd{background:var(--red-bg);border-color:var(--red-bd);color:var(--red)}
 .pill.inf{background:var(--blu-bg);border-color:var(--blu-bd);color:var(--blu)}
-.pill.acc{background:var(--acc-dim);border-color:rgba(232,255,71,.2);color:var(--acc)}
+.pill.acc{background:var(--acc-bg);border-color:var(--acc-bd);color:var(--acc)}
 .pill-row{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.75rem}
 
 /* Notes */
@@ -75,8 +76,8 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--san
 .note.inf{background:var(--blu-bg);border-color:var(--blu);color:var(--blu)}
 
 /* Progress */
-.bw{background:var(--bd);border-radius:99px;height:2px;margin-top:6px;overflow:hidden}
-.bf{height:2px;border-radius:99px;transition:width .4s ease}
+.bw{background:var(--s3);border-radius:99px;height:3px;margin-top:6px;overflow:hidden}
+.bf{height:3px;border-radius:99px;transition:width .4s ease}
 
 /* Inputs */
 input[type=number],input[type=text]{
@@ -85,16 +86,17 @@ input[type=number],input[type=text]{
   padding:.65rem .9rem;outline:none;appearance:none;-moz-appearance:textfield;transition:border-color .15s,box-shadow .15s}
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(232,255,71,.08);background:var(--s3)}
+input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(26,107,60,.08);background:var(--s1)}
 input::placeholder{color:var(--m2)}
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
   padding:.7rem 1.2rem;border-radius:var(--rs);border:none;cursor:pointer;
-  font-family:var(--sans);font-weight:700;font-size:.85rem;letter-spacing:.02em;transition:all .12s;width:100%}
-.bp{background:var(--acc);color:#0A0A0B}
+  font-family:var(--sans);font-weight:600;font-size:.85rem;letter-spacing:.01em;transition:all .12s;width:100%}
+.bp{background:var(--acc);color:#fff;box-shadow:0 2px 8px rgba(26,107,60,.25)}
 .bp:active{transform:scale(.97);opacity:.9}
-.bs{background:var(--s2);border:1.5px solid var(--bd);color:var(--m1)}
+.bp:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.bs{background:var(--s1);border:1.5px solid var(--bd);color:var(--m1);box-shadow:var(--shadow)}
 .bdng{background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--m2);font-size:.8rem;
   border-radius:6px;transition:color .1s,background .1s;font-family:var(--mono)}
 .bdng:hover{color:var(--red);background:var(--red-bg)}
@@ -104,9 +106,9 @@ input::placeholder{color:var(--m2)}
 .tgl input{opacity:0;width:0;height:0}
 .tsl{position:absolute;inset:0;background:var(--bd2);border-radius:99px;cursor:pointer;transition:.2s}
 .tsl:before{content:'';position:absolute;width:17px;height:17px;left:3px;bottom:3px;
-  background:var(--m1);border-radius:50%;transition:.2s}
+  background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .tgl input:checked+.tsl{background:var(--acc)}
-.tgl input:checked+.tsl:before{transform:translateX(17px);background:#0A0A0B}
+.tgl input:checked+.tsl:before{transform:translateX(17px)}
 
 /* Expense rows */
 .er{padding:.75rem 0;border-bottom:1px solid var(--bd)}
@@ -114,8 +116,8 @@ input::placeholder{color:var(--m2)}
 .eh{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .en{font-size:.88rem;font-weight:600;display:flex;align-items:center;gap:6px}
 .chip{font-size:.55rem;padding:2px 7px;border-radius:99px;font-weight:700;letter-spacing:.06em;font-family:var(--mono)}
-.cs_{background:rgba(126,184,255,.15);color:var(--blu)}
-.cy{background:rgba(79,217,142,.12);color:var(--grn)}
+.cs_{background:rgba(26,74,138,.12);color:var(--blu)}
+.cy{background:rgba(26,107,60,.1);color:var(--grn)}
 .cd{background:var(--s3);color:var(--m1)}
 
 /* Tab bar */
@@ -123,7 +125,7 @@ input::placeholder{color:var(--m2)}
 .tab{flex:1;padding:.4rem .5rem;border:none;border-radius:7px;cursor:pointer;
   font-family:var(--sans);font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
   color:var(--m2);background:transparent;transition:all .15s}
-.tab.on{color:var(--acc);background:var(--s3);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.tab.on{color:var(--acc);background:var(--s1);box-shadow:var(--shadow)}
 
 /* Misc */
 hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
@@ -136,8 +138,8 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
 .mb{margin-bottom:.5rem}
 
 /* Waterfall */
-.wf{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem}
-.wfr{display:flex;justify-content:space-between;align-items:center;padding:.55rem .9rem;border-bottom:1px solid var(--bd);font-size:.78rem}
+.wf{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem;box-shadow:var(--shadow)}
+.wfr{display:flex;justify-content:space-between;align-items:center;padding:.6rem .9rem;border-bottom:1px solid var(--bd);font-size:.78rem}
 .wfr:last-child{border-bottom:none}
 .wfl{color:var(--m1);font-weight:500;font-size:.72rem}
 .wfv{font-family:var(--mono);font-weight:600;font-size:.76rem}
@@ -145,19 +147,19 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
 .wfr.fin{background:var(--s2)}
 
 /* Hero */
-.hero{border-radius:var(--r);padding:1.1rem 1.1rem 1rem;margin-bottom:.75rem;border:1px solid}
+.hero{border-radius:var(--r);padding:1.1rem 1.1rem 1rem;margin-bottom:.75rem;border:1px solid;box-shadow:var(--shadow-md)}
 .hero-amt{font-family:var(--mono);font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.03em;margin:.2rem 0 .6rem}
 .hero-lbl{font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
 .hrow{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.75rem}
 .hlbl{color:var(--m1);font-weight:500}
 .hval{font-family:var(--mono);font-weight:600;font-size:.76rem}
 
-/* Balance log */
+/* Spend log */
 .log-entry{display:flex;justify-content:space-between;align-items:center;padding:.6rem .9rem;
   border-bottom:1px solid var(--bd);font-size:.78rem}
 .log-entry:last-child{border-bottom:none}
 .log-time{font-size:.62rem;color:var(--m2);font-family:var(--mono);margin-top:2px}
-.log-delta{font-family:var(--mono);font-weight:600;font-size:.78rem}
+.log-note{font-size:.72rem;color:var(--m1);margin-top:1px}
 
 /* Loading / Toast */
 .loading{display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:.75rem}
@@ -165,23 +167,24 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
 @keyframes spin{to{transform:rotate(360deg)}}
 .toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 12px);left:50%;transform:translateX(-50%);
   background:var(--tx);color:var(--bg);padding:.5rem 1.2rem;border-radius:99px;
-  font-size:.75rem;font-weight:700;font-family:var(--sans);z-index:200;animation:fu .18s ease;white-space:nowrap;letter-spacing:.02em}
+  font-size:.75rem;font-weight:700;font-family:var(--sans);z-index:200;animation:fu .18s ease;white-space:nowrap;letter-spacing:.02em;box-shadow:var(--shadow-md)}
 @keyframes fu{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-/* Updated */
 .upd{display:inline-flex;align-items:center;gap:4px;font-size:.6rem;color:var(--m2);font-family:var(--mono)}
 .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 
 /* Big number input */
-.big-input-wrap{position:relative;margin-bottom:.6rem}
+.big-input-wrap{position:relative;margin-bottom:.3rem}
 .big-input-prefix{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);
   font-family:var(--mono);font-size:1.1rem;font-weight:600;color:var(--m1);pointer-events:none;z-index:1}
 input.big-inp{padding:.75rem .9rem .75rem 1.8rem;font-size:1.15rem;font-weight:600;background:var(--s2);border:1.5px solid var(--bd)}
-input.big-inp:focus{border-color:var(--acc);background:var(--s3)}
+input.big-inp:focus{border-color:var(--acc);background:var(--s1)}
 
-/* Month reset banner */
-.reset-banner{background:var(--acc-dim);border:1px solid rgba(232,255,71,.2);border-radius:var(--r);
-  padding:.75rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between}
+/* Sanity row */
+.sanity{display:flex;align-items:center;justify-content:space-between;background:var(--s2);
+  border-radius:8px;padding:.5rem .8rem;margin-top:.4rem;border:1px solid var(--bd)}
+.sanity-lbl{font-size:.65rem;color:var(--m1);font-weight:500}
+.sanity-val{font-family:var(--mono);font-size:.75rem;font-weight:600}
 </style>
 </head>
 <body>
@@ -200,19 +203,19 @@ const db = supabase.createClient(SUPA_URL, SUPA_KEY);
 const WARN = 0.75;
 
 const DEFAULT = {
-  version: 6,
+  version: 7,
   base_budget: 83500,
   additional_income: [{source:'Bank Interest', amount:69}],
   fixed: [
-    {category:'Family',         budget:15000, paid:true,  spent:15000},
-    {category:'Rent',           budget:21500, paid:true,  spent:21500},
-    {category:'Milk',           budget:2940,  paid:true,  spent:2940},
-    {category:'Rent_Furniture', budget:2994,  paid:true,  spent:2994},
-    {category:'School',         budget:3000,  paid:false, spent:0},
-    {category:'Recharge',       budget:1000,  paid:false, spent:0},
-    {category:'Gas',            budget:531,   paid:false, spent:0},
-    {category:'Electric',       budget:735,   paid:true,  spent:735},
-    {category:'WIFI',           budget:800,   paid:false, spent:0},
+    {category:'Family',         budget:15000, paid:false},
+    {category:'Rent',           budget:21500, paid:false},
+    {category:'Milk',           budget:2940,  paid:false},
+    {category:'Rent_Furniture', budget:2994,  paid:false},
+    {category:'School',         budget:3000,  paid:false},
+    {category:'Recharge',       budget:1000,  paid:false},
+    {category:'Gas',            budget:531,   paid:false},
+    {category:'Electric',       budget:735,   paid:false},
+    {category:'WIFI',           budget:800,   paid:false},
   ],
   variable: [
     {category:'Instamart', budget:6000, card:'SBI'},
@@ -226,24 +229,40 @@ const DEFAULT = {
   savings: {budget:10000, done:false},
   debts: [{name:'Credit Bill', amount:7932, paid:false}],
   accounts: {
-    debit: {balance:83569},
+    // opening_balance = balance set at start of month (never changes mid-month unless reset)
+    // balance = current actual balance (updated each check-in)
+    debit: {opening_balance:83569, balance:83569},
     sbi:   {limit:20000, available:20000, cashback:0},
     yes:   {limit:51000, available:51000, cashback:0},
   },
   cash: 0,
-  // Debit balance log: [{balance, ts, note}]
-  debit_log: [],
+  // Debit variable spend log: [{amount, note, ts}]
+  debit_spend_log: [],
   updated_at: null,
 };
 
 function migrate(s) {
-  if (!s.accounts?.sbi?.cashback) s.accounts.sbi.cashback = 0;
-  if (!s.accounts?.yes?.cashback) s.accounts.yes.cashback = 0;
+  if (!s.accounts) s.accounts = JSON.parse(JSON.stringify(DEFAULT.accounts));
+  if (!s.accounts.sbi) s.accounts.sbi = JSON.parse(JSON.stringify(DEFAULT.accounts.sbi));
+  if (!s.accounts.yes) s.accounts.yes = JSON.parse(JSON.stringify(DEFAULT.accounts.yes));
+  if (!s.accounts.debit) s.accounts.debit = {opening_balance:83569, balance:83569};
+  if (s.accounts.sbi.cashback === undefined) s.accounts.sbi.cashback = 0;
+  if (s.accounts.yes.cashback === undefined) s.accounts.yes.cashback = 0;
   if (s.cash === undefined) s.cash = 0;
   if (!s.updated_at) s.updated_at = null;
-  if (!s.debit_log) s.debit_log = [];
+  // Migrate old debit structure
+  if (s.accounts.debit && s.accounts.debit.opening_balance === undefined) {
+    s.accounts.debit.opening_balance = s.accounts.debit.balance || 0;
+  }
+  // Remove old logs
+  delete s.debit_log;
   delete s.checkin_log;
-  s.version = 6;
+  // Migrate old fixed (remove 'spent' field, keep paid)
+  if (s.fixed) {
+    s.fixed = s.fixed.map(f => ({category:f.category, budget:f.budget, paid:!!f.paid}));
+  }
+  if (!s.debit_spend_log) s.debit_spend_log = [];
+  s.version = 7;
   return s;
 }
 
@@ -253,10 +272,9 @@ const lastDay = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
 const dLeft   = Math.max(1, lastDay - today.getDate());
 const wLeft   = Math.max(1, Math.ceil(dLeft/7));
 
-const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
-const pct = (a,b) => b ? Math.round(a/b*100) : 0;
+const fmt  = n => '₹' + Math.round(n).toLocaleString('en-IN');
+const pct  = (a,b) => b ? Math.round(a/b*100) : 0;
 const bClr = (sp,bud) => { const p=bud?sp/bud:0; return p>1?'var(--red)':p>WARN?'var(--amb)':'var(--grn)' };
-const bCls = (sp,bud) => !sp?'':sp>bud?'bd':sp/bud>WARN?'wn':'gd';
 
 function timeSince(iso) {
   if (!iso) return {label:'never', dot:'var(--red)'};
@@ -275,54 +293,50 @@ function fmtTime(iso) {
 }
 
 // ── Aggregators ───────────────────────────────────────────────────────────────
-const totIncome   = s => s.base_budget + s.additional_income.reduce((a,i)=>a+i.amount,0);
-const paidFixed   = s => s.fixed.filter(f=>f.paid).reduce((a,f)=>a+f.spent,0);
-const unpaidFixed = s => s.fixed.filter(f=>!f.paid).reduce((a,f)=>a+f.budget,0);
-const totVarBud   = s => s.variable.reduce((a,v)=>a+v.budget,0);
-const totDebts    = s => s.debts.reduce((a,d)=>a+d.amount,0);
-const paidDebts   = s => s.debts.filter(d=>d.paid).reduce((a,d)=>a+d.amount,0);
-const unpaidDebts = s => totDebts(s)-paidDebts(s);
-const sbiSpent    = s => Math.max(0, s.accounts.sbi.limit - s.accounts.sbi.available - (s.accounts.sbi.cashback||0));
-const yesSpent    = s => Math.max(0, s.accounts.yes.limit - s.accounts.yes.available - (s.accounts.yes.cashback||0));
+const totIncome      = s => s.base_budget + s.additional_income.reduce((a,i)=>a+i.amount,0);
+const paidFixedAmt   = s => s.fixed.filter(f=>f.paid).reduce((a,f)=>a+f.budget,0);
+const unpaidFixedAmt = s => s.fixed.filter(f=>!f.paid).reduce((a,f)=>a+f.budget,0);
+const totVarBud      = s => s.variable.reduce((a,v)=>a+v.budget,0);
+const totDebts       = s => s.debts.reduce((a,d)=>a+d.amount,0);
+const paidDebts      = s => s.debts.filter(d=>d.paid).reduce((a,d)=>a+d.amount,0);
+const unpaidDebts    = s => totDebts(s)-paidDebts(s);
+const sbiSpent       = s => Math.max(0, s.accounts.sbi.limit - s.accounts.sbi.available - (s.accounts.sbi.cashback||0));
+const yesSpent       = s => Math.max(0, s.accounts.yes.limit - s.accounts.yes.available - (s.accounts.yes.cashback||0));
 const totCreditBills = s => sbiSpent(s)+yesSpent(s);
+const debitVarSpent  = s => (s.debit_spend_log||[]).reduce((a,e)=>a+e.amount,0);
 
-// ── Debit log helpers ─────────────────────────────────────────────────────────
-// Compute total debit variable spent from log (sum of spending entries, ignore deposits)
-function debitSpentFromLog(log) {
-  if (!log || log.length < 2) return 0;
-  let spent = 0;
-  // Sort by time ascending
-  const sorted = [...log].sort((a,b) => new Date(a.ts)-new Date(b.ts));
-  for (let i=1; i<sorted.length; i++) {
-    const diff = sorted[i-1].balance - sorted[i].balance;
-    if (diff > 0) spent += diff; // positive diff = spent money
-    // negative diff = received money, don't count as spending
-  }
-  return spent;
-}
+// ── Predicted debit balance ───────────────────────────────────────────────────
+// Opening balance − all paid fixed expenses − manually logged debit variable spend
+const predictedDebit = s =>
+  s.accounts.debit.opening_balance - paidFixedAmt(s) - debitVarSpent(s);
 
-// ── Waterfall ─────────────────────────────────────────────────────────────────
+// ── Waterfall (from ACTUAL current balance) ────────────────────────────────────
+// Actual balance is ground truth. We figure out how much is "spoken for".
 function waterfall(s) {
   const balance    = s.accounts.debit.balance;
   const cash       = s.cash||0;
-  const totalFunds = balance+cash;
-  const creditBill = totCreditBills(s);
-  const fixedPend  = unpaidFixed(s);
+  const totalFunds = balance + cash;
+
+  const creditBill = totCreditBills(s);   // will pay from debit
+  const fixedPend  = unpaidFixedAmt(s);   // not yet paid fixed
   const savPend    = s.savings.done ? 0 : s.savings.budget;
   const debtPend   = unpaidDebts(s);
-  const dVarBud    = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
 
-  const afterBills = totalFunds - creditBill;
+  const afterBills = totalFunds  - creditBill;
   const afterFixed = afterBills  - fixedPend;
   const afterDebts = afterFixed  - debtPend;
-  const afterSav   = afterDebts  - (afterDebts > 0 ? savPend : 0);
+  const afterSav   = afterDebts  - savPend;
 
-  const dVarAvail = Math.max(0, afterSav);
-  const dVarSpent = debitSpentFromLog(s.debit_log);
-  const shortBy   = afterSav < 0
-    ? Math.abs(afterSav)
-    : Math.max(0, dVarBud - afterSav);
-  const surplus   = Math.max(0, afterSav - dVarBud);
+  // Debit variable budget
+  const dVarBud   = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
+  const dVarSpent = debitVarSpent(s);
+  const dVarLeft  = dVarBud - dVarSpent;
+
+  const shortBy = afterSav < 0 ? Math.abs(afterSav) : Math.max(0, -afterSav + (afterSav >= 0 ? 0 : 0));
+  // surplus/shortfall after accounting for debit variable budget
+  const net     = afterSav - dVarBud;
+  const surplus = net > 0 ? net : 0;
+  const short   = net < 0 ? Math.abs(net) : 0;
 
   return {
     balance, cash, totalFunds,
@@ -330,12 +344,12 @@ function waterfall(s) {
     fixedPend, afterFixed,
     debtPend, afterDebts,
     savPend, afterSav,
-    dVarBud, dVarAvail, dVarSpent,
-    shortBy, surplus,
+    dVarBud, dVarSpent, dVarLeft,
+    surplus, short,
   };
 }
 
-const totVarSpent = s => sbiSpent(s) + yesSpent(s) + debitSpentFromLog(s.debit_log);
+const totVarSpent = s => sbiSpent(s) + yesSpent(s) + debitVarSpent(s);
 
 // ── Mini components ───────────────────────────────────────────────────────────
 function Bar({sp, bud}) {
@@ -346,7 +360,6 @@ function Tog({v, onChange}) {
   return <label className="tgl"><input type="checkbox" checked={v} onChange={e=>onChange(e.target.checked)}/><span className="tsl"/></label>;
 }
 function Toast({msg}) { return msg ? <div className="toast">{msg}</div> : null; }
-
 function UpdatedAt({ts}) {
   const {label, dot} = timeSince(ts);
   return <span className="upd"><span className="dot" style={{background:dot}}/>{label}</span>;
@@ -356,11 +369,11 @@ function UpdatedAt({ts}) {
 function WaterfallCard({s}) {
   const wf = waterfall(s);
   const rows = [
-    {label:'Credit bills (SBI + YES)', val:-wf.creditBill, after:wf.afterBills, show:wf.creditBill>0},
-    {label:'Unpaid fixed',             val:-wf.fixedPend,  after:wf.afterFixed, show:wf.fixedPend>0},
-    {label:'Pending debts',            val:-wf.debtPend,   after:wf.afterDebts, show:wf.debtPend>0},
-    {label:'Savings',                  val:-wf.savPend,    after:wf.afterSav,   show:wf.savPend>0},
-    {label:'Debit variable budget',    val:-wf.dVarBud,    after:wf.afterSav-wf.dVarBud, show:true},
+    {label:'Credit bills (SBI + YES)', val:wf.creditBill, after:wf.afterBills, show:wf.creditBill>0},
+    {label:'Unpaid fixed expenses',    val:wf.fixedPend,  after:wf.afterFixed, show:wf.fixedPend>0},
+    {label:'Pending debts',            val:wf.debtPend,   after:wf.afterDebts, show:wf.debtPend>0},
+    {label:'Savings to transfer',      val:wf.savPend,    after:wf.afterSav,   show:wf.savPend>0},
+    {label:'Debit variable budget',    val:wf.dVarBud,    after:wf.afterSav - wf.dVarBud, show:true},
   ].filter(r=>r.show);
 
   return (
@@ -371,7 +384,7 @@ function WaterfallCard({s}) {
       </div>
       {wf.cash>0 && (
         <div className="wfr hd">
-          <span className="wfl">+ Cash</span>
+          <span className="wfl">+ Cash on hand</span>
           <span className="wfv" style={{color:'var(--grn)'}}>{fmt(wf.cash)}</span>
         </div>
       )}
@@ -381,7 +394,7 @@ function WaterfallCard({s}) {
           <div key={i} className="wfr">
             <div>
               <div className="wfl">{r.label}</div>
-              <div style={{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--red)',marginTop:1}}>{fmt(r.val)}</div>
+              <div style={{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--red)',marginTop:1}}>− {fmt(r.val)}</div>
             </div>
             <div style={{textAlign:'right'}}>
               <div style={{fontSize:'.55rem',color:'var(--m2)'}}>remaining</div>
@@ -391,11 +404,11 @@ function WaterfallCard({s}) {
         );
       })}
       <div className="wfr fin">
-        <span className="wfl" style={{fontWeight:700,color:wf.shortBy>0?'var(--red)':'var(--grn)'}}>
-          {wf.shortBy>0 ? '⚠ Short by' : '✓ Surplus'}
+        <span className="wfl" style={{fontWeight:700,color:wf.short>0?'var(--red)':'var(--grn)'}}>
+          {wf.short>0 ? '⚠ Short by' : '✓ Surplus'}
         </span>
-        <span className="wfv" style={{fontSize:'1rem',color:wf.shortBy>0?'var(--red)':'var(--grn)'}}>
-          {fmt(wf.shortBy>0 ? wf.shortBy : wf.surplus)}
+        <span className="wfv" style={{fontSize:'1rem',color:wf.short>0?'var(--red)':'var(--grn)'}}>
+          {fmt(wf.short>0 ? wf.short : wf.surplus)}
         </span>
       </div>
     </div>
@@ -404,8 +417,8 @@ function WaterfallCard({s}) {
 
 // ── Hero ──────────────────────────────────────────────────────────────────────
 function Hero({s}) {
-  const wf = waterfall(s);
-  const isOk = wf.shortBy === 0;
+  const wf  = waterfall(s);
+  const isOk = wf.short === 0;
   return (
     <div className="hero" style={{
       background: isOk ? 'var(--grn-bg)' : 'var(--red-bg)',
@@ -415,13 +428,13 @@ function Hero({s}) {
         {isOk ? 'All good · Surplus' : 'Heads up · Short by'}
       </div>
       <div className="hero-amt" style={{color: isOk?'var(--grn)':'var(--red)'}}>
-        {fmt(isOk ? wf.surplus : wf.shortBy)}
+        {fmt(isOk ? wf.surplus : wf.short)}
       </div>
       <div style={{borderTop:`1px solid ${isOk?'var(--grn-bd)':'var(--red-bd)'}`,paddingTop:'.5rem',display:'flex',flexDirection:'column',gap:2}}>
-        <div className="hrow"><span className="hlbl">Debit balance</span><span className="hval">{fmt(wf.balance)}</span></div>
+        <div className="hrow"><span className="hlbl">Actual debit balance</span><span className="hval">{fmt(wf.balance)}</span></div>
         {wf.cash>0&&<div className="hrow"><span className="hlbl">Cash</span><span className="hval" style={{color:'var(--grn)'}}>{fmt(wf.cash)}</span></div>}
         <div className="hrow"><span className="hlbl">Credit bills due</span><span className="hval" style={{color:wf.creditBill>0?'var(--amb)':'var(--m1)'}}>{fmt(wf.creditBill)}</span></div>
-        <div className="hrow"><span className="hlbl">Debit var budget</span><span className="hval" style={{color:wf.dVarAvail>=wf.dVarBud?'var(--grn)':wf.dVarAvail>0?'var(--amb)':'var(--red)'}}>{fmt(wf.dVarAvail)} / {fmt(wf.dVarBud)}</span></div>
+        <div className="hrow"><span className="hlbl">Freely spendable</span><span className="hval" style={{color:wf.afterSav>=0?'var(--grn)':wf.afterSav>-3000?'var(--amb)':'var(--red)'}}>{fmt(wf.afterSav)}</span></div>
       </div>
     </div>
   );
@@ -435,11 +448,11 @@ function Insights({s}) {
   const varRem = tvb - tvs;
   const pills = [];
 
-  if (wf.shortBy>0) pills.push({t:'bd', text:`Short ${fmt(wf.shortBy)}`});
-  else              pills.push({t:'gd', text:`${fmt(wf.surplus)} surplus`});
-  if (varRem>0)     pills.push({t:'inf', text:`${fmt(Math.round(varRem/wLeft))}/wk`});
-  else if (varRem<0) pills.push({t:'bd', text:`Over ${fmt(-varRem)}`});
-  if (wf.fixedPend>0)  pills.push({t:'wn', text:`Fixed ${fmt(wf.fixedPend)} pending`});
+  if (wf.short>0)   pills.push({t:'bd',  text:`Short ${fmt(wf.short)}`});
+  else               pills.push({t:'gd',  text:`${fmt(wf.surplus)} surplus`});
+  if (varRem>0)      pills.push({t:'inf', text:`${fmt(Math.round(varRem/wLeft))}/wk left`});
+  else if (varRem<0) pills.push({t:'bd',  text:`Over budget ${fmt(-varRem)}`});
+  if (wf.fixedPend>0)  pills.push({t:'wn', text:`${fmt(wf.fixedPend)} fixed pending`});
   if (!s.savings.done) pills.push({t:'wn', text:'Savings pending'});
   const sbiUtil = pct(sbiSpent(s), s.accounts.sbi.limit);
   const yesUtil = pct(yesSpent(s), s.accounts.yes.limit);
@@ -454,7 +467,7 @@ function Insights({s}) {
 // ══════════════════════════════════════════════════════════════════════════════
 // OVERVIEW
 // ══════════════════════════════════════════════════════════════════════════════
-function Overview({s, onCheckin}) {
+function Overview({s}) {
   const wf  = waterfall(s);
   const tvs = totVarSpent(s);
   const tvb = totVarBud(s);
@@ -464,7 +477,7 @@ function Overview({s, onCheckin}) {
     <div className="page">
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'.5rem 0 .8rem'}}>
         <div>
-          <div style={{fontSize:'1.05rem',fontWeight:800,letterSpacing:'-.01em'}}>{mLbl}</div>
+          <div style={{fontSize:'1.05rem',fontWeight:700,letterSpacing:'-.01em'}}>{mLbl}</div>
           <div style={{fontSize:'.62rem',color:'var(--m2)',marginTop:2,fontFamily:'var(--mono)'}}>{wLeft}w · {dLeft}d left</div>
         </div>
         <UpdatedAt ts={s.updated_at}/>
@@ -473,7 +486,6 @@ function Overview({s, onCheckin}) {
       <Hero s={s}/>
       <Insights s={s}/>
 
-      {/* Quick stats */}
       <div className="g2">
         <div className="card">
           <div className="sl">Var Left</div>
@@ -487,11 +499,11 @@ function Overview({s, onCheckin}) {
         </div>
         <div className="card">
           <div className="sl">Fixed Paid</div>
-          <div className="sv" style={{color:'var(--m1)'}}>{fmt(paidFixed(s))}</div>
-          <div className="ss">{unpaidFixed(s)>0 ? fmt(unpaidFixed(s))+' pending' : 'all paid'}</div>
+          <div className="sv" style={{color:'var(--m1)'}}>{fmt(paidFixedAmt(s))}</div>
+          <div className="ss">{unpaidFixedAmt(s)>0 ? fmt(unpaidFixedAmt(s))+' pending' : 'all paid'}</div>
         </div>
         <div className="card">
-          <div className="sl">Total Budget</div>
+          <div className="sl">Total Income</div>
           <div className="sv" style={{color:'var(--m1)'}}>{fmt(totIncome(s))}</div>
           <div className="ss">this month</div>
         </div>
@@ -523,59 +535,67 @@ function Overview({s, onCheckin}) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// CHECK-IN  — the primary daily-use screen
+// CHECK-IN
 // ══════════════════════════════════════════════════════════════════════════════
 function Checkin({s, save, toast}) {
   const [dv, setDv] = useState('');
   const [sv, setSv] = useState('');
   const [yv, setYv] = useState('');
   const [cv, setCv] = useState('');
+  const [spendAmt, setSpendAmt] = useState('');
+  const [spendNote, setSpendNote] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const hasAny = dv!==''||sv!==''||yv!==''||cv!=='';
+  const hasBalance = dv!==''||sv!==''||yv!==''||cv!=='';
+  const hasSpend   = spendAmt!=='' && Number(spendAmt)>0;
 
-  // Preview state
-  const preview = useMemo(() => {
-    const ns = {...s,
-      accounts: {
-        debit: {balance: dv!=='' ? Number(dv) : s.accounts.debit.balance},
-        sbi:   {...s.accounts.sbi,   available: sv!=='' ? Number(sv) : s.accounts.sbi.available},
-        yes:   {...s.accounts.yes,   available: yv!=='' ? Number(yv) : s.accounts.yes.available},
+  // Predicted balance = opening − paid fixed − all debit var spent so far
+  const predicted = predictedDebit(s);
+  // When user enters new debit balance, difference from predicted = implied variable spend this session
+  const newDebitBal   = dv !== '' ? Number(dv) : null;
+  const impliedSpend  = newDebitBal !== null ? Math.max(0, predicted - newDebitBal) : null;
+  const impliedDeposit= newDebitBal !== null ? Math.max(0, newDebitBal - predicted) : null;
+
+  // Live preview for the result card
+  const preview = useMemo(() => ({
+    ...s,
+    accounts: {
+      debit: {
+        opening_balance: s.accounts.debit.opening_balance,
+        balance: dv!=='' ? Number(dv) : s.accounts.debit.balance,
       },
-      cash: cv!=='' ? Number(cv) : (s.cash||0),
-    };
-    return ns;
-  }, [dv,sv,yv,cv,s]);
+      sbi: {...s.accounts.sbi, available: sv!=='' ? Number(sv) : s.accounts.sbi.available},
+      yes: {...s.accounts.yes, available: yv!=='' ? Number(yv) : s.accounts.yes.available},
+    },
+    cash: cv!=='' ? Number(cv) : (s.cash||0),
+  }), [dv,sv,yv,cv,s]);
 
-  const wf     = waterfall(preview);
-  const prevWf = waterfall(s);
+  const wfPrev = waterfall(preview);
+  const wfCurr = waterfall(s);
 
-  // What changed in debit
-  const newDebitBal = dv!=='' ? Number(dv) : null;
-  const debitDiff   = newDebitBal !== null ? (newDebitBal - s.accounts.debit.balance) : 0;
-  const isDeposit   = debitDiff > 0;
-  const isSpend     = debitDiff < 0;
-
-  async function doSave() {
-    if (!hasAny) return;
+  async function doSaveBalance() {
+    if (!hasBalance) return;
     setBusy(true);
     const now = new Date().toISOString();
-    let newLog = [...(s.debit_log||[])];
 
-    // If debit balance changed, push to log
-    if (dv !== '' && Number(dv) !== s.accounts.debit.balance) {
-      newLog.push({balance: Number(dv), ts: now, isDeposit});
+    // If debit balance changed and implied spend > 0, auto-add to spend log
+    let newLog = [...(s.debit_spend_log||[])];
+    if (dv !== '' && impliedSpend > 0) {
+      newLog.push({amount: impliedSpend, note:'Auto: balance drop', ts: now});
     }
 
     const ns = {
       ...s,
       cash: cv!=='' ? Number(cv) : (s.cash||0),
       updated_at: now,
-      debit_log: newLog,
+      debit_spend_log: newLog,
       accounts: {
-        debit: {balance: dv!=='' ? Number(dv) : s.accounts.debit.balance},
-        sbi:   {...s.accounts.sbi,   available: sv!=='' ? Number(sv) : s.accounts.sbi.available},
-        yes:   {...s.accounts.yes,   available: yv!=='' ? Number(yv) : s.accounts.yes.available},
+        debit: {
+          opening_balance: s.accounts.debit.opening_balance,
+          balance: dv!=='' ? Number(dv) : s.accounts.debit.balance,
+        },
+        sbi: {...s.accounts.sbi, available: sv!=='' ? Number(sv) : s.accounts.sbi.available},
+        yes: {...s.accounts.yes, available: yv!=='' ? Number(yv) : s.accounts.yes.available},
       },
     };
     await save(ns);
@@ -584,27 +604,56 @@ function Checkin({s, save, toast}) {
     setBusy(false);
   }
 
+  async function doAddSpend() {
+    if (!hasSpend) return;
+    setBusy(true);
+    const now = new Date().toISOString();
+    const entry = {amount:Number(spendAmt), note:spendNote||'Debit spend', ts:now};
+    const ns = {
+      ...s,
+      updated_at: now,
+      debit_spend_log: [...(s.debit_spend_log||[]), entry],
+    };
+    await save(ns);
+    toast('Spend logged ✓');
+    setSpendAmt(''); setSpendNote('');
+    setBusy(false);
+  }
+
   const sbiB = sbiSpent(preview);
   const yesB = yesSpent(preview);
 
   return (
     <div className="page">
-      <div style={{fontSize:'1.05rem',fontWeight:800,padding:'.5rem 0 .05rem'}}>Check-In</div>
-      <div style={{fontSize:'.7rem',color:'var(--m2)',marginBottom:'1rem',fontFamily:'var(--mono)'}}>Enter only what changed</div>
+      <div style={{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .05rem'}}>Check-In</div>
+      <div style={{fontSize:'.7rem',color:'var(--m2)',marginBottom:'1rem',fontFamily:'var(--mono)'}}>Enter only what changed today</div>
 
+      {/* Balance update */}
       <div className="card mb">
-        {/* Debit */}
         <div className="mb">
           <div className="il">🏦 Debit Balance</div>
           <div className="big-input-wrap">
             <span className="big-input-prefix">₹</span>
-            <input className="big-inp" type="number" inputMode="numeric" placeholder={String(s.accounts.debit.balance)} value={dv} onChange={e=>setDv(e.target.value)}/>
+            <input className="big-inp" type="number" inputMode="numeric"
+              placeholder={String(s.accounts.debit.balance)} value={dv} onChange={e=>setDv(e.target.value)}/>
           </div>
-          {isSpend && <div style={{fontSize:'.7rem',color:'var(--red)',fontFamily:'var(--mono)',marginTop:2}}>↓ {fmt(-debitDiff)} spent</div>}
-          {isDeposit && <div style={{fontSize:'.7rem',color:'var(--grn)',fontFamily:'var(--mono)',marginTop:2}}>↑ {fmt(debitDiff)} received</div>}
+          {/* Sanity check */}
+          <div className="sanity">
+            <span className="sanity-lbl">Predicted (opening − paid fixed − var spent)</span>
+            <span className="sanity-val">{fmt(predicted)}</span>
+          </div>
+          {impliedSpend!==null && impliedSpend>0 && (
+            <div style={{fontSize:'.7rem',color:'var(--red)',fontFamily:'var(--mono)',marginTop:4}}>
+              ↓ {fmt(impliedSpend)} gap → will auto-log as debit variable spend
+            </div>
+          )}
+          {impliedDeposit!==null && impliedDeposit>0 && (
+            <div style={{fontSize:'.7rem',color:'var(--grn)',fontFamily:'var(--mono)',marginTop:4}}>
+              ↑ {fmt(impliedDeposit)} above predicted (deposit or income received)
+            </div>
+          )}
         </div>
         <hr/>
-        {/* SBI */}
         <div className="mb">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
             <div className="il" style={{marginBottom:0}}>💳 SBI Available</div>
@@ -612,12 +661,12 @@ function Checkin({s, save, toast}) {
           </div>
           <div className="big-input-wrap">
             <span className="big-input-prefix">₹</span>
-            <input className="big-inp" type="number" inputMode="numeric" placeholder={String(s.accounts.sbi.available)} value={sv} onChange={e=>setSv(e.target.value)}/>
+            <input className="big-inp" type="number" inputMode="numeric"
+              placeholder={String(s.accounts.sbi.available)} value={sv} onChange={e=>setSv(e.target.value)}/>
           </div>
           {sbiB>0 && <div style={{marginTop:3,fontSize:'.7rem',color:'var(--amb)',fontFamily:'var(--mono)'}}>Bill: {fmt(sbiB)}</div>}
         </div>
         <hr/>
-        {/* YES */}
         <div className="mb">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
             <div className="il" style={{marginBottom:0}}>💳 YES Available</div>
@@ -625,107 +674,108 @@ function Checkin({s, save, toast}) {
           </div>
           <div className="big-input-wrap">
             <span className="big-input-prefix">₹</span>
-            <input className="big-inp" type="number" inputMode="numeric" placeholder={String(s.accounts.yes.available)} value={yv} onChange={e=>setYv(e.target.value)}/>
+            <input className="big-inp" type="number" inputMode="numeric"
+              placeholder={String(s.accounts.yes.available)} value={yv} onChange={e=>setYv(e.target.value)}/>
           </div>
           {yesB>0 && <div style={{marginTop:3,fontSize:'.7rem',color:'var(--amb)',fontFamily:'var(--mono)'}}>Bill: {fmt(yesB)}</div>}
         </div>
         <hr/>
-        {/* Cash */}
         <div>
           <div className="il">💵 Cash on Hand</div>
           <div className="big-input-wrap">
             <span className="big-input-prefix">₹</span>
-            <input className="big-inp" type="number" inputMode="numeric" placeholder={String(s.cash||0)} value={cv} onChange={e=>setCv(e.target.value)}/>
+            <input className="big-inp" type="number" inputMode="numeric"
+              placeholder={String(s.cash||0)} value={cv} onChange={e=>setCv(e.target.value)}/>
           </div>
         </div>
       </div>
 
-      {/* Live result — only show if something entered */}
-      {hasAny && (
+      {/* Live result */}
+      {hasBalance && (
         <>
-          <div className="sh">Result</div>
-          <div className="card mb" style={{background:wf.shortBy>0?'var(--red-bg)':'var(--grn-bg)',borderColor:wf.shortBy>0?'var(--red-bd)':'var(--grn-bd)'}}>
-            <div style={{fontSize:'.6rem',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:wf.shortBy>0?'var(--red)':'var(--grn)'}}>
-              {wf.shortBy>0 ? 'Short by' : 'Surplus'}
+          <div className="sh">Result after save</div>
+          <div className="card mb" style={{background:wfPrev.short>0?'var(--red-bg)':'var(--grn-bg)',borderColor:wfPrev.short>0?'var(--red-bd)':'var(--grn-bd)'}}>
+            <div style={{fontSize:'.6rem',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:wfPrev.short>0?'var(--red)':'var(--grn)'}}>
+              {wfPrev.short>0 ? 'Short by' : 'Surplus'}
             </div>
-            <div style={{fontFamily:'var(--mono)',fontSize:'1.6rem',fontWeight:700,color:wf.shortBy>0?'var(--red)':'var(--grn)',lineHeight:1,margin:'.15rem 0 .5rem'}}>
-              {fmt(wf.shortBy>0 ? wf.shortBy : wf.surplus)}
+            <div style={{fontFamily:'var(--mono)',fontSize:'1.6rem',fontWeight:700,color:wfPrev.short>0?'var(--red)':'var(--grn)',lineHeight:1,margin:'.15rem 0 .5rem'}}>
+              {fmt(wfPrev.short>0 ? wfPrev.short : wfPrev.surplus)}
             </div>
             <div style={{display:'flex',flexDirection:'column',gap:3}}>
-              <div className="hrow"><span className="hlbl">Credit bills</span><span className="hval" style={{color:'var(--amb)'}}>{fmt(wf.creditBill)}</span></div>
-              <div className="hrow"><span className="hlbl">Debit var left</span><span className="hval">{fmt(wf.dVarAvail)} / {fmt(wf.dVarBud)}</span></div>
+              <div className="hrow"><span className="hlbl">Credit bills</span><span className="hval" style={{color:'var(--amb)'}}>{fmt(wfPrev.creditBill)}</span></div>
+              <div className="hrow"><span className="hlbl">Freely spendable</span><span className="hval">{fmt(wfPrev.afterSav)}</span></div>
+              <div className="hrow"><span className="hlbl">Debit var left</span><span className="hval">{fmt(wfPrev.dVarLeft)}</span></div>
             </div>
           </div>
         </>
       )}
 
-      <button className="btn bp" onClick={doSave} disabled={busy||!hasAny}>
-        {busy ? 'Saving…' : hasAny ? '✓ Save Check-In' : 'Enter a balance above'}
+      <button className="btn bp mb" onClick={doSaveBalance} disabled={busy||!hasBalance}>
+        {busy ? 'Saving…' : hasBalance ? '✓ Save Balances' : 'Enter a balance above'}
       </button>
 
-      {/* Debit log */}
-      {s.debit_log && s.debit_log.length > 0 && (
+      {/* Manual debit spend log */}
+      <div className="sh">Log Debit Variable Spend</div>
+      <div className="note inf mb">These are cash/debit purchases not covered by credit cards</div>
+      <div className="card mb">
+        <div className="mb">
+          <div className="il">Amount</div>
+          <div className="big-input-wrap">
+            <span className="big-input-prefix">₹</span>
+            <input className="big-inp" type="number" inputMode="numeric" placeholder="0" value={spendAmt} onChange={e=>setSpendAmt(e.target.value)}/>
+          </div>
+        </div>
+        <div>
+          <div className="il">Note (optional)</div>
+          <input type="text" placeholder="e.g. Petrol, Auto, etc." value={spendNote} onChange={e=>setSpendNote(e.target.value)}/>
+        </div>
+      </div>
+      <button className="btn bp mb" onClick={doAddSpend} disabled={busy||!hasSpend}>
+        {busy ? 'Saving…' : '+ Log Spend'}
+      </button>
+
+      {/* Spend log */}
+      {s.debit_spend_log && s.debit_spend_log.length > 0 && (
         <>
-          <div className="sh">Debit History</div>
-          <DebitLog s={s} save={save} toast={toast}/>
+          <div className="sh">Debit Spend History</div>
+          <DebitSpendLog s={s} save={save} toast={toast}/>
         </>
       )}
     </div>
   );
 }
 
-// ── Debit Log ─────────────────────────────────────────────────────────────────
-function DebitLog({s, save, toast}) {
+// ── Debit Spend Log ───────────────────────────────────────────────────────────
+function DebitSpendLog({s, save, toast}) {
   const sorted = useMemo(() =>
-    [...s.debit_log].sort((a,b) => new Date(b.ts)-new Date(a.ts))
-  , [s.debit_log]);
-
-  // Compute delta for display (compare to entry right before it in time)
-  const withDelta = useMemo(() => {
-    const asc = [...s.debit_log].sort((a,b) => new Date(a.ts)-new Date(b.ts));
-    return sorted.map(entry => {
-      const idx = asc.findIndex(e=>e.ts===entry.ts);
-      const prev = idx > 0 ? asc[idx-1] : null;
-      const delta = prev ? entry.balance - prev.balance : null;
-      return {...entry, delta};
-    });
-  }, [sorted, s.debit_log]);
+    [...(s.debit_spend_log||[])].sort((a,b)=>new Date(b.ts)-new Date(a.ts))
+  , [s.debit_spend_log]);
 
   function remove(ts) {
-    const newLog = s.debit_log.filter(e=>e.ts!==ts);
-    // Recalculate current balance from most recent remaining entry
-    let newBal = s.accounts.debit.balance;
-    if (newLog.length > 0) {
-      const latest = newLog.reduce((a,b)=>new Date(a.ts)>new Date(b.ts)?a:b);
-      newBal = latest.balance;
-    }
-    save({...s, debit_log: newLog, accounts:{...s.accounts, debit:{balance:newBal}}});
+    const newLog = s.debit_spend_log.filter(e=>e.ts!==ts);
+    save({...s, debit_spend_log:newLog});
     toast('Entry removed');
   }
 
+  const total = debitVarSpent(s);
+  const dVarBud = s.variable.filter(v=>v.card==='Debit').reduce((a,v)=>a+v.budget,0);
+
   return (
     <div className="wf">
-      {withDelta.map((e,i) => (
+      {sorted.map(e=>(
         <div key={e.ts} className="log-entry">
           <div>
-            <div style={{fontFamily:'var(--mono)',fontWeight:600,fontSize:'.85rem'}}>{fmt(e.balance)}</div>
+            <div style={{fontFamily:'var(--mono)',fontWeight:600,fontSize:'.85rem',color:'var(--red)'}}>−{fmt(e.amount)}</div>
+            <div className="log-note">{e.note}</div>
             <div className="log-time">{fmtTime(e.ts)}</div>
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            {e.delta!==null && (
-              <span className="log-delta" style={{color:e.delta>0?'var(--grn)':e.delta<0?'var(--red)':'var(--m2)'}}>
-                {e.delta>0 ? '+' : ''}{fmt(e.delta)}
-              </span>
-            )}
-            <button className="bdng" onClick={()=>remove(e.ts)}>✕</button>
-          </div>
+          <button className="bdng" onClick={()=>remove(e.ts)}>✕</button>
         </div>
       ))}
-      {s.debit_log.length >= 2 && (
-        <div style={{padding:'.5rem .9rem',fontSize:'.68rem',color:'var(--m2)',fontFamily:'var(--mono)'}}>
-          Total debit spent: {fmt(debitSpentFromLog(s.debit_log))}
-        </div>
-      )}
+      <div style={{padding:'.55rem .9rem',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--s2)',borderTop:'1px solid var(--bd)'}}>
+        <span style={{fontSize:'.68rem',color:'var(--m1)',fontWeight:600}}>Total debit spent</span>
+        <span style={{fontFamily:'var(--mono)',fontSize:'.76rem',fontWeight:700,color:total>dVarBud?'var(--red)':'var(--tx)'}}>{fmt(total)} / {fmt(dVarBud)}</span>
+      </div>
     </div>
   );
 }
@@ -735,62 +785,58 @@ function DebitLog({s, save, toast}) {
 // ══════════════════════════════════════════════════════════════════════════════
 function Expenses({s, save, toast}) {
   const [tab, setTab] = useState('fixed');
-  const wf = waterfall(s);
+  const tvb = totVarBud(s);
+  const tvs = totVarSpent(s);
 
-  // Variable spend distributed by card
+  // Variable spend distributed by card proportionally
   const varWithSpent = useMemo(() => {
-    const dVarSpent = debitSpentFromLog(s.debit_log);
     function distByRatio(amount, cats) {
       const tot = cats.reduce((a,c)=>a+c.budget,0);
       if (!tot) return cats.map(c=>({...c, spent:0}));
       return cats.map(c=>({...c, spent:Math.round(amount*c.budget/tot)}));
     }
     return [
-      ...distByRatio(sbiSpent(s), s.variable.filter(v=>v.card==='SBI')),
-      ...distByRatio(yesSpent(s), s.variable.filter(v=>v.card==='YES')),
-      ...distByRatio(dVarSpent,   s.variable.filter(v=>v.card==='Debit')),
+      ...distByRatio(sbiSpent(s),      s.variable.filter(v=>v.card==='SBI')),
+      ...distByRatio(yesSpent(s),      s.variable.filter(v=>v.card==='YES')),
+      ...distByRatio(debitVarSpent(s), s.variable.filter(v=>v.card==='Debit')),
     ];
   }, [s]);
 
-  const tvb = totVarBud(s);
-  const tvs = totVarSpent(s);
-
   return (
     <div className="page">
-      <div style={{fontSize:'1.05rem',fontWeight:800,padding:'.5rem 0 .75rem'}}>Expenses</div>
+      <div style={{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .75rem'}}>Expenses</div>
       <div className="tab-bar">
         {['fixed','variable'].map(t=><button key={t} className={`tab ${tab===t?'on':''}`} onClick={()=>setTab(t)}>{t}</button>)}
       </div>
 
       {tab==='fixed' && (
         <div>
-          {unpaidFixed(s)>0
-            ? <div className="note wn">🔔 {fmt(unpaidFixed(s))} pending</div>
-            : <div className="note gd">✓ All fixed paid</div>
+          {unpaidFixedAmt(s)>0
+            ? <div className="note wn">🔔 {fmt(unpaidFixedAmt(s))} still to pay (from debit)</div>
+            : <div className="note gd">✓ All fixed expenses paid</div>
           }
-          {s.fixed.map((f,i) => {
-            const rem = f.budget - f.spent;
-            return (
+          <div className="card">
+            {s.fixed.map((f,i) => (
               <div key={i} className="er">
                 <div className="eh">
                   <div className="en">
                     <span style={{fontSize:'.7rem'}}>{f.paid?'🟢':'⚪'}</span> {f.category}
+                    <span style={{fontFamily:'var(--mono)',fontSize:'.72rem',color:'var(--m1)',fontWeight:500}}>{fmt(f.budget)}</span>
                   </div>
-                  <div className="row" style={{gap:8}}>
-                    <span style={{fontFamily:'var(--mono)',fontSize:'.72rem',color:rem>=0?'var(--grn)':'var(--red)',fontWeight:600}}>{rem>=0?fmt(rem)+' left':fmt(-rem)+' over'}</span>
-                    <Tog v={f.paid} onChange={v=>{const fx=s.fixed.map((x,j)=>j===i?{...x,paid:v}:x);save({...s,fixed:fx})}}/>
-                  </div>
+                  <Tog v={f.paid} onChange={v=>{
+                    const fx=s.fixed.map((x,j)=>j===i?{...x,paid:v}:x);
+                    save({...s,fixed:fx});
+                    toast(v ? f.category+' marked paid' : f.category+' unmarked');
+                  }}/>
                 </div>
-                <Bar sp={f.spent} bud={f.budget}/>
-                <div className="row" style={{marginTop:5,gap:5}}>
-                  <span style={{fontSize:'.68rem',color:'var(--m2)',fontFamily:'var(--mono)'}}>bud {fmt(f.budget)}</span>
-                  <input type="number" value={f.spent} inputMode="numeric"
-                    onChange={e=>{const fx=s.fixed.map((x,j)=>j===i?{...x,spent:Number(e.target.value)}:x);save({...s,fixed:fx})}}
-                    style={{width:95,padding:'3px 7px',fontSize:'.76rem'}}/>
-                </div>
+                <Bar sp={f.paid?f.budget:0} bud={f.budget}/>
               </div>
-            );
-          })}
+            ))}
+          </div>
+          <div style={{marginTop:'.5rem',padding:'.5rem .9rem',background:'var(--s2)',borderRadius:var(--rs),border:'1px solid var(--bd)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span style={{fontSize:'.72rem',color:'var(--m1)',fontWeight:500}}>Total fixed budget</span>
+            <span style={{fontFamily:'var(--mono)',fontSize:'.76rem',fontWeight:700}}>{fmt(s.fixed.reduce((a,f)=>a+f.budget,0))}</span>
+          </div>
         </div>
       )}
 
@@ -802,26 +848,28 @@ function Expenses({s, save, toast}) {
             <div className="ss">{fmt(Math.round((tvb-tvs)/wLeft))}/wk · {wLeft} wks left</div>
           </div>
           <div className="note inf" style={{marginBottom:'.75rem'}}>
-            SBI {fmt(sbiSpent(s))} · YES {fmt(yesSpent(s))} · Debit {fmt(debitSpentFromLog(s.debit_log))}
+            SBI {fmt(sbiSpent(s))} · YES {fmt(yesSpent(s))} · Debit {fmt(debitVarSpent(s))}
           </div>
-          {varWithSpent.map((v,i) => {
-            const rem = v.budget - v.spent;
-            return (
-              <div key={i} className="er">
-                <div className="eh">
-                  <div className="en">
-                    {v.category}
-                    <span className={`chip ${v.card==='SBI'?'cs_':v.card==='YES'?'cy':'cd'}`}>{v.card}</span>
+          <div className="card">
+            {varWithSpent.map((v,i) => {
+              const rem = v.budget - v.spent;
+              return (
+                <div key={i} className="er">
+                  <div className="eh">
+                    <div className="en">
+                      {v.category}
+                      <span className={`chip ${v.card==='SBI'?'cs_':v.card==='YES'?'cy':'cd'}`}>{v.card}</span>
+                    </div>
+                    <span style={{fontFamily:'var(--mono)',fontSize:'.72rem',color:rem>=0?'var(--grn)':'var(--red)',fontWeight:600}}>
+                      {rem>=0 ? fmt(rem)+' left' : fmt(-rem)+' over'}
+                    </span>
                   </div>
-                  <span style={{fontFamily:'var(--mono)',fontSize:'.72rem',color:rem>=0?'var(--grn)':'var(--red)',fontWeight:600}}>
-                    {rem>=0 ? fmt(rem)+' left' : fmt(-rem)+' over'}
-                  </span>
+                  <Bar sp={v.spent} bud={v.budget}/>
+                  <div style={{marginTop:3,fontSize:'.68rem',color:'var(--m2)',fontFamily:'var(--mono)'}}>budget {fmt(v.budget)}</div>
                 </div>
-                <Bar sp={v.spent} bud={v.budget}/>
-                <div style={{marginTop:3,fontSize:'.68rem',color:'var(--m2)',fontFamily:'var(--mono)'}}>bud {fmt(v.budget)}</div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
@@ -834,17 +882,17 @@ function Expenses({s, save, toast}) {
 function SavingsDebts({s, save, toast}) {
   return (
     <div className="page">
-      <div style={{fontSize:'1.05rem',fontWeight:800,padding:'.5rem 0 .75rem'}}>Savings & Debts</div>
+      <div style={{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .75rem'}}>Savings & Debts</div>
 
       <div className="sh">Savings</div>
       {s.savings.done
         ? <div className="note gd mb">✓ {fmt(s.savings.budget)} transferred</div>
-        : <div className="note wn mb">⏳ {fmt(s.savings.budget)} pending</div>
+        : <div className="note wn mb">⏳ {fmt(s.savings.budget)} pending transfer</div>
       }
       <div className="card mb">
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div>
-            <div style={{fontWeight:700,fontSize:'.88rem'}}>Monthly Savings</div>
+            <div style={{fontWeight:600,fontSize:'.88rem'}}>Monthly Savings</div>
             <div style={{fontSize:'.72rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:2}}>{fmt(s.savings.budget)}</div>
           </div>
           <Tog v={s.savings.done} onChange={v=>save({...s,savings:{...s.savings,done:v}})}/>
@@ -853,8 +901,8 @@ function SavingsDebts({s, save, toast}) {
 
       <div className="sh">Debts</div>
       {unpaidDebts(s)>0
-        ? <div className="note wn mb">📋 {fmt(unpaidDebts(s))} unpaid</div>
-        : <div className="note gd mb">✓ All settled</div>
+        ? <div className="note wn mb">📋 {fmt(unpaidDebts(s))} outstanding</div>
+        : <div className="note gd mb">✓ All debts settled</div>
       }
       <div className="gap mb">
         {s.debts.map((d,i) => (
@@ -886,12 +934,13 @@ function SavingsDebts({s, save, toast}) {
 function Settings({s, save, toast}) {
   return (
     <div className="page">
-      <div style={{fontSize:'1.05rem',fontWeight:800,padding:'.5rem 0 .75rem'}}>Settings</div>
+      <div style={{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .75rem'}}>Settings</div>
 
       <div className="sh">Income</div>
       <div className="card mb">
         <div className="il">Monthly Income</div>
-        <input type="number" value={s.base_budget} inputMode="numeric" onChange={e=>save({...s,base_budget:Number(e.target.value)})}/>
+        <input type="number" value={s.base_budget} inputMode="numeric"
+          onChange={e=>save({...s,base_budget:Number(e.target.value)})}/>
       </div>
 
       <div className="sh">Additional Income</div>
@@ -913,7 +962,7 @@ function Settings({s, save, toast}) {
       <button className="btn bs mb" onClick={()=>save({...s,additional_income:[...s.additional_income,{source:'',amount:0}]})}>＋ Add Income</button>
 
       <div className="sh">Cashback</div>
-      <div className="note inf mb">🎁 Auto-deducted from card bill</div>
+      <div className="note inf mb">🎁 Cashback is auto-deducted from your card bill</div>
       <div className="card gap mb">
         <div><div className="il">SBI Cashback</div>
           <input type="number" value={s.accounts.sbi.cashback||0} inputMode="numeric"
@@ -925,7 +974,7 @@ function Settings({s, save, toast}) {
         </div>
       </div>
 
-      <div className="sh">Targets</div>
+      <div className="sh">Savings Target</div>
       <div className="card mb">
         <div className="il">Monthly Savings</div>
         <input type="number" value={s.savings.budget} inputMode="numeric"
@@ -944,27 +993,36 @@ function Settings({s, save, toast}) {
         </div>
       </div>
 
+      <div className="sh">Opening Balance</div>
+      <div className="note inf mb">📌 Set once at month start — used to calculate predicted balance</div>
+      <div className="card mb">
+        <div className="il">Debit Opening Balance</div>
+        <input type="number" value={s.accounts.debit.opening_balance} inputMode="numeric"
+          onChange={e=>save({...s,accounts:{...s.accounts,debit:{...s.accounts.debit,opening_balance:Number(e.target.value)}}})}/>
+      </div>
+
       <div className="sh">Month Reset</div>
-      <div className="note wn mb">⚠ Clears debit log, resets fixed & savings for new month</div>
+      <div className="note wn mb">⚠ Resets fixed, savings, spend log, and credit available for new month</div>
       <button className="btn bs mb" onClick={()=>{
-        if(!confirm('Start new month? This resets fixed, savings, and debit log.')) return;
+        if(!confirm('Start new month? This resets all tracking data.')) return;
         const ns = {...s,
-          debit_log:[],
-          savings:{...s.savings,done:false},
-          fixed:s.fixed.map(f=>({...f,paid:false,spent:0})),
-          debts:s.debts.map(d=>({...d,paid:false})),
-          accounts:{...s.accounts,
-            sbi:{...s.accounts.sbi,available:s.accounts.sbi.limit},
-            yes:{...s.accounts.yes,available:s.accounts.yes.limit},
+          debit_spend_log: [],
+          savings: {...s.savings, done:false},
+          fixed: s.fixed.map(f=>({...f, paid:false})),
+          debts: s.debts.map(d=>({...d, paid:false})),
+          accounts: {
+            debit: {opening_balance: s.accounts.debit.balance, balance: s.accounts.debit.balance},
+            sbi: {...s.accounts.sbi, available:s.accounts.sbi.limit},
+            yes: {...s.accounts.yes, available:s.accounts.yes.limit},
           },
-          updated_at:new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
-        save(ns).then(()=>toast('New month started'));
+        save(ns).then(()=>toast('New month started ✓'));
       }}>🔄 New Month Reset</button>
 
       <div className="sh" style={{color:'var(--red)'}}>Danger</div>
-      <button className="btn" style={{background:'var(--red-bg)',color:'var(--red)',border:'1px solid var(--red-bd)'}}
-        onClick={()=>{if(confirm('Reset ALL data to defaults?'))save(JSON.parse(JSON.stringify(DEFAULT))).then(()=>toast('Reset'))}}>
+      <button className="btn mb" style={{background:'var(--red-bg)',color:'var(--red)',border:'1px solid var(--red-bd)'}}
+        onClick={()=>{if(confirm('Reset ALL data to defaults?'))save(JSON.parse(JSON.stringify(DEFAULT))).then(()=>toast('Reset ✓'))}}>
         Reset to defaults
       </button>
     </div>
@@ -989,7 +1047,7 @@ function App() {
   function deepMerge(def, saved) {
     const r = {...def};
     for (const k in saved) {
-      if (k in r && typeof r[k]==='object' && !Array.isArray(r[k]) && r[k]!==null)
+      if (k in r && typeof r[k]==='object' && !Array.isArray(r[k]) && r[k]!==null && saved[k]!==null)
         r[k] = deepMerge(r[k], saved[k]);
       else r[k] = saved[k];
     }
