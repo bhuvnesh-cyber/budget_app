@@ -507,16 +507,19 @@ function Insights(props){
 
 // ── OVERVIEW ────────────────────────────────────────────────────────
 function Overview(props){
-  var s=props.s,save=props.save,wf=waterfall(s),tvs=totVarSpent(s),tvb=totVarBud(s),rem=tvb-tvs;
+  var s=props.s,save=props.save,wf=waterfall(s),tvs=totVarSpent(s),tvb=totVarBud(s);
   var _ce=useState(false),cashEdit=_ce[0],setCashEdit=_ce[1];
   var _cv=useState(''),cv=_cv[0],setCv=_cv[1];
+
+  // Per week / per day based on actual surplus (what's truly left to freely spend)
+  var freeToSpend=wf.surplus; // after all obligations
+  var perWeek=wLeft>0?Math.round(freeToSpend/wLeft):0;
+  var perDay=dLeft>0?Math.round(freeToSpend/dLeft):0;
 
   function saveCash(){
     if(cv==='') return setCashEdit(false);
     var ns=Object.assign({},s,{cash:Number(cv),updated_at:new Date().toISOString()});
-    save(ns).then(function(res){
-      if(res&&res.error) console.error('Cash save error:',res.error);
-    });
+    save(ns).then(function(res){if(res&&res.error) console.error('Cash save error:',res.error);});
     setCv('');setCashEdit(false);
   }
 
@@ -531,29 +534,31 @@ function Overview(props){
     h(Hero,{s:s}),
     h(Insights,{s:s}),
 
+    // 4 stat cards
     h('div',{className:'g2'},
       h('div',{className:'card sc-grn'},
-        h('div',{className:'sl',style:{color:'var(--grn)'}},'Var Left'),
-        h('div',{className:'sv',style:{color:rem<0?'var(--red)':rem<5000?'var(--amb)':'var(--grn)'}},fmt(rem)),
-        h('div',{className:'ss'},fmt(Math.round(rem/wLeft))+'/wk')
+        h('div',{className:'sl',style:{color:'var(--grn)'}},'Per Week'),
+        h('div',{className:'sv',style:{color:perWeek<0?'var(--red)':perWeek<2000?'var(--amb)':'var(--grn)'}},fmt(perWeek)),
+        h('div',{className:'ss'},fmt(perDay)+'/day \u00B7 '+wLeft+'w left')
       ),
       h('div',{className:'card sc-pnk'},
-        h('div',{className:'sl',style:{color:'var(--pnk)'}},'Var Spent'),
-        h('div',{className:'sv',style:{color:'var(--pnk)'}},fmt(tvs)),
-        h('div',{className:'ss'},'of '+fmt(tvb))
+        h('div',{className:'sl',style:{color:'var(--pnk)'}},'Credit Spent'),
+        h('div',{className:'sv',style:{color:'var(--pnk)'}},fmt(totCurrCreditSpent(s))),
+        h('div',{className:'ss'},'SBI '+fmt(sbiSpent(s))+' + YES '+fmt(yesSpent(s)))
       ),
       h('div',{className:'card sc-blu'},
         h('div',{className:'sl',style:{color:'var(--blu)'}},'Fixed Paid'),
         h('div',{className:'sv',style:{color:'var(--blu)'}},fmt(paidFixedAmt(s))),
-        h('div',{className:'ss'},unpaidFixedAmt(s)>0?fmt(unpaidFixedAmt(s))+' pending':'all paid')
+        h('div',{className:'ss'},unpaidFixedAmt(s)>0?fmt(unpaidFixedAmt(s))+' left':'all paid \u2713')
       ),
       h('div',{className:'card sc-pur'},
-        h('div',{className:'sl',style:{color:'var(--pur)'}},'Salary'),
-        h('div',{className:'sv',style:{color:'var(--pur)'}},fmt(s.salary)),
-        h('div',{className:'ss'},fmt(totIncome(s))+' total')
+        h('div',{className:'sl',style:{color:'var(--pur)'}},'Var Spent'),
+        h('div',{className:'sv',style:{color:tvs>tvb?'var(--red)':'var(--pur)'}},fmt(tvs)),
+        h('div',{className:'ss'},'of '+fmt(tvb)+' budget')
       )
     ),
 
+    // Accounts row
     h('div',{className:'sh'},'Accounts'),
     h('div',{className:'g3'},
       h('div',{className:'acc-card',style:{borderTopColor:'var(--acc)'}},
@@ -572,6 +577,7 @@ function Overview(props){
         h('div',{className:'ss'},fmt(yesSpent(s))+' spent')
       )
     ),
+
     // Cash quick-edit
     h('div',{className:'card mb',style:{borderLeft:'3px solid var(--amb)'}},
       h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
