@@ -207,7 +207,7 @@ var DEFAULT={
   additional_income:[{source:'Bank Interest',amount:0}],
   fixed:[
     {category:'Family',         budget:15000,paid:false},
-    {category:'Rent',           budget:15000,paid:false},
+    {category:'Rent',           budget:21500,paid:false},
     {category:'Milk',           budget:0,    paid:false},
     {category:'Rent Furniture', budget:4000, paid:false},
     {category:'School',         budget:2500, paid:false},
@@ -326,20 +326,18 @@ function predictedDebit(s){
 }
 
 /*
-  WATERFALL:
-  Start: actual debit balance
-  + cash
-  − prev month credit bills (if not yet paid)
-  − current month credit bills (SBI + YES)
-  − unpaid fixed expenses
-  − unpaid debts (still to pay)
-  − savings (if not yet done)
-  = freely spendable
+  WATERFALL — "Can my debit balance cover everything this month?"
+  Start: actual debit balance + cash
+  − prev month credit bills (unpaid)
+  − this month credit bills (SBI + YES current spend)
+  − ALL fixed expenses total (the full month's fixed commitment)
+  − savings target (if not done)
+  − ALL debts (unpaid ones still to pay)
   − debit variable budget
-  = surplus / shortfall
+  = surplus (enough) / shortfall (not enough)
 
-  Note: paid debts already left the account — reflected in the actual balance drop.
-        unpaid debts = still coming out of debit.
+  The surplus/shortfall answers: after paying all bills + fixed + savings + debit var,
+  how much is left — or how short are you?
 */
 function waterfall(s){
   var balance=s.accounts.debit.balance||0;
@@ -348,28 +346,29 @@ function waterfall(s){
 
   var prevBill=s.prev_bill_paid?0:prevBillTotal(s);
   var currCredit=totCurrCreditSpent(s);
-  var fixedPend=unpaidFixedAmt(s);
-  var debtPend=unpaidDebts(s);
+  // Full month fixed total (already paid ones came out of balance, unpaid still pending — all counted)
+  var fixedTotal=s.fixed.reduce(function(a,f){return a+f.budget;},0);
   var savPend=s.savings.done?0:s.savings.budget;
+  var debtPend=unpaidDebts(s);
 
   var afterPrevBill=total-prevBill;
   var afterCredit=afterPrevBill-currCredit;
-  var afterFixed=afterCredit-fixedPend;
-  var afterDebts=afterFixed-debtPend;
-  var afterSav=afterDebts-savPend;
+  var afterFixed=afterCredit-fixedTotal;
+  var afterSav=afterFixed-savPend;
+  var afterDebts=afterSav-debtPend;
 
   var dVarBud=s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
   var dVarSpent=debitVarSpent(s);
   var dVarLeft=dVarBud-dVarSpent;
-  var net=afterSav-dVarBud;
+  var net=afterDebts-dVarBud;
 
   return{
     balance:balance,cash:cash,total:total,
     prevBill:prevBill,afterPrevBill:afterPrevBill,
     currCredit:currCredit,afterCredit:afterCredit,
-    fixedPend:fixedPend,afterFixed:afterFixed,
-    debtPend:debtPend,afterDebts:afterDebts,
+    fixedTotal:fixedTotal,afterFixed:afterFixed,
     savPend:savPend,afterSav:afterSav,
+    debtPend:debtPend,afterDebts:afterDebts,
     dVarBud:dVarBud,dVarSpent:dVarSpent,dVarLeft:dVarLeft,
     surplus:net>0?net:0,short:net<0?-net:0
   };
@@ -397,10 +396,10 @@ function WaterfallCard(props){
   var rows=[];
   if(wf.prevBill>0) rows.push({label:'Prev month credit bills',val:wf.prevBill,after:wf.afterPrevBill,color:'var(--pnk)',sub:'SBI '+fmt(s.prev_sbi_bill||0)+' + YES '+fmt(s.prev_yes_bill||0)});
   if(wf.currCredit>0) rows.push({label:'This month credit spend',val:wf.currCredit,after:wf.afterCredit,color:'var(--pur)',sub:'SBI '+fmt(sbiSpent(s))+' + YES '+fmt(yesSpent(s))});
-  if(wf.fixedPend>0) rows.push({label:'Unpaid fixed expenses',val:wf.fixedPend,after:wf.afterFixed,color:'var(--amb)',sub:null});
-  if(wf.debtPend>0) rows.push({label:'Pending debts',val:wf.debtPend,after:wf.afterDebts,color:'var(--red)',sub:null});
+  rows.push({label:'Fixed expenses (total)',val:wf.fixedTotal,after:wf.afterFixed,color:'var(--amb)',sub:fmt(paidFixedAmt(s))+' paid \u00B7 '+fmt(unpaidFixedAmt(s))+' pending'});
   if(wf.savPend>0) rows.push({label:'Savings to transfer',val:wf.savPend,after:wf.afterSav,color:'var(--acc)',sub:null});
-  rows.push({label:'Debit variable budget',val:wf.dVarBud,after:wf.afterSav-wf.dVarBud,color:'var(--blu)',sub:fmt(wf.dVarSpent)+' spent \u00B7 '+fmt(wf.dVarLeft)+' left'});
+  if(wf.debtPend>0) rows.push({label:'Pending debts',val:wf.debtPend,after:wf.afterDebts,color:'var(--red)',sub:null});
+  rows.push({label:'Debit variable budget',val:wf.dVarBud,after:wf.afterDebts-wf.dVarBud,color:'var(--blu)',sub:fmt(wf.dVarSpent)+' spent \u00B7 '+fmt(wf.dVarLeft)+' left'});
 
   return h('div',{className:'wf'},
     h('div',{className:'wfr hd'},
@@ -450,8 +449,8 @@ function Hero(props){
         h('span',{className:'hlbl'},'Prev month bills'+(s.prev_bill_paid?' (paid)':' (unpaid)')),
         h('span',{className:'hval',style:{color:s.prev_bill_paid?'var(--grn)':'var(--pnk)'}},fmt(prevBillTotal(s)))
       ),
-      h('div',{className:'hrow'},h('span',{className:'hlbl'},'This month credit spend'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(totCurrCreditSpent(s)))),
-      h('div',{className:'hrow'},h('span',{className:'hlbl'},'Freely spendable'),h('span',{className:'hval',style:{color:wf.afterSav>=0?'var(--grn)':'var(--red)'}},fmt(wf.afterSav)))
+      h('div',{className:'hrow'},h('span',{className:'hlbl'},'Fixed expenses (total)'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(wf.fixedTotal))),
+      h('div',{className:'hrow'},h('span',{className:'hlbl'},'After bills + fixed + savings'),h('span',{className:'hval',style:{color:wf.afterDebts>=0?'var(--grn)':'var(--red)'}},fmt(wf.afterDebts)))
     )
   );
 }
@@ -763,14 +762,25 @@ function Expenses(props){
             h('div',{className:'eh'},
               h('div',{className:'en'},
                 h('span',{style:{fontSize:'.75rem'}},f.paid?'\uD83D\uDFE2':'\u26AA'),
-                f.category,
-                h('span',{style:{fontFamily:'var(--mono)',fontSize:'.72rem',color:'var(--m1)',fontWeight:500}},fmt(f.budget))
+                f.category
               ),
               h(Tog,{v:f.paid,onChange:function(v){
                 var fx=s.fixed.map(function(x,j){return j===i?Object.assign({},x,{paid:v}):x;});
                 save(Object.assign({},s,{fixed:fx}));
                 toast(f.category+(v?' paid':' unpaid'));
               }})
+            ),
+            h('div',{style:{display:'flex',alignItems:'center',gap:6,marginTop:4}},
+              h('span',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',flexShrink:0}},'\u20B9'),
+              h('input',{
+                type:'number',inputMode:'numeric',
+                value:f.budget||0,
+                style:{padding:'.3rem .5rem',fontSize:'.8rem',borderRadius:6,flex:1},
+                onChange:function(e){
+                  var fx=s.fixed.map(function(x,j){return j===i?Object.assign({},x,{budget:Number(e.target.value)}):x;});
+                  save(Object.assign({},s,{fixed:fx}));
+                }
+              })
             ),
             h(Bar,{sp:f.paid?f.budget:0,bud:f.budget})
           );
