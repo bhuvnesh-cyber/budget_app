@@ -326,35 +326,50 @@ function predictedDebit(s){
 }
 
 /*
-  SIMPLE CHECK: Can debit + cash cover what's LEFT to spend?
-  Fixed remaining = unpaid fixed expenses only (paid ones already left the account)
-  Variable remaining = variable budget − already spent
-  (Debit + Cash) − Fixed remaining − Variable remaining = surplus / shortfall
+  SURPLUS = (Debit + Cash) − fixed remaining − all variable remaining − credit bills due
+  
+  Variable remaining = (all variable budgets) − (all variable spent, across debit+credit)
+  Credit bills due   = current credit spend (will come out of debit when bill arrives)
+  
+  This answers: after paying everything left this month, what's left over?
 */
 function waterfall(s){
   var balance=s.accounts.debit.balance||0;
   var cash=s.cash||0;
   var total=balance+cash;
 
+  // Fixed: only unpaid remain
   var fixedRem=unpaidFixedAmt(s);
+
+  // All variable remaining (debit + credit combined)
+  var allVarBud=s.variable.reduce(function(a,v){return a+v.budget;},0);
+  var allVarSpent=totVarSpent(s); // sbi spent + yes spent + debit var spent
+  var allVarRem=Math.max(0,allVarBud-allVarSpent);
+
+  // Credit bills already spent — will need to be paid from debit when bill arrives
+  var creditBillsDue=totCurrCreditSpent(s);
+
+  // Prev month bills (unpaid)
+  var prevBill=s.prev_bill_paid?0:prevBillTotal(s);
+
+  var afterFixed=total-fixedRem;
+  var afterVar=afterFixed-allVarRem;
+  var net=afterVar-creditBillsDue-prevBill;
+
+  var savPend=s.savings.done?0:s.savings.budget;
+  var debtPend=unpaidDebts(s);
+
+  // Debit-only var for breakdown display
   var dVarBud=s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
   var dVarSpent=debitVarSpent(s);
   var dVarRem=Math.max(0,dVarBud-dVarSpent);
 
-  var afterFixed=total-fixedRem;
-  var net=afterFixed-dVarRem;
-
-  // Info-only
-  var currCredit=totCurrCreditSpent(s);
-  var prevBill=s.prev_bill_paid?0:prevBillTotal(s);
-  var savPend=s.savings.done?0:s.savings.budget;
-  var debtPend=unpaidDebts(s);
-
   return{
     balance:balance,cash:cash,total:total,
     fixedRem:fixedRem,afterFixed:afterFixed,
+    allVarBud:allVarBud,allVarSpent:allVarSpent,allVarRem:allVarRem,afterVar:afterVar,
+    creditBillsDue:creditBillsDue,prevBill:prevBill,
     dVarBud:dVarBud,dVarSpent:dVarSpent,dVarRem:dVarRem,
-    currCredit:currCredit,prevBill:prevBill,
     savPend:savPend,debtPend:debtPend,
     surplus:net>0?net:0,short:net<0?-net:0
   };
@@ -380,7 +395,6 @@ function UpdatedAt(props){
 function WaterfallCard(props){
   var s=props.s,wf=waterfall(s);
   return h('div',{className:'wf'},
-    // Starting point
     h('div',{className:'wfr hd'},
       h('span',{className:'wfl',style:{color:'var(--acc)',fontWeight:700}},'Debit balance'),
       h('span',{className:'wfv',style:{color:'var(--acc)'}},fmt(wf.balance))
@@ -393,47 +407,60 @@ function WaterfallCard(props){
       h('span',{className:'wfl',style:{fontWeight:700}},'Total available'),
       h('span',{className:'wfv',style:{fontWeight:700}},fmt(wf.total))
     ),
-    // Fixed remaining
-    h('div',{className:'wfr',style:{borderLeft:'3px solid var(--amb)'}},
+    wf.fixedRem>0&&h('div',{className:'wfr',style:{borderLeft:'3px solid var(--amb)'}},
       h('div',null,
-        h('div',{className:'wfl'},'Fixed remaining to pay'),
-        h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},
-          fmt(paidFixedAmt(s))+' already paid'),
+        h('div',{className:'wfl'},'Fixed remaining'),
+        h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},fmt(paidFixedAmt(s))+' already paid'),
         h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--amb)',marginTop:1}},'− '+fmt(wf.fixedRem))
       ),
       h('div',{style:{textAlign:'right'}},
-        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'remaining'),
-        h('div',{className:'wfv',style:{color:wf.afterFixed<0?'var(--red)':wf.afterFixed<5000?'var(--amb)':'var(--grn)'}},fmt(wf.afterFixed))
+        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'after'),
+        h('div',{className:'wfv',style:{color:wf.afterFixed<0?'var(--red)':'var(--grn)'}},fmt(wf.afterFixed))
       )
     ),
-    // Debit variable remaining
-    h('div',{className:'wfr',style:{borderLeft:'3px solid var(--blu)'}},
+    wf.allVarRem>0&&h('div',{className:'wfr',style:{borderLeft:'3px solid var(--blu)'}},
       h('div',null,
-        h('div',{className:'wfl'},'Debit variable remaining'),
+        h('div',{className:'wfl'},'Variable remaining'),
         h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},
-          fmt(wf.dVarSpent)+' already spent of '+fmt(wf.dVarBud)),
-        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--blu)',marginTop:1}},'− '+fmt(wf.dVarRem))
+          'Debit '+fmt(wf.dVarRem)+' \u00B7 Credit '+fmt(Math.max(0,(wf.allVarBud-wf.dVarBud)-(sbiSpent(s)+yesSpent(s))))),
+        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--blu)',marginTop:1}},'− '+fmt(wf.allVarRem))
+      ),
+      h('div',{style:{textAlign:'right'}},
+        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'after'),
+        h('div',{className:'wfv',style:{color:wf.afterVar<0?'var(--red)':'var(--grn)'}},fmt(wf.afterVar))
+      )
+    ),
+    wf.creditBillsDue>0&&h('div',{className:'wfr',style:{borderLeft:'3px solid var(--pnk)'}},
+      h('div',null,
+        h('div',{className:'wfl'},'Credit bills due'),
+        h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},'SBI '+fmt(sbiSpent(s))+' + YES '+fmt(yesSpent(s))),
+        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--pnk)',marginTop:1}},'− '+fmt(wf.creditBillsDue))
+      ),
+      h('div',{style:{textAlign:'right'}},
+        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'after'),
+        h('div',{className:'wfv',style:{color:(wf.afterVar-wf.creditBillsDue)<0?'var(--red)':'var(--grn)'}},fmt(wf.afterVar-wf.creditBillsDue))
+      )
+    ),
+    wf.prevBill>0&&h('div',{className:'wfr',style:{borderLeft:'3px solid var(--red)'}},
+      h('div',null,
+        h('div',{className:'wfl'},'Prev month bill (unpaid)'),
+        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--red)',marginTop:1}},'− '+fmt(wf.prevBill))
       ),
       h('div',{style:{textAlign:'right'}},
         h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'surplus/short'),
-        h('div',{className:'wfv',style:{color:wf.short>0?'var(--red)':'var(--grn)'}},
-          fmt(wf.short>0?-wf.short:wf.surplus))
+        h('div',{className:'wfv',style:{color:wf.short>0?'var(--red)':'var(--grn)'}},fmt(wf.short>0?-wf.short:wf.surplus))
       )
     ),
-    // Surplus / shortfall final
     h('div',{className:'wfr fin'},
       h('span',{className:'wfl',style:{fontWeight:700,color:wf.short>0?'var(--red)':'var(--grn)'}},
         wf.short>0?'\u26A0 Short by':'\u2713 Surplus'),
       h('span',{className:'wfv',style:{fontSize:'1.05rem',color:wf.short>0?'var(--red)':'var(--grn)'}},
         fmt(wf.short>0?wf.short:wf.surplus))
     ),
-    // Info-only section
-    (wf.prevBill>0||wf.currCredit>0||wf.savPend>0||wf.debtPend>0)&&h('div',{style:{padding:'.5rem .9rem',background:'var(--s2)',borderTop:'1px solid var(--bd)'}},
-      h('div',{style:{fontSize:'.58rem',color:'var(--m2)',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}},'Also to pay (not from debit budget)'),
-      wf.prevBill>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Prev month bills'),h('span',{className:'hval',style:{color:'var(--pnk)'}},fmt(wf.prevBill))),
-      wf.currCredit>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Credit card spend'),h('span',{className:'hval',style:{color:'var(--pur)'}},fmt(wf.currCredit))),
-      wf.savPend>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Savings pending'),h('span',{className:'hval',style:{color:'var(--acc)'}},fmt(wf.savPend))),
-      wf.debtPend>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Debts pending'),h('span',{className:'hval',style:{color:'var(--red)'}},fmt(wf.debtPend)))
+    (wf.savPend>0||wf.debtPend>0)&&h('div',{style:{padding:'.5rem .9rem',background:'var(--s2)',borderTop:'1px solid var(--bd)'}},
+      h('div',{style:{fontSize:'.58rem',color:'var(--m2)',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}},'Also pending'),
+      wf.savPend>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Savings'),h('span',{className:'hval',style:{color:'var(--acc)'}},fmt(wf.savPend))),
+      wf.debtPend>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Debts'),h('span',{className:'hval',style:{color:'var(--red)'}},fmt(wf.debtPend)))
     )
   );
 }
@@ -449,8 +476,10 @@ function Hero(props){
     h('div',{className:'hero-amt'},fmt(ok?wf.surplus:wf.short)),
     h('div',{style:{borderTop:'1px solid '+(ok?'var(--grn-bd)':'var(--red-bd)'),paddingTop:'.5rem',display:'flex',flexDirection:'column',gap:2}},
       h('div',{className:'hrow'},h('span',{className:'hlbl'},'Debit + Cash'),h('span',{className:'hval',style:{color:'var(--acc)'}},fmt(wf.total))),
-      h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Fixed remaining'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(wf.fixedRem))),
-      h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Debit var remaining'),h('span',{className:'hval',style:{color:'var(--blu)'}},fmt(wf.dVarRem))),
+      wf.fixedRem>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Fixed remaining'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(wf.fixedRem))),
+      wf.allVarRem>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Variable remaining'),h('span',{className:'hval',style:{color:'var(--blu)'}},fmt(wf.allVarRem))),
+      wf.creditBillsDue>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Credit bills due'),h('span',{className:'hval',style:{color:'var(--pnk)'}},fmt(wf.creditBillsDue))),
+      wf.prevBill>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Prev month bills'),h('span',{className:'hval',style:{color:'var(--pnk)'}},fmt(wf.prevBill))),
       h('div',{className:'hrow',style:{borderTop:'1px solid '+(ok?'var(--grn-bd)':'var(--red-bd)'),marginTop:4,paddingTop:4}},
         h('span',{className:'hlbl',style:{fontWeight:700}},'= '+(ok?'Surplus':'Shortfall')),
         h('span',{className:'hval',style:{color:ok?'var(--grn)':'var(--red)',fontSize:'.9rem'}},fmt(ok?wf.surplus:wf.short))
@@ -478,7 +507,16 @@ function Insights(props){
 
 // ── OVERVIEW ────────────────────────────────────────────────────────
 function Overview(props){
-  var s=props.s,wf=waterfall(s),tvs=totVarSpent(s),tvb=totVarBud(s),rem=tvb-tvs;
+  var s=props.s,save=props.save,wf=waterfall(s),tvs=totVarSpent(s),tvb=totVarBud(s),rem=tvb-tvs;
+  var _ce=useState(false),cashEdit=_ce[0],setCashEdit=_ce[1];
+  var _cv=useState(''),cv=_cv[0],setCv=_cv[1];
+
+  function saveCash(){
+    if(cv==='') return setCashEdit(false);
+    save(Object.assign({},s,{cash:Number(cv),updated_at:new Date().toISOString()}));
+    setCv('');setCashEdit(false);
+  }
+
   return h('div',{className:'page'},
     h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'.5rem 0 .8rem'}},
       h('div',null,
@@ -529,6 +567,26 @@ function Overview(props){
         h('div',{className:'sl',style:{color:'var(--grn)'}},'YES'),
         h('div',{style:{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700,color:'var(--grn)'}},fmt(s.accounts.yes.available)),
         h('div',{className:'ss'},fmt(yesSpent(s))+' spent')
+      )
+    ),
+    // Cash quick-edit
+    h('div',{className:'card mb',style:{borderLeft:'3px solid var(--amb)'}},
+      h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
+        h('div',null,
+          h('div',{className:'sl',style:{color:'var(--amb)'}},'Cash on hand'),
+          h('div',{style:{fontFamily:'var(--mono)',fontSize:'1.1rem',fontWeight:700,color:'var(--amb)'}},fmt(s.cash||0))
+        ),
+        cashEdit
+          ? h('div',{style:{display:'flex',gap:6,alignItems:'center'}},
+              h('input',{type:'number',inputMode:'numeric',value:cv,autoFocus:true,
+                style:{width:100,padding:'.3rem .5rem',fontSize:'.85rem',borderRadius:6,border:'1.5px solid var(--acc)',background:'var(--s2)',fontFamily:'var(--mono)',color:'var(--tx)',outline:'none'},
+                onChange:function(e){setCv(e.target.value);},
+                onKeyDown:function(e){if(e.key==='Enter')saveCash();if(e.key==='Escape')setCashEdit(false);}
+              }),
+              h('button',{className:'btn bp',style:{width:'auto',padding:'.3rem .7rem',margin:0,fontSize:'.75rem'},onClick:saveCash},'Save'),
+              h('button',{className:'bdng',onClick:function(){setCashEdit(false);setCv('');}},'\u2715')
+            )
+          : h('button',{className:'bs btn',style:{width:'auto',padding:'.3rem .8rem',margin:0,fontSize:'.75rem'},onClick:function(){setCv(String(s.cash||0));setCashEdit(true);}},'Edit')
       )
     ),
 
@@ -1015,7 +1073,7 @@ function App(){
   }
 
   return h('div',null,
-    page==='overview'&&h(Overview,  {s:state}),
+    page==='overview'&&h(Overview,  {s:state,save:save}),
     page==='checkin' &&h(Checkin,   {s:state,save:save,toast:toast}),
     page==='expenses'&&h(Expenses,  {s:state,save:save,toast:toast}),
     page==='savings' &&h(SavingsDebts,{s:state,save:save,toast:toast}),
