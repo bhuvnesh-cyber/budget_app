@@ -557,17 +557,10 @@ function Overview(props){
 
     // 4 stat cards
     h('div',{className:'g2'},
-      h('div',{className:'card '+(wf.short>0?'sc-amb':'sc-grn')},
-        h('div',{className:'sl',style:{color:wf.short>0?'var(--amb)':'var(--grn)'}},
-          wf.short>0?'Need / Week':'Safe to Spend'),
-        h('div',{className:'sv',style:{color:wf.short>0?'var(--amb)':'var(--grn)'}},
-          wf.short>0?fmt(Math.round(wf.short/wLeft)):fmt(perWeek)
-        ),
-        h('div',{className:'ss'},
-          wf.short>0
-            ?('per week to cover gap')
-            :(fmt(perDay)+'/day \u00B7 '+wLeft+'w left')
-        )
+      h('div',{className:'card sc-grn'},
+        h('div',{className:'sl',style:{color:'var(--grn)'}},'Safe to Spend'),
+        h('div',{className:'sv',style:{color:safePerWeek<2000?'var(--amb)':'var(--grn)'}},fmt(safePerWeek)),
+        h('div',{className:'ss'},fmt(safePerDay)+'/day \u00B7 after bills')
       ),
       h('div',{className:'card sc-pnk'},
         h('div',{className:'sl',style:{color:'var(--pnk)'}},'Credit Spent'),
