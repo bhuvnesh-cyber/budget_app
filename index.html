@@ -557,14 +557,15 @@ function Overview(props){
 
     // 4 stat cards
     h('div',{className:'g2'},
-      h('div',{className:'card '+(wf.short>0?'sc-pnk':'sc-grn')},
-        h('div',{className:'sl',style:{color:wf.short>0?'var(--pnk)':'var(--grn)'}},wf.short>0?'Short / Week':'Free / Week'),
-        h('div',{className:'sv',style:{color:wf.short>0?'var(--pnk)':'var(--grn)'}},
-          wf.short>0?('−'+fmt(Math.round(wf.short/wLeft))):fmt(perWeek)
+      h('div',{className:'card '+(wf.short>0?'sc-amb':'sc-grn')},
+        h('div',{className:'sl',style:{color:wf.short>0?'var(--amb)':'var(--grn)'}},
+          wf.short>0?'Need / Week':'Safe to Spend'),
+        h('div',{className:'sv',style:{color:wf.short>0?'var(--amb)':'var(--grn)'}},
+          wf.short>0?fmt(Math.round(wf.short/wLeft)):fmt(perWeek)
         ),
         h('div',{className:'ss'},
           wf.short>0
-            ?(fmt(Math.round(wf.short/dLeft))+'/day over')
+            ?('per week to cover gap')
             :(fmt(perDay)+'/day \u00B7 '+wLeft+'w left')
         )
       ),
@@ -874,10 +875,17 @@ function Expenses(props){
     ),
 
     tab==='variable'&&h('div',null,
-      h('div',{className:'card mb sc-grn'},
-        h('div',{className:'sl',style:{color:'var(--grn)'}},'Variable Remaining'),
-        h('div',{className:'sv',style:{color:tvb-tvs<0?'var(--red)':'var(--grn)'}},fmt(tvb-tvs)),
-        h('div',{className:'ss'},fmt(Math.round((tvb-tvs)/wLeft))+'/wk \u00B7 '+wLeft+' wks left')
+      h('div',{className:'g2 mb'},
+        h('div',{className:'card sc-grn'},
+          h('div',{className:'sl',style:{color:'var(--grn)'}},'Remaining'),
+          h('div',{className:'sv',style:{color:tvb-tvs<0?'var(--red)':'var(--grn)'}},fmt(tvb-tvs)),
+          h('div',{className:'ss'},fmt(Math.round(Math.max(0,tvb-tvs)/wLeft))+'/wk')
+        ),
+        h('div',{className:'card sc-pnk'},
+          h('div',{className:'sl',style:{color:'var(--pnk)'}},'Spent'),
+          h('div',{className:'sv',style:{color:'var(--pnk)'}},fmt(tvs)),
+          h('div',{className:'ss'},'of '+fmt(tvb)+' budget')
+        )
       ),
       h('div',{className:'note inf',style:{marginBottom:'.75rem'}},
         'SBI '+fmt(sbiSpent(s))+' \u00B7 YES '+fmt(yesSpent(s))+' \u00B7 Debit '+fmt(debitVarSpent(s))),
@@ -891,8 +899,11 @@ function Expenses(props){
               h('span',{style:{fontFamily:'var(--mono)',fontSize:'.72rem',color:rem>=0?'var(--grn)':'var(--red)',fontWeight:700}},
                 rem>=0?fmt(rem)+' left':fmt(-rem)+' over')
             ),
-            h(Bar,{sp:v.spent,bud:v.budget}),
-            h('div',{style:{marginTop:3,fontSize:'.68rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'budget '+fmt(v.budget))
+            h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:4}},
+              h('span',{style:{fontSize:'.68rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'spent '+fmt(v.spent)),
+              h('span',{style:{fontSize:'.68rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'of '+fmt(v.budget))
+            ),
+            h(Bar,{sp:v.spent,bud:v.budget})
           );
         })
       )
