@@ -150,8 +150,8 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
 // ─── Supabase ────────────────────────────────────────────────────────────────
 var SUPA_URL = 'https://jyacewgyqvrqybeyrcig.supabase.co';
 var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5YWNld2d5cXZycXliZXlyY2lnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNzUxNTYsImV4cCI6MjA5MDk1MTE1Nn0.yMffM11nwBLiyd3-M4n-Fx5oVirCK4uojkLu2JLw5xU';
-var _sc = (window.supabase && window.supabase.createClient) ? window.supabase : supabase;
-var db = _sc.createClient(SUPA_URL, SUPA_KEY);
+var _supaLib = (window.supabase && window.supabase.createClient) ? window.supabase : supabase;
+var db = _supaLib.createClient(SUPA_URL, SUPA_KEY);
 
 // ─── React helpers ───────────────────────────────────────────────────────────
 var h = React.createElement;
@@ -161,88 +161,86 @@ var useCallback = React.useCallback;
 var useRef = React.useRef;
 var useMemo = React.useMemo;
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Date helpers ─────────────────────────────────────────────────────────────
 var today = new Date();
-var mLbl  = today.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+var mLbl  = today.toLocaleDateString('en-IN', {month:'long', year:'numeric'});
 var lastDay = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
 var dLeft = Math.max(1, lastDay - today.getDate());
 var wLeft = Math.max(1, Math.ceil(dLeft/7));
 
+// ─── DEFAULT STATE ────────────────────────────────────────────────────────────
 var DEFAULT = {
-  version:8,
-  base_budget:83500,
-  additional_income:[{source:'Bank Interest',amount:69}],
-  fixed:[
-    {category:'Family',        budget:15000,paid:false},
-    {category:'Rent',          budget:21500,paid:false},
-    {category:'Milk',          budget:2940, paid:false},
-    {category:'Rent Furniture',budget:2994, paid:false},
-    {category:'School',        budget:3000, paid:false},
-    {category:'Recharge',      budget:1000, paid:false},
-    {category:'Gas',           budget:531,  paid:false},
-    {category:'Electric',      budget:735,  paid:false},
-    {category:'WIFI',          budget:800,  paid:false},
+  version: 9,
+  base_budget: 85800,
+  additional_income: [{source:'Bank Interest', amount:0}],
+  fixed: [
+    {category:'Family',         budget:15000, paid:false},
+    {category:'Rent',           budget:21500, paid:false},
+    {category:'Milk',           budget:0,     paid:false},
+    {category:'Rent Furniture', budget:4000,  paid:false},
+    {category:'School',         budget:2500,  paid:false},
+    {category:'Recharge',       budget:1000,  paid:false},
+    {category:'Gas',            budget:0,     paid:false},
+    {category:'Electric',       budget:1000,  paid:false},
+    {category:'WIFI',           budget:800,   paid:false},
   ],
-  variable:[
-    {category:'Instamart',budget:6000,card:'SBI'},
-    {category:'Swiggy',   budget:1000,card:'SBI'},
-    {category:'Amazon',   budget:3000,card:'SBI'},
-    {category:'Other',    budget:8000,card:'YES'},
-    {category:'Mall',     budget:4000,card:'Debit'},
-    {category:'Clothes',  budget:2000,card:'Debit'},
-    {category:'Doctor',   budget:1000,card:'Debit'},
+  variable: [
+    {category:'Instamart', budget:6000, card:'SBI'},
+    {category:'Swiggy',    budget:1000, card:'SBI'},
+    {category:'Amazon',    budget:3000, card:'SBI'},
+    {category:'Other',     budget:8000, card:'YES'},
+    {category:'Mall',      budget:4000, card:'Debit'},
+    {category:'Clothes',   budget:2000, card:'Debit'},
+    {category:'Doctor',    budget:1000, card:'Debit'},
   ],
-  savings:{budget:10000,done:false},
-  debts:[{name:'Credit Bill',amount:7932,paid:false}],
-  accounts:{
-    debit:{opening:83569,balance:83569},
-    sbi:  {limit:20000,available:20000,cashback:0},
-    yes:  {limit:51000,available:51000,cashback:0},
+  savings: {budget:15000, done:false},
+  debts: [{name:'Credit Bill', amount:0, paid:false}],
+  accounts: {
+    debit: {opening:0, balance:0},
+    sbi:   {limit:20000, available:20000, cashback:0},
+    yes:   {limit:51000, available:51000, cashback:0},
   },
-  cash:0,
-  debit_spend_log:[],
-  updated_at:null,
+  cash: 0,
+  debit_spend_log: [],
+  updated_at: null,
 };
 
-// ─── Migrate ─────────────────────────────────────────────────────────────────
+// ─── MIGRATE ──────────────────────────────────────────────────────────────────
 function migrate(s) {
   if (!s.accounts) s.accounts = JSON.parse(JSON.stringify(DEFAULT.accounts));
-  if (!s.accounts.debit) s.accounts.debit = {opening:83569,balance:83569};
-  if (s.accounts.debit.opening === undefined) s.accounts.debit.opening = s.accounts.debit.opening_balance || s.accounts.debit.balance || 0;
+  if (!s.accounts.debit) s.accounts.debit = {opening:0, balance:0};
+  if (s.accounts.debit.opening === undefined) s.accounts.debit.opening = s.accounts.debit.balance || 0;
   if (!s.accounts.sbi) s.accounts.sbi = JSON.parse(JSON.stringify(DEFAULT.accounts.sbi));
   if (!s.accounts.yes) s.accounts.yes = JSON.parse(JSON.stringify(DEFAULT.accounts.yes));
   if (s.accounts.sbi.cashback === undefined) s.accounts.sbi.cashback = 0;
   if (s.accounts.yes.cashback === undefined) s.accounts.yes.cashback = 0;
   if (s.cash === undefined) s.cash = 0;
-  if (!s.debit_spend_log) {
-    // migrate old debit_log entries to new spend log if possible
-    s.debit_spend_log = [];
-  }
+  if (!s.debit_spend_log) s.debit_spend_log = [];
   if (!s.updated_at) s.updated_at = null;
-  // normalize fixed - remove spent field
-  if (s.fixed) s.fixed = s.fixed.map(function(f){ return {category:f.category,budget:f.budget,paid:!!f.paid}; });
-  delete s.debit_log;
-  delete s.checkin_log;
-  s.version = 8;
+  if (s.fixed) s.fixed = s.fixed.map(function(f){ return {category:f.category, budget:f.budget, paid:!!f.paid}; });
+  s.version = 9;
   return s;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function fmt(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
-function pct(a,b) { return b ? Math.round(a/b*100) : 0; }
-function bclr(sp,bud) { var p=bud?sp/bud:0; return p>1?'var(--red)':p>0.75?'var(--amb)':'var(--grn)'; }
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function fmt(n) { return '\u20B9' + Math.round(n).toLocaleString('en-IN'); }
+function pct(a, b) { return b ? Math.round(a/b*100) : 0; }
+function bclr(sp, bud) {
+  var p = bud ? sp/bud : 0;
+  return p > 1 ? 'var(--red)' : p > 0.75 ? 'var(--amb)' : 'var(--grn)';
+}
 function fmtTime(iso) {
   var d = new Date(iso);
   return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' '+
          d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
 }
 function timeSince(iso) {
-  if (!iso) return {label:'never',dot:'var(--red)'};
-  var diff = Math.floor((Date.now()-new Date(iso))/60000);
-  if (diff<60) return {label:diff+'m ago',dot:'var(--grn)'};
-  if (diff<1440) return {label:Math.floor(diff/60)+'h ago',dot:'var(--grn)'};
-  var days=Math.floor(diff/1440);
-  return {label:days+'d ago',dot:days<=3?'var(--amb)':'var(--red)'};
+  if (!iso) return {label:'never', dot:'var(--red)'};
+  var diff = Math.floor((Date.now() - new Date(iso)) / 60000);
+  if (diff < 60)   return {label: diff+'m ago', dot:'var(--grn)'};
+  if (diff < 1440) return {label: Math.floor(diff/60)+'h ago', dot:'var(--grn)'};
+  var days = Math.floor(diff/1440);
+  return {label: days+'d ago', dot: days<=3 ? 'var(--amb)' : 'var(--red)'};
 }
 function deepMerge(def, saved) {
   var r = Object.assign({}, def);
@@ -254,7 +252,7 @@ function deepMerge(def, saved) {
   return r;
 }
 
-// ─── Aggregators ─────────────────────────────────────────────────────────────
+// ─── AGGREGATORS ──────────────────────────────────────────────────────────────
 function totIncome(s)      { return s.base_budget + s.additional_income.reduce(function(a,i){return a+i.amount;},0); }
 function paidFixedAmt(s)   { return s.fixed.filter(function(f){return f.paid;}).reduce(function(a,f){return a+f.budget;},0); }
 function unpaidFixedAmt(s) { return s.fixed.filter(function(f){return !f.paid;}).reduce(function(a,f){return a+f.budget;},0); }
@@ -263,42 +261,53 @@ function totDebts(s)       { return s.debts.reduce(function(a,d){return a+d.amou
 function unpaidDebts(s)    { return s.debts.filter(function(d){return !d.paid;}).reduce(function(a,d){return a+d.amount;},0); }
 function sbiSpent(s)       { return Math.max(0, s.accounts.sbi.limit - s.accounts.sbi.available - (s.accounts.sbi.cashback||0)); }
 function yesSpent(s)       { return Math.max(0, s.accounts.yes.limit - s.accounts.yes.available - (s.accounts.yes.cashback||0)); }
-function totCreditBills(s) { return sbiSpent(s)+yesSpent(s); }
+function totCreditBills(s) { return sbiSpent(s) + yesSpent(s); }
 function debitVarSpent(s)  { return (s.debit_spend_log||[]).reduce(function(a,e){return a+e.amount;},0); }
-function totVarSpent(s)    { return sbiSpent(s)+yesSpent(s)+debitVarSpent(s); }
-function predictedDebit(s) { return s.accounts.debit.opening - paidFixedAmt(s) - debitVarSpent(s); }
+function totVarSpent(s)    { return sbiSpent(s) + yesSpent(s) + debitVarSpent(s); }
 
+// Predicted debit = opening − paid fixed − accumulated debit var spend
+function predictedDebit(s) {
+  return s.accounts.debit.opening - paidFixedAmt(s) - debitVarSpent(s);
+}
+
+// WATERFALL: actual balance − credit bills − unpaid fixed − debts − savings → freely spendable → minus debit var budget → surplus/short
 function waterfall(s) {
   var balance    = s.accounts.debit.balance;
-  var cash       = s.cash||0;
-  var total      = balance+cash;
+  var cash       = s.cash || 0;
+  var total      = balance + cash;
   var creditBill = totCreditBills(s);
   var fixedPend  = unpaidFixedAmt(s);
-  var savPend    = s.savings.done ? 0 : s.savings.budget;
   var debtPend   = unpaidDebts(s);
+  var savPend    = s.savings.done ? 0 : s.savings.budget;
+
   var afterBills = total      - creditBill;
   var afterFixed = afterBills - fixedPend;
   var afterDebts = afterFixed - debtPend;
-  var afterSav   = afterDebts - savPend;
+  var afterSav   = afterDebts - savPend;   // = freely spendable
+
   var dVarBud    = s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
   var dVarSpent  = debitVarSpent(s);
   var dVarLeft   = dVarBud - dVarSpent;
   var net        = afterSav - dVarBud;
+
   return {
-    balance:balance, cash:cash, total:total,
-    creditBill:creditBill, afterBills:afterBills,
-    fixedPend:fixedPend, afterFixed:afterFixed,
-    debtPend:debtPend, afterDebts:afterDebts,
-    savPend:savPend, afterSav:afterSav,
-    dVarBud:dVarBud, dVarSpent:dVarSpent, dVarLeft:dVarLeft,
-    surplus:net>0?net:0, short:net<0?-net:0,
+    balance: balance, cash: cash, total: total,
+    creditBill: creditBill, afterBills: afterBills,
+    fixedPend: fixedPend,   afterFixed: afterFixed,
+    debtPend: debtPend,     afterDebts: afterDebts,
+    savPend: savPend,       afterSav: afterSav,
+    dVarBud: dVarBud, dVarSpent: dVarSpent, dVarLeft: dVarLeft,
+    surplus: net > 0 ? net : 0,
+    short:   net < 0 ? -net : 0,
   };
 }
 
-// ─── Small components ─────────────────────────────────────────────────────────
+// ─── SMALL COMPONENTS ─────────────────────────────────────────────────────────
 function Bar(props) {
   var p = props.bud ? Math.min(100, props.sp/props.bud*100) : 0;
-  return h('div',{className:'bw'},h('div',{className:'bf',style:{width:p+'%',background:bclr(props.sp,props.bud)}}));
+  return h('div',{className:'bw'},
+    h('div',{className:'bf',style:{width:p+'%',background:bclr(props.sp,props.bud)}})
+  );
 }
 
 function Tog(props) {
@@ -310,15 +319,18 @@ function Tog(props) {
 
 function Toast(props) {
   if (!props.msg) return null;
-  return h('div',{className:'toast'},props.msg);
+  return h('div',{className:'toast'}, props.msg);
 }
 
 function UpdatedAt(props) {
   var r = timeSince(props.ts);
-  return h('span',{className:'upd'},h('span',{className:'dot',style:{background:r.dot}}),r.label);
+  return h('span',{className:'upd'},
+    h('span',{className:'dot',style:{background:r.dot}}),
+    r.label
+  );
 }
 
-// ─── Waterfall Card ───────────────────────────────────────────────────────────
+// ─── WATERFALL CARD ───────────────────────────────────────────────────────────
 function WaterfallCard(props) {
   var s = props.s;
   var wf = waterfall(s);
@@ -329,17 +341,18 @@ function WaterfallCard(props) {
     {label:'Savings to transfer',      val:wf.savPend,    after:wf.afterSav,   show:wf.savPend>0},
     {label:'Debit variable budget',    val:wf.dVarBud,    after:wf.afterSav-wf.dVarBud, show:true},
   ].filter(function(r){return r.show;});
+
   return h('div',{className:'wf'},
     h('div',{className:'wfr hd'},
       h('span',{className:'wfl',style:{color:'var(--tx)',fontWeight:700}},'Debit balance'),
       h('span',{className:'wfv'},fmt(wf.balance))
     ),
-    wf.cash>0 && h('div',{className:'wfr hd'},
+    wf.cash > 0 && h('div',{className:'wfr hd'},
       h('span',{className:'wfl'},'+ Cash on hand'),
       h('span',{className:'wfv',style:{color:'var(--grn)'}},fmt(wf.cash))
     ),
-    rows.map(function(r,i){
-      var col = r.after<0?'var(--red)':r.after<3000?'var(--amb)':'var(--grn)';
+    rows.map(function(r, i) {
+      var col = r.after<0 ? 'var(--red)' : r.after<3000 ? 'var(--amb)' : 'var(--grn)';
       return h('div',{className:'wfr',key:i},
         h('div',null,
           h('div',{className:'wfl'},r.label),
@@ -353,53 +366,67 @@ function WaterfallCard(props) {
     }),
     h('div',{className:'wfr fin'},
       h('span',{className:'wfl',style:{fontWeight:700,color:wf.short>0?'var(--red)':'var(--grn)'}},
-        wf.short>0 ? '⚠ Short by' : '✓ Surplus'
+        wf.short > 0 ? '\u26A0 Short by' : '\u2713 Surplus'
       ),
       h('span',{className:'wfv',style:{fontSize:'1rem',color:wf.short>0?'var(--red)':'var(--grn)'}},
-        fmt(wf.short>0?wf.short:wf.surplus)
+        fmt(wf.short > 0 ? wf.short : wf.surplus)
       )
     )
   );
 }
 
-// ─── Hero ─────────────────────────────────────────────────────────────────────
+// ─── HERO ─────────────────────────────────────────────────────────────────────
 function Hero(props) {
   var s  = props.s;
   var wf = waterfall(s);
-  var ok = wf.short===0;
-  return h('div',{className:'hero',style:{background:ok?'var(--grn-bg)':'var(--red-bg)',borderColor:ok?'var(--grn-bd)':'var(--red-bd)'}},
-    h('div',{className:'hero-lbl',style:{color:ok?'var(--grn)':'var(--red)'}},ok?'All good · Surplus':'Heads up · Short by'),
-    h('div',{className:'hero-amt',style:{color:ok?'var(--grn)':'var(--red)'}},fmt(ok?wf.surplus:wf.short)),
+  var ok = wf.short === 0;
+  return h('div',{className:'hero',style:{
+    background:  ok ? 'var(--grn-bg)' : 'var(--red-bg)',
+    borderColor: ok ? 'var(--grn-bd)' : 'var(--red-bd)'
+  }},
+    h('div',{className:'hero-lbl',style:{color:ok?'var(--grn)':'var(--red)'}},
+      ok ? 'All good \u00B7 Surplus' : 'Heads up \u00B7 Short by'
+    ),
+    h('div',{className:'hero-amt',style:{color:ok?'var(--grn)':'var(--red)'}},
+      fmt(ok ? wf.surplus : wf.short)
+    ),
     h('div',{style:{borderTop:'1px solid '+(ok?'var(--grn-bd)':'var(--red-bd)'),paddingTop:'.5rem',display:'flex',flexDirection:'column',gap:2}},
       h('div',{className:'hrow'},h('span',{className:'hlbl'},'Actual debit balance'),h('span',{className:'hval'},fmt(wf.balance))),
-      wf.cash>0 && h('div',{className:'hrow'},h('span',{className:'hlbl'},'Cash'),h('span',{className:'hval',style:{color:'var(--grn)'}},fmt(wf.cash))),
+      wf.cash > 0 && h('div',{className:'hrow'},h('span',{className:'hlbl'},'Cash'),h('span',{className:'hval',style:{color:'var(--grn)'}},fmt(wf.cash))),
       h('div',{className:'hrow'},h('span',{className:'hlbl'},'Credit bills due'),h('span',{className:'hval',style:{color:wf.creditBill>0?'var(--amb)':'var(--m1)'}},fmt(wf.creditBill))),
       h('div',{className:'hrow'},h('span',{className:'hlbl'},'Freely spendable'),h('span',{className:'hval',style:{color:wf.afterSav>=0?'var(--grn)':'var(--red)'}},fmt(wf.afterSav)))
     )
   );
 }
 
-// ─── Insights ─────────────────────────────────────────────────────────────────
+// ─── INSIGHTS ─────────────────────────────────────────────────────────────────
 function Insights(props) {
   var s   = props.s;
   var wf  = waterfall(s);
   var tvs = totVarSpent(s);
   var tvb = totVarBud(s);
-  var rem = tvb-tvs;
+  var rem = tvb - tvs;
   var pills = [];
-  if (wf.short>0) pills.push({t:'bd', txt:'Short '+fmt(wf.short)});
-  else             pills.push({t:'gd', txt:fmt(wf.surplus)+' surplus'});
-  if (rem>0)  pills.push({t:'inf', txt:fmt(Math.round(rem/wLeft))+'/wk left'});
-  else if (rem<0) pills.push({t:'bd', txt:'Over '+fmt(-rem)});
-  if (unpaidFixedAmt(s)>0) pills.push({t:'wn', txt:fmt(unpaidFixedAmt(s))+' fixed pending'});
-  if (!s.savings.done) pills.push({t:'wn', txt:'Savings pending'});
-  var su=pct(sbiSpent(s),s.accounts.sbi.limit), yu=pct(yesSpent(s),s.accounts.yes.limit);
-  if (su>75) pills.push({t:'wn', txt:'SBI '+su+'% used'});
-  if (yu>75) pills.push({t:'wn', txt:'YES '+yu+'% used'});
-  var cb=(s.accounts.sbi.cashback||0)+(s.accounts.yes.cashback||0);
-  if (cb>0) pills.push({t:'ac', txt:fmt(cb)+' cashback'});
+
+  if (wf.short > 0) pills.push({t:'bd',  txt:'Short '+fmt(wf.short)});
+  else              pills.push({t:'gd',  txt:fmt(wf.surplus)+' surplus'});
+
+  if (rem > 0)      pills.push({t:'inf', txt:fmt(Math.round(rem/wLeft))+'/wk left'});
+  else if (rem < 0) pills.push({t:'bd',  txt:'Over '+fmt(-rem)});
+
+  if (unpaidFixedAmt(s) > 0) pills.push({t:'wn', txt:fmt(unpaidFixedAmt(s))+' fixed pending'});
+  if (!s.savings.done)       pills.push({t:'wn', txt:'Savings pending'});
+
+  var su = pct(sbiSpent(s), s.accounts.sbi.limit);
+  var yu = pct(yesSpent(s), s.accounts.yes.limit);
+  if (su > 75) pills.push({t:'wn', txt:'SBI '+su+'% used'});
+  if (yu > 75) pills.push({t:'wn', txt:'YES '+yu+'% used'});
+
+  var cb = (s.accounts.sbi.cashback||0) + (s.accounts.yes.cashback||0);
+  if (cb > 0) pills.push({t:'ac', txt:fmt(cb)+' cashback'});
+
   return h('div',{className:'pill-row'},
-    pills.map(function(p,i){ return h('span',{key:i,className:'pill '+p.t},p.txt); })
+    pills.map(function(p, i){ return h('span',{key:i,className:'pill '+p.t}, p.txt); })
   );
 }
 
@@ -409,28 +436,57 @@ function Insights(props) {
 function Overview(props) {
   var s  = props.s;
   var wf = waterfall(s);
-  var tvs = totVarSpent(s), tvb = totVarBud(s), rem = tvb-tvs;
+  var tvs = totVarSpent(s), tvb = totVarBud(s), rem = tvb - tvs;
+
   return h('div',{className:'page'},
     h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'.5rem 0 .8rem'}},
       h('div',null,
-        h('div',{style:{fontSize:'1.05rem',fontWeight:700}},mLbl),
-        h('div',{style:{fontSize:'.62rem',color:'var(--m2)',marginTop:2,fontFamily:'var(--mono)'}},wLeft+'w · '+dLeft+'d left')
+        h('div',{style:{fontSize:'1.05rem',fontWeight:700}}, mLbl),
+        h('div',{style:{fontSize:'.62rem',color:'var(--m2)',marginTop:2,fontFamily:'var(--mono)'}}, wLeft+'w \u00B7 '+dLeft+'d left')
       ),
       h(UpdatedAt,{ts:s.updated_at})
     ),
     h(Hero,{s:s}),
     h(Insights,{s:s}),
     h('div',{className:'g2'},
-      h('div',{className:'card'},h('div',{className:'sl'},'Var Left'),h('div',{className:'sv',style:{color:rem<0?'var(--red)':rem<5000?'var(--amb)':'var(--tx)'}},fmt(rem)),h('div',{className:'ss'},fmt(Math.round(rem/wLeft))+'/wk')),
-      h('div',{className:'card'},h('div',{className:'sl'},'Var Spent'),h('div',{className:'sv',style:{color:'var(--m1)'}},fmt(tvs)),h('div',{className:'ss'},'of '+fmt(tvb))),
-      h('div',{className:'card'},h('div',{className:'sl'},'Fixed Paid'),h('div',{className:'sv',style:{color:'var(--m1)'}},fmt(paidFixedAmt(s))),h('div',{className:'ss'},unpaidFixedAmt(s)>0?fmt(unpaidFixedAmt(s))+' pending':'all paid')),
-      h('div',{className:'card'},h('div',{className:'sl'},'Total Income'),h('div',{className:'sv',style:{color:'var(--m1)'}},fmt(totIncome(s))),h('div',{className:'ss'},'this month'))
+      h('div',{className:'card'},
+        h('div',{className:'sl'},'Var Left'),
+        h('div',{className:'sv',style:{color:rem<0?'var(--red)':rem<5000?'var(--amb)':'var(--tx)'}},fmt(rem)),
+        h('div',{className:'ss'},fmt(Math.round(rem/wLeft))+'/wk')
+      ),
+      h('div',{className:'card'},
+        h('div',{className:'sl'},'Var Spent'),
+        h('div',{className:'sv',style:{color:'var(--m1)'}},fmt(tvs)),
+        h('div',{className:'ss'},'of '+fmt(tvb))
+      ),
+      h('div',{className:'card'},
+        h('div',{className:'sl'},'Fixed Paid'),
+        h('div',{className:'sv',style:{color:'var(--m1)'}},fmt(paidFixedAmt(s))),
+        h('div',{className:'ss'},unpaidFixedAmt(s)>0?fmt(unpaidFixedAmt(s))+' pending':'all paid')
+      ),
+      h('div',{className:'card'},
+        h('div',{className:'sl'},'Total Income'),
+        h('div',{className:'sv',style:{color:'var(--m1)'}},fmt(totIncome(s))),
+        h('div',{className:'ss'},'this month')
+      )
     ),
     h('div',{className:'sh'},'Accounts'),
     h('div',{className:'g3'},
-      h('div',{className:'card'},h('div',{className:'sl'},'Debit'),h('div',{style:{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700}},fmt(s.accounts.debit.balance)),h('div',{className:'ss'},'balance')),
-      h('div',{className:'card'},h('div',{className:'sl'},'SBI'),h('div',{style:{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700,color:'var(--m1)'}},fmt(s.accounts.sbi.available)),h('div',{className:'ss'},fmt(sbiSpent(s))+' spent')),
-      h('div',{className:'card'},h('div',{className:'sl'},'YES'),h('div',{style:{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700,color:'var(--m1)'}},fmt(s.accounts.yes.available)),h('div',{className:'ss'},fmt(yesSpent(s))+' spent'))
+      h('div',{className:'card'},
+        h('div',{className:'sl'},'Debit'),
+        h('div',{style:{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700}},fmt(s.accounts.debit.balance)),
+        h('div',{className:'ss'},'balance')
+      ),
+      h('div',{className:'card'},
+        h('div',{className:'sl'},'SBI'),
+        h('div',{style:{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700,color:'var(--m1)'}},fmt(s.accounts.sbi.available)),
+        h('div',{className:'ss'},fmt(sbiSpent(s))+' spent')
+      ),
+      h('div',{className:'card'},
+        h('div',{className:'sl'},'YES'),
+        h('div',{style:{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700,color:'var(--m1)'}},fmt(s.accounts.yes.available)),
+        h('div',{className:'ss'},fmt(yesSpent(s))+' spent')
+      )
     ),
     h('div',{className:'sh'},'Debit Breakdown'),
     h(WaterfallCard,{s:s})
@@ -441,136 +497,162 @@ function Overview(props) {
 // CHECK-IN
 // ════════════════════════════════════════════════════════════════
 function Checkin(props) {
-  var s=props.s, save=props.save, toast=props.toast;
-  var _dv=useState(''), dv=_dv[0], setDv=_dv[1];
-  var _sv=useState(''), sv=_sv[0], setSv=_sv[1];
-  var _yv=useState(''), yv=_yv[0], setYv=_yv[1];
-  var _cv=useState(''), cv=_cv[0], setCv=_cv[1];
-  var _sa=useState(''), sa=_sa[0], setSa=_sa[1];
-  var _sn=useState(''), sn=_sn[0], setSn=_sn[1];
-  var _busy=useState(false), busy=_busy[0], setBusy=_busy[1];
+  var s = props.s, save = props.save, toast = props.toast;
+  var _dv = useState(''); var dv = _dv[0]; var setDv = _dv[1];
+  var _sv = useState(''); var sv = _sv[0]; var setSv = _sv[1];
+  var _yv = useState(''); var yv = _yv[0]; var setYv = _yv[1];
+  var _cv = useState(''); var cv = _cv[0]; var setCv = _cv[1];
+  var _sa = useState(''); var sa = _sa[0]; var setSa = _sa[1];
+  var _sn = useState(''); var sn = _sn[0]; var setSn = _sn[1];
+  var _busy = useState(false); var busy = _busy[0]; var setBusy = _busy[1];
 
-  var hasBalance = dv!==''||sv!==''||yv!==''||cv!=='';
-  var hasSpend   = sa!==''&&Number(sa)>0;
+  var hasBalance = dv !== '' || sv !== '' || yv !== '' || cv !== '';
+  var hasSpend   = sa !== '' && Number(sa) > 0;
+
+  // Sanity check: predicted debit
   var pred = predictedDebit(s);
-  var newBal = dv!==''?Number(dv):null;
-  var impSpend   = newBal!==null ? Math.max(0,pred-newBal) : null;
-  var impDeposit = newBal!==null ? Math.max(0,newBal-pred) : null;
+  var newBal = dv !== '' ? Number(dv) : null;
+  // Gap between predicted and newly entered = variable debit spend in this period
+  var autoSpend   = newBal !== null ? Math.max(0, pred - newBal) : null;
+  var autoDeposit = newBal !== null ? Math.max(0, newBal - pred) : null;
 
-  var prevS = useMemo(function(){
-    return Object.assign({},s,{
-      accounts:Object.assign({},s.accounts,{
-        debit:{opening:s.accounts.debit.opening, balance:dv!==''?Number(dv):s.accounts.debit.balance},
-        sbi:Object.assign({},s.accounts.sbi,{available:sv!==''?Number(sv):s.accounts.sbi.available}),
-        yes:Object.assign({},s.accounts.yes,{available:yv!==''?Number(yv):s.accounts.yes.available}),
+  // Live preview with entered values
+  var prevS = useMemo(function() {
+    return Object.assign({}, s, {
+      accounts: Object.assign({}, s.accounts, {
+        debit: {opening: s.accounts.debit.opening, balance: dv!=='' ? Number(dv) : s.accounts.debit.balance},
+        sbi:   Object.assign({}, s.accounts.sbi,   {available: sv!=='' ? Number(sv) : s.accounts.sbi.available}),
+        yes:   Object.assign({}, s.accounts.yes,   {available: yv!=='' ? Number(yv) : s.accounts.yes.available}),
       }),
-      cash:cv!==''?Number(cv):(s.cash||0),
+      cash: cv !== '' ? Number(cv) : (s.cash||0),
     });
-  },[dv,sv,yv,cv,s]);
-  var wfP = waterfall(prevS);
-  var sbiB = sbiSpent(prevS), yesB = yesSpent(prevS);
+  }, [dv, sv, yv, cv, s]);
+
+  var wfP  = waterfall(prevS);
+  var sbiB = sbiSpent(prevS);
+  var yesB = yesSpent(prevS);
 
   function doSaveBalance() {
-    if (!hasBalance||busy) return;
+    if (!hasBalance || busy) return;
     setBusy(true);
     var now = new Date().toISOString();
     var newLog = (s.debit_spend_log||[]).slice();
-    if (dv!==''&&impSpend>0) newLog.push({amount:impSpend,note:'Auto: balance drop',ts:now});
-    var ns = Object.assign({},s,{
-      cash:cv!==''?Number(cv):(s.cash||0),
-      updated_at:now,
-      debit_spend_log:newLog,
-      accounts:Object.assign({},s.accounts,{
-        debit:{opening:s.accounts.debit.opening, balance:dv!==''?Number(dv):s.accounts.debit.balance},
-        sbi:Object.assign({},s.accounts.sbi,{available:sv!==''?Number(sv):s.accounts.sbi.available}),
-        yes:Object.assign({},s.accounts.yes,{available:yv!==''?Number(yv):s.accounts.yes.available}),
+    // Auto-log the balance drop as debit variable spend
+    if (newBal !== null && autoSpend > 0) {
+      newLog.push({amount:autoSpend, note:'Auto: balance drop', ts:now});
+    }
+    var ns = Object.assign({}, s, {
+      cash: cv !== '' ? Number(cv) : (s.cash||0),
+      updated_at: now,
+      debit_spend_log: newLog,
+      accounts: Object.assign({}, s.accounts, {
+        debit: {opening: s.accounts.debit.opening, balance: dv!=='' ? Number(dv) : s.accounts.debit.balance},
+        sbi:   Object.assign({}, s.accounts.sbi,   {available: sv!=='' ? Number(sv) : s.accounts.sbi.available}),
+        yes:   Object.assign({}, s.accounts.yes,   {available: yv!=='' ? Number(yv) : s.accounts.yes.available}),
       }),
     });
-    save(ns).then(function(){
-      toast('Saved ✓'); setDv(''); setSv(''); setYv(''); setCv(''); setBusy(false);
+    save(ns).then(function() {
+      toast('Saved \u2713'); setDv(''); setSv(''); setYv(''); setCv(''); setBusy(false);
     });
   }
 
   function doAddSpend() {
-    if (!hasSpend||busy) return;
+    if (!hasSpend || busy) return;
     setBusy(true);
     var now = new Date().toISOString();
-    var entry = {amount:Number(sa), note:sn||'Debit spend', ts:now};
-    var ns = Object.assign({},s,{
-      updated_at:now,
-      debit_spend_log:(s.debit_spend_log||[]).concat([entry]),
+    var entry = {amount: Number(sa), note: sn||'Debit spend', ts: now};
+    var ns = Object.assign({}, s, {
+      updated_at: now,
+      debit_spend_log: (s.debit_spend_log||[]).concat([entry]),
     });
-    save(ns).then(function(){ toast('Logged ✓'); setSa(''); setSn(''); setBusy(false); });
+    save(ns).then(function() { toast('Logged \u2713'); setSa(''); setSn(''); setBusy(false); });
   }
 
-  var dVarBud = s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
+  var dVarBud   = s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
   var dVarSpent = debitVarSpent(s);
 
   return h('div',{className:'page'},
-    h('div',{style:{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .05rem'}},'Check-In'),
-    h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'1rem',fontFamily:'var(--mono)'}},'Enter only what changed today'),
+    h('div',{style:{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .05rem'}}, 'Check-In'),
+    h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'1rem',fontFamily:'var(--mono)'}}, 'Enter only what changed today'),
 
-    // Balance card
+    // ── Balance inputs ──
     h('div',{className:'card mb'},
       // Debit
       h('div',{className:'mb'},
-        h('div',{className:'il'},'🏦 Debit Balance'),
+        h('div',{className:'il'}, '\uD83C\uDFE6 Debit Balance'),
         h('div',{className:'bigwrap'},
-          h('span',{className:'bigpfx'},'₹'),
-          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.accounts.debit.balance),value:dv,onChange:function(e){setDv(e.target.value);}})
+          h('span',{className:'bigpfx'}, '\u20B9'),
+          h('input',{className:'biginp',type:'number',inputMode:'numeric',
+            placeholder:String(s.accounts.debit.balance), value:dv,
+            onChange:function(e){setDv(e.target.value);}})
         ),
         h('div',{className:'sanity'},
-          h('span',{style:{fontSize:'.65rem',color:'var(--m1)'}},'Predicted (opening − paid − spent)'),
+          h('span',{style:{fontSize:'.65rem',color:'var(--m1)'}},'Predicted (opening \u2212 paid fixed \u2212 spent)'),
           h('span',{style:{fontFamily:'var(--mono)',fontSize:'.75rem',fontWeight:600}},fmt(pred))
         ),
-        impSpend!==null&&impSpend>0&&h('div',{className:'hint',style:{color:'var(--red)'}},
-          '↓ '+fmt(impSpend)+' gap → auto-logged as debit spend'),
-        impDeposit!==null&&impDeposit>0&&h('div',{className:'hint',style:{color:'var(--grn)'}},
-          '↑ '+fmt(impDeposit)+' above predicted (deposit/income)')
+        autoSpend !== null && autoSpend > 0 && h('div',{className:'hint',style:{color:'var(--red)'}},
+          '\u2193 '+fmt(autoSpend)+' gap \u2192 auto-logged as debit variable spend'
+        ),
+        autoDeposit !== null && autoDeposit > 0 && h('div',{className:'hint',style:{color:'var(--grn)'}},
+          '\u2191 '+fmt(autoDeposit)+' above predicted (deposit/income)'
+        )
       ),
       h('hr'),
       // SBI
       h('div',{className:'mb'},
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}},
-          h('div',{className:'il',style:{marginBottom:0}},'💳 SBI Available'),
+          h('div',{className:'il',style:{marginBottom:0}}, '\uD83D\uDCB3 SBI Available'),
           h('span',{style:{fontSize:'.62rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'limit '+fmt(s.accounts.sbi.limit))
         ),
         h('div',{className:'bigwrap'},
-          h('span',{className:'bigpfx'},'₹'),
-          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.accounts.sbi.available),value:sv,onChange:function(e){setSv(e.target.value);}})
+          h('span',{className:'bigpfx'}, '\u20B9'),
+          h('input',{className:'biginp',type:'number',inputMode:'numeric',
+            placeholder:String(s.accounts.sbi.available), value:sv,
+            onChange:function(e){setSv(e.target.value);}})
         ),
-        sbiB>0&&h('div',{style:{marginTop:3,fontSize:'.7rem',color:'var(--amb)',fontFamily:'var(--mono)'}},'Bill: '+fmt(sbiB))
+        sbiB > 0 && h('div',{style:{marginTop:3,fontSize:'.7rem',color:'var(--amb)',fontFamily:'var(--mono)'}}, 'Bill: '+fmt(sbiB))
       ),
       h('hr'),
       // YES
       h('div',{className:'mb'},
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}},
-          h('div',{className:'il',style:{marginBottom:0}},'💳 YES Available'),
+          h('div',{className:'il',style:{marginBottom:0}}, '\uD83D\uDCB3 YES Available'),
           h('span',{style:{fontSize:'.62rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'limit '+fmt(s.accounts.yes.limit))
         ),
         h('div',{className:'bigwrap'},
-          h('span',{className:'bigpfx'},'₹'),
-          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.accounts.yes.available),value:yv,onChange:function(e){setYv(e.target.value);}})
+          h('span',{className:'bigpfx'}, '\u20B9'),
+          h('input',{className:'biginp',type:'number',inputMode:'numeric',
+            placeholder:String(s.accounts.yes.available), value:yv,
+            onChange:function(e){setYv(e.target.value);}})
         ),
-        yesB>0&&h('div',{style:{marginTop:3,fontSize:'.7rem',color:'var(--amb)',fontFamily:'var(--mono)'}},'Bill: '+fmt(yesB))
+        yesB > 0 && h('div',{style:{marginTop:3,fontSize:'.7rem',color:'var(--amb)',fontFamily:'var(--mono)'}}, 'Bill: '+fmt(yesB))
       ),
       h('hr'),
       // Cash
       h('div',null,
-        h('div',{className:'il'},'💵 Cash on Hand'),
+        h('div',{className:'il'}, '\uD83D\uDCB5 Cash on Hand'),
         h('div',{className:'bigwrap'},
-          h('span',{className:'bigpfx'},'₹'),
-          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.cash||0),value:cv,onChange:function(e){setCv(e.target.value);}})
+          h('span',{className:'bigpfx'}, '\u20B9'),
+          h('input',{className:'biginp',type:'number',inputMode:'numeric',
+            placeholder:String(s.cash||0), value:cv,
+            onChange:function(e){setCv(e.target.value);}})
         )
       )
     ),
 
-    // Live preview
+    // ── Live preview ──
     hasBalance && h('div',null,
-      h('div',{className:'sh'},'Result after save'),
-      h('div',{className:'card mb',style:{background:wfP.short>0?'var(--red-bg)':'var(--grn-bg)',borderColor:wfP.short>0?'var(--red-bd)':'var(--grn-bd)'}},
-        h('div',{style:{fontSize:'.6rem',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:wfP.short>0?'var(--red)':'var(--grn)'}},wfP.short>0?'Short by':'Surplus'),
-        h('div',{style:{fontFamily:'var(--mono)',fontSize:'1.6rem',fontWeight:700,color:wfP.short>0?'var(--red)':'var(--grn)',lineHeight:1,margin:'.15rem 0 .5rem'}},fmt(wfP.short>0?wfP.short:wfP.surplus)),
+      h('div',{className:'sh'}, 'Result after save'),
+      h('div',{className:'card mb',style:{
+        background:  wfP.short>0 ? 'var(--red-bg)' : 'var(--grn-bg)',
+        borderColor: wfP.short>0 ? 'var(--red-bd)' : 'var(--grn-bd)'
+      }},
+        h('div',{style:{fontSize:'.6rem',fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:wfP.short>0?'var(--red)':'var(--grn)'}},
+          wfP.short>0 ? 'Short by' : 'Surplus'
+        ),
+        h('div',{style:{fontFamily:'var(--mono)',fontSize:'1.6rem',fontWeight:700,color:wfP.short>0?'var(--red)':'var(--grn)',lineHeight:1,margin:'.15rem 0 .5rem'}},
+          fmt(wfP.short>0 ? wfP.short : wfP.surplus)
+        ),
         h('div',{className:'hrow'},h('span',{className:'hlbl'},'Credit bills'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(wfP.creditBill))),
         h('div',{className:'hrow'},h('span',{className:'hlbl'},'Freely spendable'),h('span',{className:'hval'},fmt(wfP.afterSav))),
         h('div',{className:'hrow'},h('span',{className:'hlbl'},'Debit var left'),h('span',{className:'hval'},fmt(wfP.dVarLeft)))
@@ -578,52 +660,59 @@ function Checkin(props) {
     ),
 
     h('button',{className:'btn bp',onClick:doSaveBalance,disabled:busy||!hasBalance},
-      busy?'Saving…':hasBalance?'✓ Save Balances':'Enter a balance above'),
+      busy ? 'Saving\u2026' : hasBalance ? '\u2713 Save Balances' : 'Enter a balance above'
+    ),
 
-    // Manual spend log
-    h('div',{className:'sh'},'Log Debit Variable Spend'),
-    h('div',{className:'note inf mb'},'Cash or debit card purchases not on credit cards'),
+    // ── Manual spend log ──
+    h('div',{className:'sh'}, 'Log Debit Variable Spend'),
+    h('div',{className:'note inf mb'}, 'Cash or debit card purchases (not on credit cards)'),
     h('div',{className:'card mb'},
       h('div',{className:'mb'},
-        h('div',{className:'il'},'Amount'),
+        h('div',{className:'il'}, 'Amount'),
         h('div',{className:'bigwrap'},
-          h('span',{className:'bigpfx'},'₹'),
-          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:'0',value:sa,onChange:function(e){setSa(e.target.value);}})
+          h('span',{className:'bigpfx'}, '\u20B9'),
+          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:'0',value:sa,
+            onChange:function(e){setSa(e.target.value);}})
         )
       ),
       h('div',null,
-        h('div',{className:'il'},'Note (optional)'),
-        h('input',{type:'text',placeholder:'e.g. Petrol, Auto…',value:sn,onChange:function(e){setSn(e.target.value);}})
+        h('div',{className:'il'}, 'Note (optional)'),
+        h('input',{type:'text',placeholder:'e.g. Petrol, Auto, Mall\u2026',value:sn,
+          onChange:function(e){setSn(e.target.value);}})
       )
     ),
-    h('button',{className:'btn bp',onClick:doAddSpend,disabled:busy||!hasSpend},busy?'Saving…':'+ Log Spend'),
+    h('button',{className:'btn bp',onClick:doAddSpend,disabled:busy||!hasSpend},
+      busy ? 'Saving\u2026' : '+ Log Spend'
+    ),
 
-    // Spend history
-    s.debit_spend_log&&s.debit_spend_log.length>0&&h('div',null,
-      h('div',{className:'sh'},'Debit Spend History'),
+    // ── Spend history ──
+    s.debit_spend_log && s.debit_spend_log.length > 0 && h('div',null,
+      h('div',{className:'sh'}, 'Debit Spend History'),
       h(DebitSpendLog,{s:s,save:save,toast:toast})
     )
   );
 }
 
 function DebitSpendLog(props) {
-  var s=props.s, save=props.save, toast=props.toast;
+  var s = props.s, save = props.save, toast = props.toast;
   var sorted = (s.debit_spend_log||[]).slice().sort(function(a,b){return new Date(b.ts)-new Date(a.ts);});
   var dVarBud = s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
   var total = debitVarSpent(s);
+
   function remove(ts) {
     var newLog = s.debit_spend_log.filter(function(e){return e.ts!==ts;});
     save(Object.assign({},s,{debit_spend_log:newLog})).then(function(){toast('Removed');});
   }
+
   return h('div',{className:'wf'},
-    sorted.map(function(e){
+    sorted.map(function(e) {
       return h('div',{key:e.ts,className:'log-entry'},
         h('div',null,
-          h('div',{style:{fontFamily:'var(--mono)',fontWeight:600,fontSize:'.85rem',color:'var(--red)'}},'−'+fmt(e.amount)),
+          h('div',{style:{fontFamily:'var(--mono)',fontWeight:600,fontSize:'.85rem',color:'var(--red)'}},'\u2212'+fmt(e.amount)),
           h('div',{className:'log-note'},e.note),
           h('div',{className:'log-time'},fmtTime(e.ts))
         ),
-        h('button',{className:'bdng',onClick:function(){remove(e.ts);}},'✕')
+        h('button',{className:'bdng',onClick:function(){remove(e.ts);}},'\u2715')
       );
     }),
     h('div',{style:{padding:'.55rem .9rem',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--s2)',borderTop:'1px solid var(--bd)'}},
@@ -637,11 +726,11 @@ function DebitSpendLog(props) {
 // EXPENSES
 // ════════════════════════════════════════════════════════════════
 function Expenses(props) {
-  var s=props.s, save=props.save, toast=props.toast;
-  var _tab=useState('fixed'), tab=_tab[0], setTab=_tab[1];
-  var tvb=totVarBud(s), tvs=totVarSpent(s);
+  var s = props.s, save = props.save, toast = props.toast;
+  var _tab = useState('fixed'); var tab = _tab[0]; var setTab = _tab[1];
+  var tvb = totVarBud(s), tvs = totVarSpent(s);
 
-  var varWithSpent = useMemo(function(){
+  var varWithSpent = useMemo(function() {
     function dist(amount, cats) {
       var tot = cats.reduce(function(a,c){return a+c.budget;},0);
       if (!tot) return cats.map(function(c){return Object.assign({},c,{spent:0});});
@@ -652,66 +741,71 @@ function Expenses(props) {
       dist(yesSpent(s),      s.variable.filter(function(v){return v.card==='YES';})),
       dist(debitVarSpent(s), s.variable.filter(function(v){return v.card==='Debit';}))
     );
-  },[s]);
+  }, [s]);
 
   return h('div',{className:'page'},
-    h('div',{style:{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .75rem'}},'Expenses'),
+    h('div',{style:{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .75rem'}}, 'Expenses'),
     h('div',{className:'tab-bar'},
       ['fixed','variable'].map(function(t){
-        return h('button',{key:t,className:'tab'+(tab===t?' on':''),onClick:function(){setTab(t);}},t);
+        return h('button',{key:t,className:'tab'+(tab===t?' on':''),onClick:function(){setTab(t);}}, t);
       })
     ),
 
-    tab==='fixed'&&h('div',null,
-      unpaidFixedAmt(s)>0
-        ? h('div',{className:'note wn'},'🔔 '+fmt(unpaidFixedAmt(s))+' still to pay (debit)')
-        : h('div',{className:'note gd'},'✓ All fixed expenses paid'),
+    tab==='fixed' && h('div',null,
+      unpaidFixedAmt(s) > 0
+        ? h('div',{className:'note wn'}, '\uD83D\uDD14 '+fmt(unpaidFixedAmt(s))+' still to pay (debit)')
+        : h('div',{className:'note gd'}, '\u2713 All fixed expenses paid'),
       h('div',{className:'card'},
-        s.fixed.map(function(f,i){
+        s.fixed.map(function(f, i) {
           return h('div',{key:i,className:'er'},
             h('div',{className:'eh'},
               h('div',{className:'en'},
-                h('span',{style:{fontSize:'.7rem'}},f.paid?'🟢':'⚪'),
+                h('span',{style:{fontSize:'.7rem'}}, f.paid ? '\uD83D\uDFE2' : '\u26AA'),
                 f.category,
                 h('span',{style:{fontFamily:'var(--mono)',fontSize:'.72rem',color:'var(--m1)',fontWeight:500}},fmt(f.budget))
               ),
-              h(Tog,{v:f.paid,onChange:function(v){
-                var fx=s.fixed.map(function(x,j){return j===i?Object.assign({},x,{paid:v}):x;});
+              h(Tog,{v:f.paid, onChange:function(v){
+                var fx = s.fixed.map(function(x,j){return j===i ? Object.assign({},x,{paid:v}) : x;});
                 save(Object.assign({},s,{fixed:fx}));
                 toast(f.category+(v?' paid':' unpaid'));
               }})
             ),
-            h(Bar,{sp:f.paid?f.budget:0,bud:f.budget})
+            h(Bar,{sp:f.paid?f.budget:0, bud:f.budget})
           );
         })
       ),
       h('div',{style:{marginTop:'.5rem',padding:'.5rem .9rem',background:'var(--s2)',borderRadius:'var(--rs)',border:'1px solid var(--bd)',display:'flex',justifyContent:'space-between',alignItems:'center'}},
         h('span',{style:{fontSize:'.72rem',color:'var(--m1)',fontWeight:500}},'Total fixed budget'),
-        h('span',{style:{fontFamily:'var(--mono)',fontSize:'.76rem',fontWeight:700}},fmt(s.fixed.reduce(function(a,f){return a+f.budget;},0)))
+        h('span',{style:{fontFamily:'var(--mono)',fontSize:'.76rem',fontWeight:700}},
+          fmt(s.fixed.reduce(function(a,f){return a+f.budget;},0))
+        )
       )
     ),
 
-    tab==='variable'&&h('div',null,
+    tab==='variable' && h('div',null,
       h('div',{className:'card mb'},
-        h('div',{className:'sl'},'Variable Remaining'),
-        h('div',{className:'sv',style:{color:tvb-tvs<0?'var(--red)':'var(--tx)'}},fmt(tvb-tvs)),
-        h('div',{className:'ss'},fmt(Math.round((tvb-tvs)/wLeft))+'/wk · '+wLeft+' wks left')
+        h('div',{className:'sl'}, 'Variable Remaining'),
+        h('div',{className:'sv',style:{color:tvb-tvs<0?'var(--red)':'var(--tx)'}}, fmt(tvb-tvs)),
+        h('div',{className:'ss'}, fmt(Math.round((tvb-tvs)/wLeft))+'/wk \u00B7 '+wLeft+' wks left')
       ),
-      h('div',{className:'note inf',style:{marginBottom:'.75rem'}},'SBI '+fmt(sbiSpent(s))+' · YES '+fmt(yesSpent(s))+' · Debit '+fmt(debitVarSpent(s))),
+      h('div',{className:'note inf',style:{marginBottom:'.75rem'}},
+        'SBI '+fmt(sbiSpent(s))+' \u00B7 YES '+fmt(yesSpent(s))+' \u00B7 Debit '+fmt(debitVarSpent(s))
+      ),
       h('div',{className:'card'},
-        varWithSpent.map(function(v,i){
-          var rem=v.budget-v.spent;
+        varWithSpent.map(function(v, i) {
+          var rem = v.budget - v.spent;
           return h('div',{key:i,className:'er'},
             h('div',{className:'eh'},
               h('div',{className:'en'},
                 v.category,
-                h('span',{className:'chip '+(v.card==='SBI'?'csbi':v.card==='YES'?'cyes':'cdeb')},v.card)
+                h('span',{className:'chip '+(v.card==='SBI'?'csbi':v.card==='YES'?'cyes':'cdeb')}, v.card)
               ),
               h('span',{style:{fontFamily:'var(--mono)',fontSize:'.72rem',color:rem>=0?'var(--grn)':'var(--red)',fontWeight:600}},
-                rem>=0?fmt(rem)+' left':fmt(-rem)+' over')
+                rem >= 0 ? fmt(rem)+' left' : fmt(-rem)+' over'
+              )
             ),
             h(Bar,{sp:v.spent,bud:v.budget}),
-            h('div',{style:{marginTop:3,fontSize:'.68rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'budget '+fmt(v.budget))
+            h('div',{style:{marginTop:3,fontSize:'.68rem',color:'var(--m2)',fontFamily:'var(--mono)'}}, 'budget '+fmt(v.budget))
           );
         })
       )
@@ -723,53 +817,55 @@ function Expenses(props) {
 // SAVINGS & DEBTS
 // ════════════════════════════════════════════════════════════════
 function SavingsDebts(props) {
-  var s=props.s, save=props.save, toast=props.toast;
+  var s = props.s, save = props.save, toast = props.toast;
   return h('div',{className:'page'},
-    h('div',{style:{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .75rem'}},'Savings & Debts'),
-    h('div',{className:'sh'},'Savings'),
+    h('div',{style:{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .75rem'}}, 'Savings & Debts'),
+
+    h('div',{className:'sh'}, 'Savings'),
     s.savings.done
-      ? h('div',{className:'note gd mb'},'✓ '+fmt(s.savings.budget)+' transferred')
-      : h('div',{className:'note wn mb'},'⏳ '+fmt(s.savings.budget)+' pending'),
+      ? h('div',{className:'note gd mb'}, '\u2713 '+fmt(s.savings.budget)+' transferred')
+      : h('div',{className:'note wn mb'}, '\u23F3 '+fmt(s.savings.budget)+' pending'),
     h('div',{className:'card mb'},
       h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
         h('div',null,
-          h('div',{style:{fontWeight:600,fontSize:'.88rem'}},'Monthly Savings'),
-          h('div',{style:{fontSize:'.72rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:2}},fmt(s.savings.budget))
+          h('div',{style:{fontWeight:600,fontSize:'.88rem'}}, 'Monthly Savings'),
+          h('div',{style:{fontSize:'.72rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:2}}, fmt(s.savings.budget))
         ),
         h(Tog,{v:s.savings.done,onChange:function(v){save(Object.assign({},s,{savings:Object.assign({},s.savings,{done:v})}));}})
       )
     ),
-    h('div',{className:'sh'},'Debts'),
-    unpaidDebts(s)>0
-      ? h('div',{className:'note wn mb'},'📋 '+fmt(unpaidDebts(s))+' outstanding')
-      : h('div',{className:'note gd mb'},'✓ All debts settled'),
+
+    h('div',{className:'sh'}, 'Debts'),
+    unpaidDebts(s) > 0
+      ? h('div',{className:'note wn mb'}, '\uD83D\uDCCB '+fmt(unpaidDebts(s))+' outstanding')
+      : h('div',{className:'note gd mb'}, '\u2713 All debts settled'),
     h('div',{className:'gap mb'},
-      s.debts.map(function(d,i){
+      s.debts.map(function(d, i) {
         return h('div',{key:i,className:'card'},
           h('div',{className:'row'},
             h('div',{className:'f1 gap'},
               h('input',{type:'text',value:d.name,placeholder:'Name',onChange:function(e){
-                var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{name:e.target.value}):x;});
+                var dts = s.debts.map(function(x,j){return j===i?Object.assign({},x,{name:e.target.value}):x;});
                 save(Object.assign({},s,{debts:dts}));
               }}),
               h('input',{type:'number',value:d.amount,inputMode:'numeric',onChange:function(e){
-                var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{amount:Number(e.target.value)}):x;});
+                var dts = s.debts.map(function(x,j){return j===i?Object.assign({},x,{amount:Number(e.target.value)}):x;});
                 save(Object.assign({},s,{debts:dts}));
               }})
             ),
             h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:6}},
               h(Tog,{v:!!d.paid,onChange:function(v){
-                var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{paid:v}):x;});
+                var dts = s.debts.map(function(x,j){return j===i?Object.assign({},x,{paid:v}):x;});
                 save(Object.assign({},s,{debts:dts}));
               }}),
-              h('span',{style:{fontSize:'.58rem',color:'var(--m2)'}},d.paid?'paid':'unpaid'),
-              h('button',{className:'bdng',onClick:function(){save(Object.assign({},s,{debts:s.debts.filter(function(_,j){return j!==i;})}));}}, '✕')
+              h('span',{style:{fontSize:'.58rem',color:'var(--m2)'}}, d.paid?'paid':'unpaid'),
+              h('button',{className:'bdng',onClick:function(){save(Object.assign({},s,{debts:s.debts.filter(function(_,j){return j!==i;})}));}}, '\u2715')
             )
           )
         );
       })
     ),
-    h('button',{className:'btn bs',onClick:function(){save(Object.assign({},s,{debts:s.debts.concat([{name:'',amount:0,paid:false}])}));}}, '＋ Add Debt')
+    h('button',{className:'btn bs',onClick:function(){save(Object.assign({},s,{debts:s.debts.concat([{name:'',amount:0,paid:false}])}));}}, '\uFF0B Add Debt')
   );
 }
 
@@ -777,89 +873,121 @@ function SavingsDebts(props) {
 // SETTINGS
 // ════════════════════════════════════════════════════════════════
 function Settings(props) {
-  var s=props.s, save=props.save, toast=props.toast;
+  var s = props.s, save = props.save, toast = props.toast;
   return h('div',{className:'page'},
-    h('div',{style:{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .75rem'}},'Settings'),
+    h('div',{style:{fontSize:'1.05rem',fontWeight:700,padding:'.5rem 0 .75rem'}}, 'Settings'),
 
-    h('div',{className:'sh'},'Income'),
+    h('div',{className:'sh'}, 'Income'),
     h('div',{className:'card mb'},
-      h('div',{className:'il'},'Monthly Income'),
-      h('input',{type:'number',value:s.base_budget,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{base_budget:Number(e.target.value)}));}})
+      h('div',{className:'il'}, 'Monthly Income'),
+      h('input',{type:'number',value:s.base_budget,inputMode:'numeric',onChange:function(e){
+        save(Object.assign({},s,{base_budget:Number(e.target.value)}));
+      }})
     ),
 
-    h('div',{className:'sh'},'Additional Income'),
+    h('div',{className:'sh'}, 'Additional Income'),
     h('div',{className:'gap mb'},
-      s.additional_income.map(function(inc,i){
+      s.additional_income.map(function(inc, i) {
         return h('div',{key:i,className:'card'},
           h('div',{className:'row'},
             h('div',{className:'f1 gap'},
               h('input',{type:'text',placeholder:'Source',value:inc.source,onChange:function(e){
-                var ai=s.additional_income.map(function(x,j){return j===i?Object.assign({},x,{source:e.target.value}):x;});
+                var ai = s.additional_income.map(function(x,j){return j===i?Object.assign({},x,{source:e.target.value}):x;});
                 save(Object.assign({},s,{additional_income:ai}));
               }}),
               h('input',{type:'number',placeholder:'Amount',value:inc.amount,inputMode:'numeric',onChange:function(e){
-                var ai=s.additional_income.map(function(x,j){return j===i?Object.assign({},x,{amount:Number(e.target.value)}):x;});
+                var ai = s.additional_income.map(function(x,j){return j===i?Object.assign({},x,{amount:Number(e.target.value)}):x;});
                 save(Object.assign({},s,{additional_income:ai}));
               }})
             ),
-            h('button',{className:'bdng',onClick:function(){save(Object.assign({},s,{additional_income:s.additional_income.filter(function(_,j){return j!==i;})}));}}, '✕')
+            h('button',{className:'bdng',onClick:function(){
+              save(Object.assign({},s,{additional_income:s.additional_income.filter(function(_,j){return j!==i;})}));
+            }}, '\u2715')
           )
         );
       })
     ),
-    h('button',{className:'btn bs mb',onClick:function(){save(Object.assign({},s,{additional_income:s.additional_income.concat([{source:'',amount:0}])}));}}, '＋ Add Income'),
+    h('button',{className:'btn bs mb',onClick:function(){
+      save(Object.assign({},s,{additional_income:s.additional_income.concat([{source:'',amount:0}])}));
+    }}, '\uFF0B Add Income'),
 
-    h('div',{className:'sh'},'Cashback'),
-    h('div',{className:'note inf mb'},'🎁 Auto-deducted from card bill'),
+    h('div',{className:'sh'}, 'Cashback'),
+    h('div',{className:'note inf mb'}, '\uD83C\uDF81 Auto-deducted from card bill'),
     h('div',{className:'card gap mb'},
-      h('div',null,h('div',{className:'il'},'SBI Cashback'),h('input',{type:'number',value:s.accounts.sbi.cashback||0,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{sbi:Object.assign({},s.accounts.sbi,{cashback:Number(e.target.value)})})}));}})),
-      h('div',null,h('div',{className:'il'},'YES Cashback'),h('input',{type:'number',value:s.accounts.yes.cashback||0,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{yes:Object.assign({},s.accounts.yes,{cashback:Number(e.target.value)})})}));}}))
+      h('div',null,
+        h('div',{className:'il'}, 'SBI Cashback'),
+        h('input',{type:'number',value:s.accounts.sbi.cashback||0,inputMode:'numeric',onChange:function(e){
+          save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{sbi:Object.assign({},s.accounts.sbi,{cashback:Number(e.target.value)})})}));
+        }})
+      ),
+      h('div',null,
+        h('div',{className:'il'}, 'YES Cashback'),
+        h('input',{type:'number',value:s.accounts.yes.cashback||0,inputMode:'numeric',onChange:function(e){
+          save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{yes:Object.assign({},s.accounts.yes,{cashback:Number(e.target.value)})})}));
+        }})
+      )
     ),
 
-    h('div',{className:'sh'},'Savings Target'),
+    h('div',{className:'sh'}, 'Savings Target'),
     h('div',{className:'card mb'},
-      h('div',{className:'il'},'Monthly Savings'),
-      h('input',{type:'number',value:s.savings.budget,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{savings:Object.assign({},s.savings,{budget:Number(e.target.value)})}));}})
+      h('div',{className:'il'}, 'Monthly Savings'),
+      h('input',{type:'number',value:s.savings.budget,inputMode:'numeric',onChange:function(e){
+        save(Object.assign({},s,{savings:Object.assign({},s.savings,{budget:Number(e.target.value)})}));
+      }})
     ),
 
-    h('div',{className:'sh'},'Credit Limits'),
+    h('div',{className:'sh'}, 'Credit Limits'),
     h('div',{className:'card gap mb'},
-      h('div',null,h('div',{className:'il'},'SBI Limit'),h('input',{type:'number',value:s.accounts.sbi.limit,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{sbi:Object.assign({},s.accounts.sbi,{limit:Number(e.target.value)})})}));}})),
-      h('div',null,h('div',{className:'il'},'YES Limit'),h('input',{type:'number',value:s.accounts.yes.limit,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{yes:Object.assign({},s.accounts.yes,{limit:Number(e.target.value)})})}));}}))
+      h('div',null,
+        h('div',{className:'il'}, 'SBI Limit'),
+        h('input',{type:'number',value:s.accounts.sbi.limit,inputMode:'numeric',onChange:function(e){
+          save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{sbi:Object.assign({},s.accounts.sbi,{limit:Number(e.target.value)})})}));
+        }})
+      ),
+      h('div',null,
+        h('div',{className:'il'}, 'YES Limit'),
+        h('input',{type:'number',value:s.accounts.yes.limit,inputMode:'numeric',onChange:function(e){
+          save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{yes:Object.assign({},s.accounts.yes,{limit:Number(e.target.value)})})}));
+        }})
+      )
     ),
 
-    h('div',{className:'sh'},'Opening Balance'),
-    h('div',{className:'note inf mb'},'📌 Set once at month start'),
+    h('div',{className:'sh'}, 'Opening Balance (set once at month start)'),
+    h('div',{className:'note inf mb'}, '\uD83D\uDCCC Used to calculate predicted debit balance'),
     h('div',{className:'card mb'},
-      h('div',{className:'il'},'Debit Opening Balance'),
-      h('input',{type:'number',value:s.accounts.debit.opening,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{debit:Object.assign({},s.accounts.debit,{opening:Number(e.target.value)})})}));}})
+      h('div',{className:'il'}, 'Debit Opening Balance'),
+      h('input',{type:'number',value:s.accounts.debit.opening,inputMode:'numeric',onChange:function(e){
+        save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{debit:Object.assign({},s.accounts.debit,{opening:Number(e.target.value)})})}));
+      }})
     ),
 
-    h('div',{className:'sh'},'Month Reset'),
-    h('div',{className:'note wn mb'},'⚠ Resets all tracking for new month'),
+    h('div',{className:'sh'}, 'Month Reset'),
+    h('div',{className:'note wn mb'}, '\u26A0 Resets all tracking for new month'),
     h('button',{className:'btn bs mb',onClick:function(){
       if (!confirm('Start new month? Resets fixed, savings, spend log.')) return;
       var ns = Object.assign({},s,{
-        debit_spend_log:[],
-        savings:Object.assign({},s.savings,{done:false}),
-        fixed:s.fixed.map(function(f){return Object.assign({},f,{paid:false});}),
-        debts:s.debts.map(function(d){return Object.assign({},d,{paid:false});}),
-        accounts:Object.assign({},s.accounts,{
-          debit:{opening:s.accounts.debit.balance, balance:s.accounts.debit.balance},
-          sbi:Object.assign({},s.accounts.sbi,{available:s.accounts.sbi.limit}),
-          yes:Object.assign({},s.accounts.yes,{available:s.accounts.yes.limit}),
+        debit_spend_log: [],
+        savings:  Object.assign({},s.savings,{done:false}),
+        fixed:    s.fixed.map(function(f){return Object.assign({},f,{paid:false});}),
+        debts:    s.debts.map(function(d){return Object.assign({},d,{paid:false});}),
+        accounts: Object.assign({},s.accounts,{
+          debit: {opening:s.accounts.debit.balance, balance:s.accounts.debit.balance},
+          sbi:   Object.assign({},s.accounts.sbi,{available:s.accounts.sbi.limit}),
+          yes:   Object.assign({},s.accounts.yes,{available:s.accounts.yes.limit}),
         }),
-        updated_at:new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       });
-      save(ns).then(function(){toast('New month started ✓');});
-    }},'🔄 New Month Reset'),
+      save(ns).then(function(){toast('New month started \u2713');});
+    }}, '\uD83D\uDD04 New Month Reset'),
 
-    h('div',{className:'sh',style:{color:'var(--red)'}},'Danger'),
+    h('div',{className:'sh',style:{color:'var(--red)'}}, 'Danger'),
     h('button',{className:'btn mb',style:{background:'var(--red-bg)',color:'var(--red)',border:'1px solid var(--red-bd)'},
       onClick:function(){
-        if (confirm('Reset ALL data to defaults?')) save(JSON.parse(JSON.stringify(DEFAULT))).then(function(){toast('Reset ✓');});
+        if (confirm('Reset ALL data to defaults?')) {
+          save(JSON.parse(JSON.stringify(DEFAULT))).then(function(){toast('Reset \u2713');});
+        }
       }
-    },'Reset to defaults')
+    }, 'Reset to defaults')
   );
 }
 
@@ -867,9 +995,9 @@ function Settings(props) {
 // APP
 // ════════════════════════════════════════════════════════════════
 function App() {
-  var _st=useState(null),  state=_st[0],  setState=_st[1];
-  var _pg=useState('checkin'), page=_pg[0], setPage=_pg[1];
-  var _tm=useState(''),   tmsg=_tm[0],   setTmsg=_tm[1];
+  var _st = useState(null);  var state = _st[0];  var setState = _st[1];
+  var _pg = useState('checkin'); var page = _pg[0]; var setPage = _pg[1];
+  var _tm = useState('');   var tmsg = _tm[0];   var setTmsg = _tm[1];
   var timer = useRef(null);
 
   function toast(msg) {
@@ -878,53 +1006,68 @@ function App() {
     timer.current = setTimeout(function(){setTmsg('');}, 2200);
   }
 
-  useEffect(function(){
-    db.from('budget_state').select('data').eq('id','main').single().then(function(res){
-      var data = res.data;
-      if (data && data.data) {
-        var merged = deepMerge(JSON.parse(JSON.stringify(DEFAULT)), data.data);
-        setState(migrate(merged));
-      } else {
+  useEffect(function() {
+    db.from('budget_state').select('data').eq('id','main').single()
+      .then(function(res) {
+        var data = res.data;
+        if (data && data.data) {
+          var merged = deepMerge(JSON.parse(JSON.stringify(DEFAULT)), data.data);
+          setState(migrate(merged));
+        } else {
+          setState(JSON.parse(JSON.stringify(DEFAULT)));
+        }
+      })
+      .catch(function() {
         setState(JSON.parse(JSON.stringify(DEFAULT)));
-      }
-    }).catch(function(){
-      setState(JSON.parse(JSON.stringify(DEFAULT)));
-    });
-  },[]);
+      });
+  }, []);
 
-  var save = useCallback(function(ns){
+  var save = useCallback(function(ns) {
     setState(ns);
-    return db.from('budget_state').upsert({id:'main',data:ns,updated_at:new Date().toISOString()});
-  },[]);
+    return db.from('budget_state').upsert({id:'main', data:ns, updated_at:new Date().toISOString()});
+  }, []);
 
-  if (!state) return h('div',{className:'loading'},h('div',{className:'spinner'}),h('div',{style:{fontSize:'.72rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'Loading…'));
+  if (!state) {
+    return h('div',{className:'loading'},
+      h('div',{className:'spinner'}),
+      h('div',{style:{fontSize:'.72rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'Loading\u2026')
+    );
+  }
 
   var navItems = [
-    {id:'overview', label:'Overview', path:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z'},
-    {id:'checkin',  label:'Check-In', circle:true},
-    {id:'expenses', label:'Expenses', lines:true},
-    {id:'savings',  label:'Debts',    shield:true},
-    {id:'settings', label:'Settings', gear:true},
+    {id:'overview', label:'Overview'},
+    {id:'checkin',  label:'Check-In'},
+    {id:'expenses', label:'Expenses'},
+    {id:'savings',  label:'Debts'},
+    {id:'settings', label:'Settings'},
   ];
 
-  function navIcon(n) {
-    if (n.id==='overview') return h('svg',{viewBox:'0 0 24 24'},h('rect',{x:3,y:3,width:7,height:7,rx:1.5}),h('rect',{x:14,y:3,width:7,height:7,rx:1.5}),h('rect',{x:3,y:14,width:7,height:7,rx:1.5}),h('rect',{x:14,y:14,width:7,height:7,rx:1.5}));
-    if (n.id==='checkin')  return h('svg',{viewBox:'0 0 24 24'},h('circle',{cx:12,cy:12,r:9}),h('polyline',{points:'12 6 12 12 16 14'}));
-    if (n.id==='expenses') return h('svg',{viewBox:'0 0 24 24'},h('line',{x1:8,y1:6,x2:21,y2:6}),h('line',{x1:8,y1:12,x2:21,y2:12}),h('line',{x1:8,y1:18,x2:21,y2:18}),h('line',{x1:3,y1:6,x2:3.01,y2:6}),h('line',{x1:3,y1:12,x2:3.01,y2:12}),h('line',{x1:3,y1:18,x2:3.01,y2:18}));
-    if (n.id==='savings')  return h('svg',{viewBox:'0 0 24 24'},h('path',{d:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'}));
-    if (n.id==='settings') return h('svg',{viewBox:'0 0 24 24'},h('circle',{cx:12,cy:12,r:3}),h('path',{d:'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'}));
+  function navIcon(id) {
+    if (id==='overview') return h('svg',{viewBox:'0 0 24 24'},
+      h('rect',{x:3,y:3,width:7,height:7,rx:1.5}),h('rect',{x:14,y:3,width:7,height:7,rx:1.5}),
+      h('rect',{x:3,y:14,width:7,height:7,rx:1.5}),h('rect',{x:14,y:14,width:7,height:7,rx:1.5}));
+    if (id==='checkin')  return h('svg',{viewBox:'0 0 24 24'},
+      h('circle',{cx:12,cy:12,r:9}),h('polyline',{points:'12 6 12 12 16 14'}));
+    if (id==='expenses') return h('svg',{viewBox:'0 0 24 24'},
+      h('line',{x1:8,y1:6,x2:21,y2:6}),h('line',{x1:8,y1:12,x2:21,y2:12}),h('line',{x1:8,y1:18,x2:21,y2:18}),
+      h('line',{x1:3,y1:6,x2:3.01,y2:6}),h('line',{x1:3,y1:12,x2:3.01,y2:12}),h('line',{x1:3,y1:18,x2:3.01,y2:18}));
+    if (id==='savings')  return h('svg',{viewBox:'0 0 24 24'},
+      h('path',{d:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'}));
+    if (id==='settings') return h('svg',{viewBox:'0 0 24 24'},
+      h('circle',{cx:12,cy:12,r:3}),
+      h('path',{d:'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'}));
   }
 
   return h('div',null,
-    page==='overview' && h(Overview,{s:state}),
-    page==='checkin'  && h(Checkin, {s:state,save:save,toast:toast}),
-    page==='expenses' && h(Expenses,{s:state,save:save,toast:toast}),
+    page==='overview' && h(Overview,  {s:state}),
+    page==='checkin'  && h(Checkin,   {s:state,save:save,toast:toast}),
+    page==='expenses' && h(Expenses,  {s:state,save:save,toast:toast}),
     page==='savings'  && h(SavingsDebts,{s:state,save:save,toast:toast}),
-    page==='settings' && h(Settings,{s:state,save:save,toast:toast}),
+    page==='settings' && h(Settings,  {s:state,save:save,toast:toast}),
     h('nav',{className:'nav'},
-      navItems.map(function(n){
+      navItems.map(function(n) {
         return h('button',{key:n.id,className:'nb'+(page===n.id?' on':''),onClick:function(){setPage(n.id);}},
-          navIcon(n), n.label
+          navIcon(n.id), n.label
         );
       })
     ),
