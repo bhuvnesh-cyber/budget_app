@@ -513,7 +513,10 @@ function Overview(props){
 
   function saveCash(){
     if(cv==='') return setCashEdit(false);
-    save(Object.assign({},s,{cash:Number(cv),updated_at:new Date().toISOString()}));
+    var ns=Object.assign({},s,{cash:Number(cv),updated_at:new Date().toISOString()});
+    save(ns).then(function(res){
+      if(res&&res.error) console.error('Cash save error:',res.error);
+    });
     setCv('');setCashEdit(false);
   }
 
@@ -1051,7 +1054,7 @@ function App(){
 
   var save=useCallback(function(ns){
     setState(ns);
-    return db.from('budget_state').upsert({id:'main',data:ns,updated_at:new Date().toISOString()});
+    return db.from('budget_state').upsert({id:'main',data:ns,updated_at:new Date().toISOString()},{onConflict:'id'});
   },[]);
 
   if(!state) return h('div',{className:'loading'},h('div',{className:'spinner'}),h('div',{style:{fontSize:'.72rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'Loading\u2026'));
