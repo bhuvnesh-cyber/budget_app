@@ -326,50 +326,36 @@ function predictedDebit(s){
 }
 
 /*
-  WATERFALL — "Can my debit balance cover everything this month?"
-  Start: actual debit balance + cash
-  − prev month credit bills (unpaid)
-  − this month credit bills (SBI + YES current spend)
-  − ALL fixed expenses total (the full month's fixed commitment)
-  − savings target (if not done)
-  − ALL debts (unpaid ones still to pay)
-  − debit variable budget
-  = surplus (enough) / shortfall (not enough)
-
-  The surplus/shortfall answers: after paying all bills + fixed + savings + debit var,
-  how much is left — or how short are you?
+  SIMPLE CHECK: Can debit + cash cover what's LEFT to spend?
+  Fixed remaining = unpaid fixed expenses only (paid ones already left the account)
+  Variable remaining = variable budget − already spent
+  (Debit + Cash) − Fixed remaining − Variable remaining = surplus / shortfall
 */
 function waterfall(s){
   var balance=s.accounts.debit.balance||0;
   var cash=s.cash||0;
   var total=balance+cash;
 
-  var prevBill=s.prev_bill_paid?0:prevBillTotal(s);
+  var fixedRem=unpaidFixedAmt(s);
+  var dVarBud=s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
+  var dVarSpent=debitVarSpent(s);
+  var dVarRem=Math.max(0,dVarBud-dVarSpent);
+
+  var afterFixed=total-fixedRem;
+  var net=afterFixed-dVarRem;
+
+  // Info-only
   var currCredit=totCurrCreditSpent(s);
-  // Full month fixed total (already paid ones came out of balance, unpaid still pending — all counted)
-  var fixedTotal=s.fixed.reduce(function(a,f){return a+f.budget;},0);
+  var prevBill=s.prev_bill_paid?0:prevBillTotal(s);
   var savPend=s.savings.done?0:s.savings.budget;
   var debtPend=unpaidDebts(s);
 
-  var afterPrevBill=total-prevBill;
-  var afterCredit=afterPrevBill-currCredit;
-  var afterFixed=afterCredit-fixedTotal;
-  var afterSav=afterFixed-savPend;
-  var afterDebts=afterSav-debtPend;
-
-  var dVarBud=s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
-  var dVarSpent=debitVarSpent(s);
-  var dVarLeft=dVarBud-dVarSpent;
-  var net=afterDebts-dVarBud;
-
   return{
     balance:balance,cash:cash,total:total,
-    prevBill:prevBill,afterPrevBill:afterPrevBill,
-    currCredit:currCredit,afterCredit:afterCredit,
-    fixedTotal:fixedTotal,afterFixed:afterFixed,
-    savPend:savPend,afterSav:afterSav,
-    debtPend:debtPend,afterDebts:afterDebts,
-    dVarBud:dVarBud,dVarSpent:dVarSpent,dVarLeft:dVarLeft,
+    fixedRem:fixedRem,afterFixed:afterFixed,
+    dVarBud:dVarBud,dVarSpent:dVarSpent,dVarRem:dVarRem,
+    currCredit:currCredit,prevBill:prevBill,
+    savPend:savPend,debtPend:debtPend,
     surplus:net>0?net:0,short:net<0?-net:0
   };
 }
@@ -393,15 +379,8 @@ function UpdatedAt(props){
 // ── Waterfall Card ──────────────────────────────────────────────────
 function WaterfallCard(props){
   var s=props.s,wf=waterfall(s);
-  var rows=[];
-  if(wf.prevBill>0) rows.push({label:'Prev month credit bills',val:wf.prevBill,after:wf.afterPrevBill,color:'var(--pnk)',sub:'SBI '+fmt(s.prev_sbi_bill||0)+' + YES '+fmt(s.prev_yes_bill||0)});
-  if(wf.currCredit>0) rows.push({label:'This month credit spend',val:wf.currCredit,after:wf.afterCredit,color:'var(--pur)',sub:'SBI '+fmt(sbiSpent(s))+' + YES '+fmt(yesSpent(s))});
-  rows.push({label:'Fixed expenses (total)',val:wf.fixedTotal,after:wf.afterFixed,color:'var(--amb)',sub:fmt(paidFixedAmt(s))+' paid \u00B7 '+fmt(unpaidFixedAmt(s))+' pending'});
-  if(wf.savPend>0) rows.push({label:'Savings to transfer',val:wf.savPend,after:wf.afterSav,color:'var(--acc)',sub:null});
-  if(wf.debtPend>0) rows.push({label:'Pending debts',val:wf.debtPend,after:wf.afterDebts,color:'var(--red)',sub:null});
-  rows.push({label:'Debit variable budget',val:wf.dVarBud,after:wf.afterDebts-wf.dVarBud,color:'var(--blu)',sub:fmt(wf.dVarSpent)+' spent \u00B7 '+fmt(wf.dVarLeft)+' left'});
-
   return h('div',{className:'wf'},
+    // Starting point
     h('div',{className:'wfr hd'},
       h('span',{className:'wfl',style:{color:'var(--acc)',fontWeight:700}},'Debit balance'),
       h('span',{className:'wfv',style:{color:'var(--acc)'}},fmt(wf.balance))
@@ -410,28 +389,55 @@ function WaterfallCard(props){
       h('span',{className:'wfl',style:{color:'var(--grn)'}},'+ Cash on hand'),
       h('span',{className:'wfv',style:{color:'var(--grn)'}},fmt(wf.cash))
     ),
-    rows.map(function(r,i){
-      var col=r.after<0?'var(--red)':r.after<3000?'var(--amb)':'var(--grn)';
-      return h('div',{className:'wfr',key:i,style:{borderLeft:'3px solid '+r.color}},
-        h('div',null,
-          h('div',{className:'wfl'},r.label),
-          r.sub&&h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},r.sub),
-          h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:r.color,marginTop:1}},'− '+fmt(r.val))
-        ),
-        h('div',{style:{textAlign:'right'}},
-          h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'remaining'),
-          h('div',{className:'wfv',style:{color:col}},fmt(r.after))
-        )
-      );
-    }),
+    h('div',{className:'wfr',style:{background:'var(--s2)'}},
+      h('span',{className:'wfl',style:{fontWeight:700}},'Total available'),
+      h('span',{className:'wfv',style:{fontWeight:700}},fmt(wf.total))
+    ),
+    // Fixed remaining
+    h('div',{className:'wfr',style:{borderLeft:'3px solid var(--amb)'}},
+      h('div',null,
+        h('div',{className:'wfl'},'Fixed remaining to pay'),
+        h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},
+          fmt(paidFixedAmt(s))+' already paid'),
+        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--amb)',marginTop:1}},'− '+fmt(wf.fixedRem))
+      ),
+      h('div',{style:{textAlign:'right'}},
+        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'remaining'),
+        h('div',{className:'wfv',style:{color:wf.afterFixed<0?'var(--red)':wf.afterFixed<5000?'var(--amb)':'var(--grn)'}},fmt(wf.afterFixed))
+      )
+    ),
+    // Debit variable remaining
+    h('div',{className:'wfr',style:{borderLeft:'3px solid var(--blu)'}},
+      h('div',null,
+        h('div',{className:'wfl'},'Debit variable remaining'),
+        h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},
+          fmt(wf.dVarSpent)+' already spent of '+fmt(wf.dVarBud)),
+        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--blu)',marginTop:1}},'− '+fmt(wf.dVarRem))
+      ),
+      h('div',{style:{textAlign:'right'}},
+        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'surplus/short'),
+        h('div',{className:'wfv',style:{color:wf.short>0?'var(--red)':'var(--grn)'}},
+          fmt(wf.short>0?-wf.short:wf.surplus))
+      )
+    ),
+    // Surplus / shortfall final
     h('div',{className:'wfr fin'},
       h('span',{className:'wfl',style:{fontWeight:700,color:wf.short>0?'var(--red)':'var(--grn)'}},
         wf.short>0?'\u26A0 Short by':'\u2713 Surplus'),
       h('span',{className:'wfv',style:{fontSize:'1.05rem',color:wf.short>0?'var(--red)':'var(--grn)'}},
         fmt(wf.short>0?wf.short:wf.surplus))
+    ),
+    // Info-only section
+    (wf.prevBill>0||wf.currCredit>0||wf.savPend>0||wf.debtPend>0)&&h('div',{style:{padding:'.5rem .9rem',background:'var(--s2)',borderTop:'1px solid var(--bd)'}},
+      h('div',{style:{fontSize:'.58rem',color:'var(--m2)',fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',marginBottom:4}},'Also to pay (not from debit budget)'),
+      wf.prevBill>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Prev month bills'),h('span',{className:'hval',style:{color:'var(--pnk)'}},fmt(wf.prevBill))),
+      wf.currCredit>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Credit card spend'),h('span',{className:'hval',style:{color:'var(--pur)'}},fmt(wf.currCredit))),
+      wf.savPend>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Savings pending'),h('span',{className:'hval',style:{color:'var(--acc)'}},fmt(wf.savPend))),
+      wf.debtPend>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Debts pending'),h('span',{className:'hval',style:{color:'var(--red)'}},fmt(wf.debtPend)))
     )
   );
 }
+
 
 // ── Hero ────────────────────────────────────────────────────────────
 function Hero(props){
@@ -439,18 +445,16 @@ function Hero(props){
   var hbg=ok?'linear-gradient(135deg,#ECFDF5,#D1FAE5)':'linear-gradient(135deg,#FEF2F2,#FEE2E2)';
   var hbc=ok?'var(--grn-bd)':'var(--red-bd)';
   return h('div',{className:'hero',style:{background:hbg,borderColor:hbc,color:ok?'var(--grn)':'var(--red)'}},
-    h('div',{className:'hero-lbl'},ok?'All good \u00B7 Surplus':'Heads up \u00B7 Short by'),
+    h('div',{className:'hero-lbl'},ok?'Covered \u00B7 Surplus':'Not covered \u00B7 Short by'),
     h('div',{className:'hero-amt'},fmt(ok?wf.surplus:wf.short)),
     h('div',{style:{borderTop:'1px solid '+(ok?'var(--grn-bd)':'var(--red-bd)'),paddingTop:'.5rem',display:'flex',flexDirection:'column',gap:2}},
-      h('div',{className:'hrow'},h('span',{className:'hlbl'},'Salary / opening'),h('span',{className:'hval',style:{color:'var(--acc)'}},fmt(s.salary))),
-      h('div',{className:'hrow'},h('span',{className:'hlbl'},'Actual debit balance'),h('span',{className:'hval'},fmt(wf.balance))),
-      wf.cash>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Cash'),h('span',{className:'hval',style:{color:'var(--grn)'}},fmt(wf.cash))),
-      prevBillTotal(s)>0&&h('div',{className:'hrow'},
-        h('span',{className:'hlbl'},'Prev month bills'+(s.prev_bill_paid?' (paid)':' (unpaid)')),
-        h('span',{className:'hval',style:{color:s.prev_bill_paid?'var(--grn)':'var(--pnk)'}},fmt(prevBillTotal(s)))
-      ),
-      h('div',{className:'hrow'},h('span',{className:'hlbl'},'Fixed expenses (total)'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(wf.fixedTotal))),
-      h('div',{className:'hrow'},h('span',{className:'hlbl'},'After bills + fixed + savings'),h('span',{className:'hval',style:{color:wf.afterDebts>=0?'var(--grn)':'var(--red)'}},fmt(wf.afterDebts)))
+      h('div',{className:'hrow'},h('span',{className:'hlbl'},'Debit + Cash'),h('span',{className:'hval',style:{color:'var(--acc)'}},fmt(wf.total))),
+      h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Fixed remaining'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(wf.fixedRem))),
+      h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Debit var remaining'),h('span',{className:'hval',style:{color:'var(--blu)'}},fmt(wf.dVarRem))),
+      h('div',{className:'hrow',style:{borderTop:'1px solid '+(ok?'var(--grn-bd)':'var(--red-bd)'),marginTop:4,paddingTop:4}},
+        h('span',{className:'hlbl',style:{fontWeight:700}},'= '+(ok?'Surplus':'Shortfall')),
+        h('span',{className:'hval',style:{color:ok?'var(--grn)':'var(--red)',fontSize:'.9rem'}},fmt(ok?wf.surplus:wf.short))
+      )
     )
   );
 }
