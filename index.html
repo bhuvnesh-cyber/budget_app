@@ -176,9 +176,6 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
 .sc-amb{background:linear-gradient(135deg,#FFFBEB,#FEF3C7);border-color:var(--amb-bd)}
 
 .acc-card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:.75rem .85rem;box-shadow:var(--sh);border-top:3px solid}
-
-/* Prev bill banner */
-.bill-banner{background:linear-gradient(135deg,#FDF2F8,#FCE7F3);border:1px solid var(--pnk-bd);border-radius:var(--r);padding:.75rem .9rem;margin-bottom:.5rem}
 </style>
 </head>
 <body>
@@ -321,9 +318,10 @@ function prevBillTotal(s){return (s.prev_sbi_bill||0)+(s.prev_yes_bill||0);}
 function debitVarSpent(s){return (s.debit_spend_log||[]).reduce(function(a,e){return a+e.amount;},0);}
 function totVarSpent(s){return sbiSpent(s)+yesSpent(s)+debitVarSpent(s);}
 
-// Predicted debit = opening − paid fixed − debit var spent − prev bill (if paid)
+// Predicted debit = opening − paid fixed − debit var spent − savings (if done) − prev bill (if paid)
 function predictedDebit(s){
-  return s.accounts.debit.opening - paidFixedAmt(s) - debitVarSpent(s) - (s.prev_bill_paid?prevBillTotal(s):0);
+  var sav=s.savings.done?s.savings.budget:0;
+  return s.accounts.debit.opening - paidFixedAmt(s) - debitVarSpent(s) - sav - (s.prev_bill_paid?prevBillTotal(s):0);
 }
 
 /*
@@ -595,17 +593,17 @@ function Checkin(props){
     h('div',{style:{fontSize:'1.1rem',fontWeight:800,padding:'.5rem 0 .05rem'}},'Check-In'),
     h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'.75rem',fontFamily:'var(--mono)'}},'Enter only what changed today'),
 
-    // Prev month bill quick mark
-    prevBillTotal(s)>0&&h('div',{className:'bill-banner mb'},
+    // Prev month bill — clean card with toggle
+    prevBillTotal(s)>0&&h('div',{className:'card mb',style:{borderLeft:'3px solid var(--pnk)'}},
       h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
         h('div',null,
-          h('div',{style:{fontSize:'.6rem',fontWeight:800,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--pnk)',marginBottom:3}},'Prev Month Bill'),
-          h('div',{style:{fontFamily:'var(--mono)',fontWeight:700,color:'var(--pnk)',fontSize:'1rem'}},fmt(prevBillTotal(s))),
+          h('div',{style:{fontSize:'.58rem',fontWeight:800,letterSpacing:'.12em',textTransform:'uppercase',color:'var(--pnk)',marginBottom:3}},'Prev Month Credit Bill'),
+          h('div',{style:{fontFamily:'var(--mono)',fontWeight:700,color:s.prev_bill_paid?'var(--grn)':'var(--pnk)',fontSize:'1.05rem'}},fmt(prevBillTotal(s))),
           h('div',{style:{fontSize:'.65rem',color:'var(--m2)',marginTop:2}},'SBI '+fmt(s.prev_sbi_bill||0)+' + YES '+fmt(s.prev_yes_bill||0))
         ),
-        h('div',{style:{textAlign:'center'}},
-          h(Tog,{v:!!s.prev_bill_paid,onChange:function(v){save(Object.assign({},s,{prev_bill_paid:v})).then(function(){toast(v?'Prev bill marked paid':'Marked unpaid');});}}),
-          h('div',{style:{fontSize:'.58rem',color:'var(--m2)',marginTop:4}},s.prev_bill_paid?'paid':'unpaid')
+        h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:5}},
+          h(Tog,{v:!!s.prev_bill_paid,onChange:function(v){save(Object.assign({},s,{prev_bill_paid:v})).then(function(){toast(v?'Prev bill marked paid \u2713':'Marked unpaid');});}}),
+          h('div',{style:{fontSize:'.6rem',color:s.prev_bill_paid?'var(--grn)':'var(--m2)',fontWeight:700}},s.prev_bill_paid?'Paid':'Unpaid')
         )
       )
     ),
@@ -876,19 +874,6 @@ function Settings(props){
           accounts:Object.assign({},s.accounts,{debit:Object.assign({},s.accounts.debit,{opening:sal})})
         }));
       }})
-    ),
-
-    h('div',{className:'sh'},'Previous Month Credit Bills'),
-    h('div',{className:'note wn mb'},'\uD83D\uDDD3 Bills from last month that will be paid from debit this month'),
-    h('div',{className:'card gap mb'},
-      h('div',null,h('div',{className:'il',style:{color:'var(--blu)'}},'SBI Previous Bill'),
-        h('input',{type:'number',value:s.prev_sbi_bill||0,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{prev_sbi_bill:Number(e.target.value)}));}})),
-      h('div',null,h('div',{className:'il',style:{color:'var(--grn)'}},'YES Previous Bill'),
-        h('input',{type:'number',value:s.prev_yes_bill||0,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{prev_yes_bill:Number(e.target.value)}));}})),
-      prevBillTotal(s)>0&&h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'.4rem .6rem',background:'var(--pnk-bg)',borderRadius:8,border:'1px solid var(--pnk-bd)'}},
-        h('span',{style:{fontSize:'.72rem',color:'var(--pnk)',fontWeight:600}},'Total prev bills'),
-        h('span',{style:{fontFamily:'var(--mono)',fontSize:'.78rem',fontWeight:700,color:'var(--pnk)'}},fmt(prevBillTotal(s)))
-      )
     ),
 
     h('div',{className:'sh'},'Additional Income'),
