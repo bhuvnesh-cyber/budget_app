@@ -610,17 +610,12 @@ function Checkin(props){
   var _dv=useState(''),dv=_dv[0],setDv=_dv[1];
   var _sv=useState(''),sv=_sv[0],setSv=_sv[1];
   var _yv=useState(''),yv=_yv[0],setYv=_yv[1];
-  var _cv=useState(''),cv=_cv[0],setCv=_cv[1];
   var _sa=useState(''),sa=_sa[0],setSa=_sa[1];
   var _sn=useState(''),sn=_sn[0],setSn=_sn[1];
   var _busy=useState(false),busy=_busy[0],setBusy=_busy[1];
 
-  var hasBalance=dv!==''||sv!==''||yv!==''||cv!=='';
+  var hasBalance=dv!==''||sv!==''||yv!=='';
   var hasSpend=sa!==''&&Number(sa)>0;
-  var pred=predictedDebit(s);
-  var newBal=dv!==''?Number(dv):null;
-  var autoSpend=newBal!==null?Math.max(0,pred-newBal):null;
-  var autoDeposit=newBal!==null?Math.max(0,newBal-pred):null;
 
   var prevS=useMemo(function(){
     return Object.assign({},s,{
@@ -629,27 +624,23 @@ function Checkin(props){
         sbi:Object.assign({},s.accounts.sbi,{available:sv!==''?Number(sv):s.accounts.sbi.available}),
         yes:Object.assign({},s.accounts.yes,{available:yv!==''?Number(yv):s.accounts.yes.available}),
       }),
-      cash:cv!==''?Number(cv):(s.cash||0),
     });
-  },[dv,sv,yv,cv,s]);
+  },[dv,sv,yv,s]);
   var wfP=waterfall(prevS);
 
   function doSaveBalance(){
     if(!hasBalance||busy) return;
     setBusy(true);
     var now=new Date().toISOString();
-    var newLog=(s.debit_spend_log||[]).slice();
-    if(newBal!==null&&autoSpend>0) newLog.push({amount:autoSpend,note:'Auto: balance drop',ts:now});
     var ns=Object.assign({},s,{
-      cash:cv!==''?Number(cv):(s.cash||0),
-      updated_at:now,debit_spend_log:newLog,
+      updated_at:now,
       accounts:Object.assign({},s.accounts,{
         debit:{opening:s.accounts.debit.opening,balance:dv!==''?Number(dv):s.accounts.debit.balance},
         sbi:Object.assign({},s.accounts.sbi,{available:sv!==''?Number(sv):s.accounts.sbi.available}),
         yes:Object.assign({},s.accounts.yes,{available:yv!==''?Number(yv):s.accounts.yes.available}),
       }),
     });
-    save(ns).then(function(){toast('Saved \u2713');setDv('');setSv('');setYv('');setCv('');setBusy(false);});
+    save(ns).then(function(){toast('Saved \u2713');setDv('');setSv('');setYv('');setBusy(false);});
   }
 
   function doAddSpend(){
@@ -661,13 +652,10 @@ function Checkin(props){
     save(ns).then(function(){toast('Logged \u2713');setSa('');setSn('');setBusy(false);});
   }
 
-  var dVarBud=s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
-
   return h('div',{className:'page'},
     h('div',{style:{fontSize:'1.1rem',fontWeight:800,padding:'.5rem 0 .05rem'}},'Check-In'),
-    h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'.75rem',fontFamily:'var(--mono)'}},'Enter only what changed today'),
+    h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'.75rem',fontFamily:'var(--mono)'}},'Update balances as they change'),
 
-    // Prev month bill — clean card with toggle
     prevBillTotal(s)>0&&h('div',{className:'card mb',style:{borderLeft:'3px solid var(--pnk)'}},
       h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
         h('div',null,
@@ -676,7 +664,7 @@ function Checkin(props){
           h('div',{style:{fontSize:'.65rem',color:'var(--m2)',marginTop:2}},'SBI '+fmt(s.prev_sbi_bill||0)+' + YES '+fmt(s.prev_yes_bill||0))
         ),
         h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:5}},
-          h(Tog,{v:!!s.prev_bill_paid,onChange:function(v){save(Object.assign({},s,{prev_bill_paid:v})).then(function(){toast(v?'Prev bill marked paid \u2713':'Marked unpaid');});}}),
+          h(Tog,{v:!!s.prev_bill_paid,onChange:function(v){save(Object.assign({},s,{prev_bill_paid:v})).then(function(){toast(v?'Marked paid \u2713':'Marked unpaid');});}}),
           h('div',{style:{fontSize:'.6rem',color:s.prev_bill_paid?'var(--grn)':'var(--m2)',fontWeight:700}},s.prev_bill_paid?'Paid':'Unpaid')
         )
       )
@@ -687,14 +675,10 @@ function Checkin(props){
         h('div',{className:'il',style:{color:'var(--acc)'}},'🏦 Debit Balance'),
         h('div',{className:'bigwrap'},
           h('span',{className:'bigpfx'},'\u20B9'),
-          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.accounts.debit.balance||0),value:dv,onChange:function(e){setDv(e.target.value);}})
-        ),
-        h('div',{className:'sanity'},
-          h('span',{style:{fontSize:'.65rem',color:'var(--acc)'}},'Predicted (opening \u2212 paid \u2212 spent)'),
-          h('span',{style:{fontFamily:'var(--mono)',fontSize:'.75rem',fontWeight:700,color:'var(--acc)'}},fmt(pred))
-        ),
-        autoSpend!==null&&autoSpend>0&&h('div',{className:'hint',style:{color:'var(--red)'}},'\u2193 '+fmt(autoSpend)+' gap \u2192 auto-logged as debit spend'),
-        autoDeposit!==null&&autoDeposit>0&&h('div',{className:'hint',style:{color:'var(--grn)'}},'\u2191 '+fmt(autoDeposit)+' above predicted (deposit or extra income)')
+          h('input',{className:'biginp',type:'number',inputMode:'numeric',
+            placeholder:String(s.accounts.debit.balance||0),
+            value:dv,onChange:function(e){setDv(e.target.value);}})
+        )
       ),
       h('hr'),
       h('div',{className:'mb'},
@@ -704,49 +688,48 @@ function Checkin(props){
         ),
         h('div',{className:'bigwrap'},
           h('span',{className:'bigpfx'},'\u20B9'),
-          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.accounts.sbi.available),value:sv,onChange:function(e){setSv(e.target.value);}})
+          h('input',{className:'biginp',type:'number',inputMode:'numeric',
+            placeholder:String(s.accounts.sbi.available),
+            value:sv,onChange:function(e){setSv(e.target.value);}})
         ),
-        sbiSpent(prevS)>0&&h('div',{style:{marginTop:3,fontSize:'.7rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'Current bill: '+fmt(sbiSpent(prevS)))
+        sbiSpent(prevS)>0&&h('div',{style:{marginTop:4,fontSize:'.7rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'Bill so far: '+fmt(sbiSpent(prevS)))
       ),
       h('hr'),
-      h('div',{className:'mb'},
+      h('div',null,
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}},
           h('div',{className:'il',style:{marginBottom:0,color:'var(--grn)'}},'💳 YES Available'),
           h('span',{style:{fontSize:'.62rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'limit '+fmt(s.accounts.yes.limit))
         ),
         h('div',{className:'bigwrap'},
           h('span',{className:'bigpfx'},'\u20B9'),
-          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.accounts.yes.available),value:yv,onChange:function(e){setYv(e.target.value);}})
+          h('input',{className:'biginp',type:'number',inputMode:'numeric',
+            placeholder:String(s.accounts.yes.available),
+            value:yv,onChange:function(e){setYv(e.target.value);}})
         ),
-        yesSpent(prevS)>0&&h('div',{style:{marginTop:3,fontSize:'.7rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'Current bill: '+fmt(yesSpent(prevS)))
-      ),
-      h('hr'),
-      h('div',null,
-        h('div',{className:'il',style:{color:'var(--amb)'}},'💵 Cash on Hand'),
-        h('div',{className:'bigwrap'},
-          h('span',{className:'bigpfx'},'\u20B9'),
-          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.cash||0),value:cv,onChange:function(e){setCv(e.target.value);}})
-        )
+        yesSpent(prevS)>0&&h('div',{style:{marginTop:4,fontSize:'.7rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'Bill so far: '+fmt(yesSpent(prevS)))
       )
     ),
 
-    hasBalance&&h('div',null,
-      h('div',{className:'sh'},'Preview after save'),
-      h('div',{className:'card mb',style:{background:wfP.short>0?'linear-gradient(135deg,#FEF2F2,#FEE2E2)':'linear-gradient(135deg,#ECFDF5,#D1FAE5)',borderColor:wfP.short>0?'var(--red-bd)':'var(--grn-bd)'}},
-        h('div',{style:{fontSize:'.6rem',fontWeight:800,letterSpacing:'.1em',textTransform:'uppercase',color:wfP.short>0?'var(--red)':'var(--grn)'}},wfP.short>0?'Short by':'Surplus'),
-        h('div',{style:{fontFamily:'var(--mono)',fontSize:'1.7rem',fontWeight:700,color:wfP.short>0?'var(--red)':'var(--grn)',lineHeight:1,margin:'.15rem 0 .5rem'}},fmt(wfP.short>0?wfP.short:wfP.surplus)),
-        h('div',{className:'hrow'},h('span',{className:'hlbl'},'Prev month bill'),h('span',{className:'hval',style:{color:s.prev_bill_paid?'var(--grn)':'var(--pnk)'}},fmt(prevBillTotal(s))+(s.prev_bill_paid?' (paid)':''))),
-        h('div',{className:'hrow'},h('span',{className:'hlbl'},'Current credit spend'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(wfP.currCredit))),
-        h('div',{className:'hrow'},h('span',{className:'hlbl'},'Freely spendable'),h('span',{className:'hval'},fmt(wfP.afterSav))),
-        h('div',{className:'hrow'},h('span',{className:'hlbl'},'Debit var left'),h('span',{className:'hval'},fmt(wfP.dVarLeft)))
-      )
+    hasBalance&&h('div',{className:'card mb',style:{
+      background:wfP.short>0?'linear-gradient(135deg,#FEF2F2,#FEE2E2)':'linear-gradient(135deg,#ECFDF5,#D1FAE5)',
+      borderColor:wfP.short>0?'var(--red-bd)':'var(--grn-bd)'
+    }},
+      h('div',{style:{fontSize:'.58rem',fontWeight:800,letterSpacing:'.1em',textTransform:'uppercase',
+        color:wfP.short>0?'var(--red)':'var(--grn)',marginBottom:4}},'After saving'),
+      h('div',{className:'hrow'},
+        h('span',{className:'hlbl'},'Surplus / Short'),
+        h('span',{className:'hval',style:{color:wfP.short>0?'var(--red)':'var(--grn)',fontSize:'1rem'}},
+          (wfP.short>0?'−':'+') + fmt(wfP.short>0?wfP.short:wfP.surplus))),
+      wfP.creditBillsDue>0&&h('div',{className:'hrow'},
+        h('span',{className:'hlbl'},'Credit bills due'),
+        h('span',{className:'hval',style:{color:'var(--pnk)'}},fmt(wfP.creditBillsDue)))
     ),
 
     h('button',{className:'btn bp',onClick:doSaveBalance,disabled:busy||!hasBalance},
-      busy?'Saving\u2026':hasBalance?'\u2713 Save Balances':'Enter a balance above'),
+      busy?'Saving\u2026':'\u2713 Save Balances'),
 
-    h('div',{className:'sh'},'Log Debit Variable Spend'),
-    h('div',{className:'note inf mb'},'Cash or debit purchases not on credit cards'),
+    h('div',{className:'sh'},'Log Debit / Cash Spend'),
+    h('div',{className:'note inf mb'},'\uD83D\uDCB5 Direct debit or cash purchases (not on credit card)'),
     h('div',{className:'card mb'},
       h('div',{className:'mb'},
         h('div',{className:'il',style:{color:'var(--blu)'}},'Amount'),
@@ -757,13 +740,13 @@ function Checkin(props){
       ),
       h('div',null,
         h('div',{className:'il'},'Note (optional)'),
-        h('input',{type:'text',placeholder:'e.g. Petrol, Auto, Mall\u2026',value:sn,onChange:function(e){setSn(e.target.value);}})
+        h('input',{type:'text',placeholder:'e.g. Petrol, Auto, Grocery\u2026',value:sn,onChange:function(e){setSn(e.target.value);}})
       )
     ),
     h('button',{className:'btn bp',onClick:doAddSpend,disabled:busy||!hasSpend},busy?'Saving\u2026':'+ Log Spend'),
 
     s.debit_spend_log&&s.debit_spend_log.length>0&&h('div',null,
-      h('div',{className:'sh'},'Debit Spend History'),
+      h('div',{className:'sh'},'Spend History'),
       h(DebitSpendLog,{s:s,save:save,toast:toast})
     )
   );
@@ -772,8 +755,8 @@ function Checkin(props){
 function DebitSpendLog(props){
   var s=props.s,save=props.save,toast=props.toast;
   var sorted=(s.debit_spend_log||[]).slice().sort(function(a,b){return new Date(b.ts)-new Date(a.ts);});
-  var dVarBud=s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
   var total=debitVarSpent(s);
+  var wf=waterfall(s);
   function remove(ts){
     var newLog=s.debit_spend_log.filter(function(e){return e.ts!==ts;});
     save(Object.assign({},s,{debit_spend_log:newLog})).then(function(){toast('Removed');});
@@ -790,8 +773,8 @@ function DebitSpendLog(props){
       );
     }),
     h('div',{style:{padding:'.55rem .9rem',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--s2)',borderTop:'1px solid var(--bd)'}},
-      h('span',{style:{fontSize:'.68rem',color:'var(--m1)',fontWeight:700}},'Total debit spent'),
-      h('span',{style:{fontFamily:'var(--mono)',fontSize:'.78rem',fontWeight:700,color:total>dVarBud?'var(--red)':'var(--acc)'}},fmt(total)+' / '+fmt(dVarBud))
+      h('span',{style:{fontSize:'.68rem',color:'var(--m1)',fontWeight:700}},'Total logged'),
+      h('span',{style:{fontFamily:'var(--mono)',fontSize:'.78rem',fontWeight:700,color:'var(--acc)'}},fmt(total))
     )
   );
 }
