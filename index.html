@@ -532,10 +532,10 @@ function Overview(props){
   var _ce=useState(false),cashEdit=_ce[0],setCashEdit=_ce[1];
   var _cv=useState(''),cv=_cv[0],setCv=_cv[1];
 
-  // Per week / per day based on actual surplus (what's truly left to freely spend)
-  var freeToSpend=wf.surplus; // after all obligations
-  var perWeek=wLeft>0?Math.round(freeToSpend/wLeft):0;
-  var perDay=dLeft>0?Math.round(freeToSpend/dLeft):0;
+  // Safe to spend per week = (debit + cash - credit bills due - prev bills) / weeks left
+  var afterBills=Math.max(0,wf.total-wf.creditBillsDue-wf.prevBill);
+  var safePerWeek=wLeft>0?Math.round(afterBills/wLeft):0;
+  var safePerDay=dLeft>0?Math.round(afterBills/dLeft):0;
 
   function saveCash(){
     if(cv==='') return setCashEdit(false);
