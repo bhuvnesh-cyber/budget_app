@@ -31,7 +31,6 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--san
 #root{display:flex;flex-direction:column;min-height:100%}
 .page{flex:1;padding:.75rem 1rem calc(var(--nav-h) + var(--safe-b) + 1.5rem);max-width:520px;margin:0 auto;width:100%}
 
-/* Nav */
 .nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));
   background:rgba(255,255,255,.95);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   border-top:1px solid var(--bd);display:flex;align-items:stretch;z-index:100;padding-bottom:var(--safe-b);
@@ -44,26 +43,20 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--san
 .nb-dot{width:4px;height:4px;border-radius:50%;background:var(--acc);margin-top:-1px;display:none}
 .nb.on .nb-dot{display:block}
 
-/* Cards */
 .card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:.9rem 1rem;box-shadow:var(--sh)}
 .card+.card{margin-top:.5rem}
-.card-color-ind{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:.9rem 1rem;box-shadow:var(--sh);border-left:3px solid}
 
-/* Section headers */
 .sh{font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);
   font-weight:800;margin:1.4rem 0 .6rem;display:flex;align-items:center;gap:.6rem}
 .sh::after{content:'';flex:1;height:1px;background:var(--acc-bd)}
 
-/* Stat cards */
 .sl{font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--m2);font-weight:700;margin-bottom:5px}
 .sv{font-size:1.4rem;font-weight:800;line-height:1;font-family:var(--mono);letter-spacing:-.02em}
 .ss{font-size:.66rem;color:var(--m1);margin-top:4px;font-family:var(--mono)}
 
-/* Grids */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem}
 
-/* Pills */
 .pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;
   font-size:.6rem;font-weight:700;border:1px solid transparent;white-space:nowrap;font-family:var(--sans)}
 .pill.gd{background:var(--grn-bg);border-color:var(--grn-bd);color:var(--grn)}
@@ -74,7 +67,6 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--san
 .pill.pk{background:var(--pnk-bg);border-color:var(--pnk-bd);color:var(--pnk)}
 .pill-row{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.75rem}
 
-/* Notes/alerts */
 .note{display:flex;align-items:center;gap:8px;padding:.45rem .8rem;border-radius:10px;
   font-size:.72rem;font-weight:600;margin-bottom:.5rem;border-left:3px solid}
 .note.gd{background:var(--grn-bg);border-color:var(--grn);color:var(--grn)}
@@ -83,11 +75,9 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--san
 .note.inf{background:var(--blu-bg);border-color:var(--blu);color:var(--blu)}
 .note.pur{background:var(--pur-bg);border-color:var(--pur);color:var(--pur)}
 
-/* Progress bars */
 .bw{background:var(--s3);border-radius:99px;height:4px;margin-top:7px;overflow:hidden}
 .bf{height:4px;border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)}
 
-/* Inputs */
 input[type=number],input[type=text]{width:100%;background:var(--s2);border:1.5px solid var(--bd);color:var(--tx);
   border-radius:var(--rs);font-family:var(--mono);font-size:.9rem;font-weight:500;
   padding:.65rem .9rem;outline:none;-moz-appearance:textfield;transition:border-color .15s,box-shadow .15s}
@@ -95,7 +85,6 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(79,70,229,.1);background:var(--s1)}
 input::placeholder{color:var(--m2)}
 
-/* Buttons */
 .btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:.75rem 1.2rem;
   border-radius:var(--rs);border:none;cursor:pointer;font-family:var(--sans);font-weight:700;
   font-size:.85rem;transition:all .12s;width:100%;margin-bottom:.5rem}
@@ -107,7 +96,6 @@ input::placeholder{color:var(--m2)}
   border-radius:6px;transition:color .1s;font-size:.85rem}
 .bdng:hover{color:var(--red)}
 
-/* Toggle */
 .tgl{position:relative;width:42px;height:24px;flex-shrink:0}
 .tgl input{opacity:0;width:0;height:0;position:absolute}
 .tsl{position:absolute;inset:0;background:var(--bd2);border-radius:99px;cursor:pointer;transition:.2s}
@@ -116,7 +104,6 @@ input::placeholder{color:var(--m2)}
 .tgl input:checked+.tsl{background:linear-gradient(135deg,#4F46E5,#7C3AED)}
 .tgl input:checked+.tsl::before{transform:translateX(18px)}
 
-/* Expense rows */
 .er{padding:.75rem 0;border-bottom:1px solid var(--bd)}
 .er:last-child{border-bottom:none}
 .eh{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
@@ -126,7 +113,6 @@ input::placeholder{color:var(--m2)}
 .cyes{background:#D1FAE5;color:#065F46}
 .cdeb{background:#EDE9FE;color:#6D28D9}
 
-/* Tab bar */
 .tab-bar{display:flex;background:var(--s2);border-radius:12px;padding:3px;margin-bottom:.8rem;gap:2px;border:1px solid var(--bd)}
 .tab{flex:1;padding:.4rem .5rem;border:none;border-radius:9px;cursor:pointer;
   font-family:var(--sans);font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
@@ -140,7 +126,6 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
 .gap{display:flex;flex-direction:column;gap:.45rem}
 .mb{margin-bottom:.5rem}
 
-/* Waterfall list */
 .wf{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem;box-shadow:var(--sh)}
 .wfr{display:flex;justify-content:space-between;align-items:center;padding:.65rem .9rem;border-bottom:1px solid var(--bd)}
 .wfr:last-child{border-bottom:none}
@@ -149,7 +134,6 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
 .wfr.hd{background:linear-gradient(135deg,var(--acc-bg),var(--pur-bg))}
 .wfr.fin{background:var(--s2)}
 
-/* Hero card */
 .hero{border-radius:var(--r);padding:1.2rem 1.1rem 1rem;margin-bottom:.75rem;border:1px solid;box-shadow:var(--shm);position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;opacity:.07;background:currentColor}
 .hero-amt{font-family:var(--mono);font-size:2.1rem;font-weight:700;line-height:1;letter-spacing:-.03em;margin:.2rem 0 .65rem}
@@ -158,28 +142,23 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
 .hlbl{color:var(--m1);font-weight:500}
 .hval{font-family:var(--mono);font-weight:700;font-size:.78rem}
 
-/* Spend log */
 .log-entry{display:flex;justify-content:space-between;align-items:center;padding:.6rem .9rem;border-bottom:1px solid var(--bd)}
 .log-entry:last-child{border-bottom:none}
 .log-time{font-size:.62rem;color:var(--m2);font-family:var(--mono);margin-top:2px}
 .log-note{font-size:.72rem;color:var(--m1);margin-top:1px}
 
-/* Loading */
 .loading{display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:.75rem;background:var(--bg)}
 .spinner{width:28px;height:28px;border:2px solid var(--bd);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* Toast */
 .toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 12px);left:50%;transform:translateX(-50%);
   background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;padding:.5rem 1.4rem;border-radius:99px;
   font-size:.75rem;font-weight:700;font-family:var(--sans);z-index:200;animation:fu .18s ease;white-space:nowrap;box-shadow:0 4px 20px rgba(79,70,229,.4)}
 @keyframes fu{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-/* Updated at */
 .upd{display:inline-flex;align-items:center;gap:4px;font-size:.6rem;color:var(--m2);font-family:var(--mono)}
 .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 
-/* Big input */
 .bigwrap{position:relative;margin-bottom:.4rem}
 .bigpfx{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);
   font-family:var(--mono);font-size:1.1rem;font-weight:600;color:var(--acc);pointer-events:none;z-index:1}
@@ -190,15 +169,16 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
   border-radius:8px;padding:.45rem .8rem;margin-top:.35rem;border:1px solid var(--acc-bd)}
 .hint{font-size:.68rem;font-family:var(--mono);margin-top:4px}
 
-/* Colourful stat cards */
 .sc-grn{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border-color:var(--grn-bd)}
 .sc-blu{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border-color:var(--blu-bd)}
 .sc-pur{background:linear-gradient(135deg,#F5F3FF,#EDE9FE);border-color:var(--pur-bd)}
 .sc-pnk{background:linear-gradient(135deg,#FDF2F8,#FCE7F3);border-color:var(--pnk-bd)}
 .sc-amb{background:linear-gradient(135deg,#FFFBEB,#FEF3C7);border-color:var(--amb-bd)}
 
-/* Accent top-border cards for accounts */
 .acc-card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:.75rem .85rem;box-shadow:var(--sh);border-top:3px solid}
+
+/* Prev bill banner */
+.bill-banner{background:linear-gradient(135deg,#FDF2F8,#FCE7F3);border:1px solid var(--pnk-bd);border-radius:var(--r);padding:.75rem .9rem;margin-bottom:.5rem}
 </style>
 </head>
 <body>
@@ -222,10 +202,11 @@ var lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
 var dLeft=Math.max(1,lastDay-today.getDate());
 var wLeft=Math.max(1,Math.ceil(dLeft/7));
 
-// VERSION 10 — force fresh defaults on load
+// VERSION 11 — salary = opening balance; prev month credit bill separate
 var DEFAULT={
-  version:10,
-  base_budget:85800,
+  version:11,
+  // salary is the opening/starting debit balance each month
+  salary:102844,
   additional_income:[{source:'Bank Interest',amount:0}],
   fixed:[
     {category:'Family',         budget:15000,paid:false},
@@ -250,18 +231,23 @@ var DEFAULT={
   savings:{budget:15000,done:false},
   debts:[{name:'',amount:0,paid:false}],
   accounts:{
-    debit:{opening:0,balance:0},
-    sbi:  {limit:20000,available:20000,cashback:0},
-    yes:  {limit:51000,available:51000,cashback:0},
+    // debit.balance = actual balance you enter via check-in
+    // debit.opening = salary (auto-set from salary field at month start)
+    debit:{opening:102844,balance:0},
+    sbi:  {limit:200000,available:200000,cashback:0},
+    yes:  {limit:510000,available:510000,cashback:0},
   },
   cash:0,
+  // Previous month unpaid credit card bills — paid from debit this month
+  prev_sbi_bill:0,
+  prev_yes_bill:0,
+  prev_bill_paid:false,
   debit_spend_log:[],
   updated_at:null,
 };
 
 function migrate(s){
-  // Force re-apply fixed/variable/savings when version < 10
-  var needsReset=(s.version||0)<10;
+  var needsReset=(s.version||0)<11;
   if(!s.accounts) s.accounts=JSON.parse(JSON.stringify(DEFAULT.accounts));
   if(!s.accounts.debit) s.accounts.debit={opening:0,balance:0};
   if(s.accounts.debit.opening===undefined) s.accounts.debit.opening=s.accounts.debit.balance||0;
@@ -271,7 +257,11 @@ function migrate(s){
   if(s.accounts.yes.cashback===undefined) s.accounts.yes.cashback=0;
   if(s.cash===undefined) s.cash=0;
   if(!s.debit_spend_log) s.debit_spend_log=[];
-  // Re-apply budgets from DEFAULT when upgrading version
+  if(s.prev_sbi_bill===undefined) s.prev_sbi_bill=0;
+  if(s.prev_yes_bill===undefined) s.prev_yes_bill=0;
+  if(s.prev_bill_paid===undefined) s.prev_bill_paid=false;
+  // salary field — if old data has base_budget, keep it as salary
+  if(s.salary===undefined) s.salary=s.base_budget||DEFAULT.salary;
   if(needsReset){
     s.fixed=JSON.parse(JSON.stringify(DEFAULT.fixed)).map(function(df){
       var old=s.fixed&&s.fixed.find(function(f){return f.category===df.category;});
@@ -279,10 +269,8 @@ function migrate(s){
     });
     s.variable=JSON.parse(JSON.stringify(DEFAULT.variable));
     s.savings=Object.assign({},DEFAULT.savings,{done:s.savings?!!s.savings.done:false});
-    s.base_budget=DEFAULT.base_budget;
-    s.additional_income=JSON.parse(JSON.stringify(DEFAULT.additional_income));
   }
-  s.version=10;
+  s.version=11;
   return s;
 }
 
@@ -312,41 +300,87 @@ function deepMerge(def,saved){
   return r;
 }
 
-// Aggregators
-function totIncome(s){return s.base_budget+s.additional_income.reduce(function(a,i){return a+i.amount;},0);}
+// ── Aggregators ────────────────────────────────────────────────────
+function totIncome(s){
+  return s.salary+(s.additional_income||[]).reduce(function(a,i){return a+i.amount;},0);
+}
 function paidFixedAmt(s){return s.fixed.filter(function(f){return f.paid;}).reduce(function(a,f){return a+f.budget;},0);}
 function unpaidFixedAmt(s){return s.fixed.filter(function(f){return !f.paid;}).reduce(function(a,f){return a+f.budget;},0);}
 function totVarBud(s){return s.variable.reduce(function(a,v){return a+v.budget;},0);}
 function unpaidDebts(s){return s.debts.filter(function(d){return !d.paid;}).reduce(function(a,d){return a+d.amount;},0);}
+
+// Current month credit card spend (limit - available - cashback)
 function sbiSpent(s){return Math.max(0,s.accounts.sbi.limit-s.accounts.sbi.available-(s.accounts.sbi.cashback||0));}
 function yesSpent(s){return Math.max(0,s.accounts.yes.limit-s.accounts.yes.available-(s.accounts.yes.cashback||0));}
-function totCreditBills(s){return sbiSpent(s)+yesSpent(s);}
+function totCurrCreditSpent(s){return sbiSpent(s)+yesSpent(s);}
+
+// Previous month bills to pay from debit
+function prevBillTotal(s){return (s.prev_sbi_bill||0)+(s.prev_yes_bill||0);}
+
+// Debit variable spend log
 function debitVarSpent(s){return (s.debit_spend_log||[]).reduce(function(a,e){return a+e.amount;},0);}
 function totVarSpent(s){return sbiSpent(s)+yesSpent(s)+debitVarSpent(s);}
-function predictedDebit(s){return s.accounts.debit.opening-paidFixedAmt(s)-debitVarSpent(s);}
 
-function waterfall(s){
-  var balance=s.accounts.debit.balance,cash=s.cash||0,total=balance+cash;
-  var creditBill=totCreditBills(s),fixedPend=unpaidFixedAmt(s),debtPend=unpaidDebts(s);
-  var savPend=s.savings.done?0:s.savings.budget;
-  var afterBills=total-creditBill,afterFixed=afterBills-fixedPend;
-  var afterDebts=afterFixed-debtPend,afterSav=afterDebts-savPend;
-  var dVarBud=s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
-  var dVarSpent=debitVarSpent(s),dVarLeft=dVarBud-dVarSpent,net=afterSav-dVarBud;
-  return{balance:balance,cash:cash,total:total,creditBill:creditBill,afterBills:afterBills,
-    fixedPend:fixedPend,afterFixed:afterFixed,debtPend:debtPend,afterDebts:afterDebts,
-    savPend:savPend,afterSav:afterSav,dVarBud:dVarBud,dVarSpent:dVarSpent,dVarLeft:dVarLeft,
-    surplus:net>0?net:0,short:net<0?-net:0};
+// Predicted debit = opening − paid fixed − debit var spent − prev bill (if paid)
+function predictedDebit(s){
+  return s.accounts.debit.opening - paidFixedAmt(s) - debitVarSpent(s) - (s.prev_bill_paid?prevBillTotal(s):0);
 }
 
-// Small components
+/*
+  WATERFALL:
+  Start: actual debit balance (entered in check-in)
+  + cash
+  − prev month credit bills (if not yet paid)   ← NEW
+  − current month credit bills (SBI + YES)
+  − unpaid fixed expenses
+  − pending debts
+  − savings
+  = freely spendable
+  − debit variable budget
+  = surplus / shortfall
+*/
+function waterfall(s){
+  var balance=s.accounts.debit.balance||0;
+  var cash=s.cash||0;
+  var total=balance+cash;
+
+  var prevBill=s.prev_bill_paid?0:prevBillTotal(s);
+  var currCredit=totCurrCreditSpent(s);
+  var fixedPend=unpaidFixedAmt(s);
+  var debtPend=unpaidDebts(s);
+  var savPend=s.savings.done?0:s.savings.budget;
+
+  var afterPrevBill=total-prevBill;
+  var afterCredit=afterPrevBill-currCredit;
+  var afterFixed=afterCredit-fixedPend;
+  var afterDebts=afterFixed-debtPend;
+  var afterSav=afterDebts-savPend;
+
+  var dVarBud=s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
+  var dVarSpent=debitVarSpent(s);
+  var dVarLeft=dVarBud-dVarSpent;
+  var net=afterSav-dVarBud;
+
+  return{
+    balance:balance,cash:cash,total:total,
+    prevBill:prevBill,afterPrevBill:afterPrevBill,
+    currCredit:currCredit,afterCredit:afterCredit,
+    fixedPend:fixedPend,afterFixed:afterFixed,
+    debtPend:debtPend,afterDebts:afterDebts,
+    savPend:savPend,afterSav:afterSav,
+    dVarBud:dVarBud,dVarSpent:dVarSpent,dVarLeft:dVarLeft,
+    surplus:net>0?net:0,short:net<0?-net:0
+  };
+}
+
+// ── Small Components ────────────────────────────────────────────────
 function Bar(props){
   var p=props.bud?Math.min(100,props.sp/props.bud*100):0;
   return h('div',{className:'bw'},h('div',{className:'bf',style:{width:p+'%',background:bclr(props.sp,props.bud)}}));
 }
 function Tog(props){
   return h('label',{className:'tgl'},
-    h('input',{type:'checkbox',checked:props.v,onChange:function(e){props.onChange(e.target.checked);}}),
+    h('input',{type:'checkbox',checked:!!props.v,onChange:function(e){props.onChange(e.target.checked);}}),
     h('span',{className:'tsl'}));
 }
 function Toast(props){if(!props.msg)return null;return h('div',{className:'toast'},props.msg);}
@@ -355,16 +389,17 @@ function UpdatedAt(props){
   return h('span',{className:'upd'},h('span',{className:'dot',style:{background:r.dot}}),r.label);
 }
 
-// Waterfall card
+// ── Waterfall Card ──────────────────────────────────────────────────
 function WaterfallCard(props){
   var s=props.s,wf=waterfall(s);
-  var rows=[
-    {label:'Credit bills (SBI + YES)',val:wf.creditBill,after:wf.afterBills,show:wf.creditBill>0,color:'var(--pnk)'},
-    {label:'Unpaid fixed expenses',   val:wf.fixedPend, after:wf.afterFixed,show:wf.fixedPend>0, color:'var(--amb)'},
-    {label:'Pending debts',           val:wf.debtPend,  after:wf.afterDebts,show:wf.debtPend>0,  color:'var(--red)'},
-    {label:'Savings to transfer',     val:wf.savPend,   after:wf.afterSav,  show:wf.savPend>0,   color:'var(--pur)'},
-    {label:'Debit variable budget',   val:wf.dVarBud,   after:wf.afterSav-wf.dVarBud,show:true,  color:'var(--blu)'},
-  ].filter(function(r){return r.show;});
+  var rows=[];
+  if(wf.prevBill>0) rows.push({label:'Prev month credit bills',val:wf.prevBill,after:wf.afterPrevBill,color:'var(--pnk)',sub:'SBI '+fmt(s.prev_sbi_bill||0)+' + YES '+fmt(s.prev_yes_bill||0)});
+  if(wf.currCredit>0) rows.push({label:'This month credit spend',val:wf.currCredit,after:wf.afterCredit,color:'var(--pur)',sub:'SBI '+fmt(sbiSpent(s))+' + YES '+fmt(yesSpent(s))});
+  if(wf.fixedPend>0) rows.push({label:'Unpaid fixed expenses',val:wf.fixedPend,after:wf.afterFixed,color:'var(--amb)',sub:null});
+  if(wf.debtPend>0) rows.push({label:'Pending debts',val:wf.debtPend,after:wf.afterDebts,color:'var(--red)',sub:null});
+  if(wf.savPend>0) rows.push({label:'Savings to transfer',val:wf.savPend,after:wf.afterSav,color:'var(--acc)',sub:null});
+  rows.push({label:'Debit variable budget',val:wf.dVarBud,after:wf.afterSav-wf.dVarBud,color:'var(--blu)',sub:fmt(wf.dVarSpent)+' spent \u00B7 '+fmt(wf.dVarLeft)+' left'});
+
   return h('div',{className:'wf'},
     h('div',{className:'wfr hd'},
       h('span',{className:'wfl',style:{color:'var(--acc)',fontWeight:700}},'Debit balance'),
@@ -379,6 +414,7 @@ function WaterfallCard(props){
       return h('div',{className:'wfr',key:i,style:{borderLeft:'3px solid '+r.color}},
         h('div',null,
           h('div',{className:'wfl'},r.label),
+          r.sub&&h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},r.sub),
           h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:r.color,marginTop:1}},'− '+fmt(r.val))
         ),
         h('div',{style:{textAlign:'right'}},
@@ -396,7 +432,7 @@ function WaterfallCard(props){
   );
 }
 
-// Hero card
+// ── Hero ────────────────────────────────────────────────────────────
 function Hero(props){
   var s=props.s,wf=waterfall(s),ok=wf.short===0;
   var hbg=ok?'linear-gradient(135deg,#ECFDF5,#D1FAE5)':'linear-gradient(135deg,#FEF2F2,#FEE2E2)';
@@ -405,9 +441,14 @@ function Hero(props){
     h('div',{className:'hero-lbl'},ok?'All good \u00B7 Surplus':'Heads up \u00B7 Short by'),
     h('div',{className:'hero-amt'},fmt(ok?wf.surplus:wf.short)),
     h('div',{style:{borderTop:'1px solid '+(ok?'var(--grn-bd)':'var(--red-bd)'),paddingTop:'.5rem',display:'flex',flexDirection:'column',gap:2}},
+      h('div',{className:'hrow'},h('span',{className:'hlbl'},'Salary / opening'),h('span',{className:'hval',style:{color:'var(--acc)'}},fmt(s.salary))),
       h('div',{className:'hrow'},h('span',{className:'hlbl'},'Actual debit balance'),h('span',{className:'hval'},fmt(wf.balance))),
       wf.cash>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'Cash'),h('span',{className:'hval',style:{color:'var(--grn)'}},fmt(wf.cash))),
-      h('div',{className:'hrow'},h('span',{className:'hlbl'},'Credit bills due'),h('span',{className:'hval',style:{color:wf.creditBill>0?'var(--amb)':'var(--m1)'}},fmt(wf.creditBill))),
+      prevBillTotal(s)>0&&h('div',{className:'hrow'},
+        h('span',{className:'hlbl'},'Prev month bills'+(s.prev_bill_paid?' (paid)':' (unpaid)')),
+        h('span',{className:'hval',style:{color:s.prev_bill_paid?'var(--grn)':'var(--pnk)'}},fmt(prevBillTotal(s)))
+      ),
+      h('div',{className:'hrow'},h('span',{className:'hlbl'},'This month credit spend'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(totCurrCreditSpent(s)))),
       h('div',{className:'hrow'},h('span',{className:'hlbl'},'Freely spendable'),h('span',{className:'hval',style:{color:wf.afterSav>=0?'var(--grn)':'var(--red)'}},fmt(wf.afterSav)))
     )
   );
@@ -418,7 +459,8 @@ function Insights(props){
   if(wf.short>0) pills.push({t:'bd',txt:'Short '+fmt(wf.short)});
   else pills.push({t:'gd',txt:fmt(wf.surplus)+' surplus'});
   if(rem>0) pills.push({t:'inf',txt:fmt(Math.round(rem/wLeft))+'/wk left'});
-  else if(rem<0) pills.push({t:'bd',txt:'Over '+fmt(-rem)});
+  else if(rem<0) pills.push({t:'bd',txt:'Over budget '+fmt(-rem)});
+  if(prevBillTotal(s)>0&&!s.prev_bill_paid) pills.push({t:'pk',txt:'Prev bill '+fmt(prevBillTotal(s))+' unpaid'});
   if(unpaidFixedAmt(s)>0) pills.push({t:'wn',txt:fmt(unpaidFixedAmt(s))+' fixed pending'});
   if(!s.savings.done) pills.push({t:'pk',txt:'Savings pending'});
   var su=pct(sbiSpent(s),s.accounts.sbi.limit),yu=pct(yesSpent(s),s.accounts.yes.limit);
@@ -429,7 +471,7 @@ function Insights(props){
   return h('div',{className:'pill-row'},pills.map(function(p,i){return h('span',{key:i,className:'pill '+p.t},p.txt);}));
 }
 
-// ── OVERVIEW ─────────────────────────────────────────────────────────
+// ── OVERVIEW ────────────────────────────────────────────────────────
 function Overview(props){
   var s=props.s,wf=waterfall(s),tvs=totVarSpent(s),tvb=totVarBud(s),rem=tvb-tvs;
   return h('div',{className:'page'},
@@ -443,27 +485,26 @@ function Overview(props){
     h(Hero,{s:s}),
     h(Insights,{s:s}),
 
-    // Stat mini-cards
     h('div',{className:'g2'},
       h('div',{className:'card sc-grn'},
-        h('div',{className:'sl',style:{color:'var(--grn)'}},'\uD83D\uDFE2 Var Left'),
+        h('div',{className:'sl',style:{color:'var(--grn)'}},'Var Left'),
         h('div',{className:'sv',style:{color:rem<0?'var(--red)':rem<5000?'var(--amb)':'var(--grn)'}},fmt(rem)),
         h('div',{className:'ss'},fmt(Math.round(rem/wLeft))+'/wk')
       ),
       h('div',{className:'card sc-pnk'},
-        h('div',{className:'sl',style:{color:'var(--pnk)'}},'\uD83D\uDCB8 Var Spent'),
+        h('div',{className:'sl',style:{color:'var(--pnk)'}},'Var Spent'),
         h('div',{className:'sv',style:{color:'var(--pnk)'}},fmt(tvs)),
         h('div',{className:'ss'},'of '+fmt(tvb))
       ),
       h('div',{className:'card sc-blu'},
-        h('div',{className:'sl',style:{color:'var(--blu)'}},'\u2705 Fixed Paid'),
+        h('div',{className:'sl',style:{color:'var(--blu)'}},'Fixed Paid'),
         h('div',{className:'sv',style:{color:'var(--blu)'}},fmt(paidFixedAmt(s))),
         h('div',{className:'ss'},unpaidFixedAmt(s)>0?fmt(unpaidFixedAmt(s))+' pending':'all paid')
       ),
       h('div',{className:'card sc-pur'},
-        h('div',{className:'sl',style:{color:'var(--pur)'}},'\uD83D\uDCB0 Income'),
-        h('div',{className:'sv',style:{color:'var(--pur)'}},fmt(totIncome(s))),
-        h('div',{className:'ss'},'this month')
+        h('div',{className:'sl',style:{color:'var(--pur)'}},'Salary'),
+        h('div',{className:'sv',style:{color:'var(--pur)'}},fmt(s.salary)),
+        h('div',{className:'ss'},fmt(totIncome(s))+' total')
       )
     ),
 
@@ -471,7 +512,7 @@ function Overview(props){
     h('div',{className:'g3'},
       h('div',{className:'acc-card',style:{borderTopColor:'var(--acc)'}},
         h('div',{className:'sl',style:{color:'var(--acc)'}},'Debit'),
-        h('div',{style:{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700,color:'var(--acc)'}},fmt(s.accounts.debit.balance)),
+        h('div',{style:{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700,color:'var(--acc)'}},fmt(s.accounts.debit.balance||0)),
         h('div',{className:'ss'},'balance')
       ),
       h('div',{className:'acc-card',style:{borderTopColor:'var(--blu)'}},
@@ -485,12 +526,13 @@ function Overview(props){
         h('div',{className:'ss'},fmt(yesSpent(s))+' spent')
       )
     ),
+
     h('div',{className:'sh'},'Debit Breakdown'),
     h(WaterfallCard,{s:s})
   );
 }
 
-// ── CHECK-IN ─────────────────────────────────────────────────────────
+// ── CHECK-IN ────────────────────────────────────────────────────────
 function Checkin(props){
   var s=props.s,save=props.save,toast=props.toast;
   var _dv=useState(''),dv=_dv[0],setDv=_dv[1];
@@ -551,25 +593,38 @@ function Checkin(props){
 
   return h('div',{className:'page'},
     h('div',{style:{fontSize:'1.1rem',fontWeight:800,padding:'.5rem 0 .05rem'}},'Check-In'),
-    h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'1rem',fontFamily:'var(--mono)'}},'Enter only what changed today'),
+    h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'.75rem',fontFamily:'var(--mono)'}},'Enter only what changed today'),
+
+    // Prev month bill quick mark
+    prevBillTotal(s)>0&&h('div',{className:'bill-banner mb'},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+        h('div',null,
+          h('div',{style:{fontSize:'.6rem',fontWeight:800,letterSpacing:'.1em',textTransform:'uppercase',color:'var(--pnk)',marginBottom:3}},'Prev Month Bill'),
+          h('div',{style:{fontFamily:'var(--mono)',fontWeight:700,color:'var(--pnk)',fontSize:'1rem'}},fmt(prevBillTotal(s))),
+          h('div',{style:{fontSize:'.65rem',color:'var(--m2)',marginTop:2}},'SBI '+fmt(s.prev_sbi_bill||0)+' + YES '+fmt(s.prev_yes_bill||0))
+        ),
+        h('div',{style:{textAlign:'center'}},
+          h(Tog,{v:!!s.prev_bill_paid,onChange:function(v){save(Object.assign({},s,{prev_bill_paid:v})).then(function(){toast(v?'Prev bill marked paid':'Marked unpaid');});}}),
+          h('div',{style:{fontSize:'.58rem',color:'var(--m2)',marginTop:4}},s.prev_bill_paid?'paid':'unpaid')
+        )
+      )
+    ),
 
     h('div',{className:'card mb'},
-      // Debit
       h('div',{className:'mb'},
         h('div',{className:'il',style:{color:'var(--acc)'}},'🏦 Debit Balance'),
         h('div',{className:'bigwrap'},
           h('span',{className:'bigpfx'},'\u20B9'),
-          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.accounts.debit.balance),value:dv,onChange:function(e){setDv(e.target.value);}})
+          h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.accounts.debit.balance||0),value:dv,onChange:function(e){setDv(e.target.value);}})
         ),
         h('div',{className:'sanity'},
           h('span',{style:{fontSize:'.65rem',color:'var(--acc)'}},'Predicted (opening \u2212 paid \u2212 spent)'),
           h('span',{style:{fontFamily:'var(--mono)',fontSize:'.75rem',fontWeight:700,color:'var(--acc)'}},fmt(pred))
         ),
         autoSpend!==null&&autoSpend>0&&h('div',{className:'hint',style:{color:'var(--red)'}},'\u2193 '+fmt(autoSpend)+' gap \u2192 auto-logged as debit spend'),
-        autoDeposit!==null&&autoDeposit>0&&h('div',{className:'hint',style:{color:'var(--grn)'}},'\u2191 '+fmt(autoDeposit)+' above predicted (deposit/income)')
+        autoDeposit!==null&&autoDeposit>0&&h('div',{className:'hint',style:{color:'var(--grn)'}},'\u2191 '+fmt(autoDeposit)+' above predicted (deposit or extra income)')
       ),
       h('hr'),
-      // SBI
       h('div',{className:'mb'},
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}},
           h('div',{className:'il',style:{marginBottom:0,color:'var(--blu)'}},'💳 SBI Available'),
@@ -579,10 +634,9 @@ function Checkin(props){
           h('span',{className:'bigpfx'},'\u20B9'),
           h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.accounts.sbi.available),value:sv,onChange:function(e){setSv(e.target.value);}})
         ),
-        sbiSpent(prevS)>0&&h('div',{style:{marginTop:3,fontSize:'.7rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'Bill: '+fmt(sbiSpent(prevS)))
+        sbiSpent(prevS)>0&&h('div',{style:{marginTop:3,fontSize:'.7rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'Current bill: '+fmt(sbiSpent(prevS)))
       ),
       h('hr'),
-      // YES
       h('div',{className:'mb'},
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}},
           h('div',{className:'il',style:{marginBottom:0,color:'var(--grn)'}},'💳 YES Available'),
@@ -592,10 +646,9 @@ function Checkin(props){
           h('span',{className:'bigpfx'},'\u20B9'),
           h('input',{className:'biginp',type:'number',inputMode:'numeric',placeholder:String(s.accounts.yes.available),value:yv,onChange:function(e){setYv(e.target.value);}})
         ),
-        yesSpent(prevS)>0&&h('div',{style:{marginTop:3,fontSize:'.7rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'Bill: '+fmt(yesSpent(prevS)))
+        yesSpent(prevS)>0&&h('div',{style:{marginTop:3,fontSize:'.7rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'Current bill: '+fmt(yesSpent(prevS)))
       ),
       h('hr'),
-      // Cash
       h('div',null,
         h('div',{className:'il',style:{color:'var(--amb)'}},'💵 Cash on Hand'),
         h('div',{className:'bigwrap'},
@@ -606,11 +659,12 @@ function Checkin(props){
     ),
 
     hasBalance&&h('div',null,
-      h('div',{className:'sh'},'Result after save'),
+      h('div',{className:'sh'},'Preview after save'),
       h('div',{className:'card mb',style:{background:wfP.short>0?'linear-gradient(135deg,#FEF2F2,#FEE2E2)':'linear-gradient(135deg,#ECFDF5,#D1FAE5)',borderColor:wfP.short>0?'var(--red-bd)':'var(--grn-bd)'}},
         h('div',{style:{fontSize:'.6rem',fontWeight:800,letterSpacing:'.1em',textTransform:'uppercase',color:wfP.short>0?'var(--red)':'var(--grn)'}},wfP.short>0?'Short by':'Surplus'),
         h('div',{style:{fontFamily:'var(--mono)',fontSize:'1.7rem',fontWeight:700,color:wfP.short>0?'var(--red)':'var(--grn)',lineHeight:1,margin:'.15rem 0 .5rem'}},fmt(wfP.short>0?wfP.short:wfP.surplus)),
-        h('div',{className:'hrow'},h('span',{className:'hlbl'},'Credit bills'),h('span',{className:'hval',style:{color:'var(--pnk)'}},fmt(wfP.creditBill))),
+        h('div',{className:'hrow'},h('span',{className:'hlbl'},'Prev month bill'),h('span',{className:'hval',style:{color:s.prev_bill_paid?'var(--grn)':'var(--pnk)'}},fmt(prevBillTotal(s))+(s.prev_bill_paid?' (paid)':''))),
+        h('div',{className:'hrow'},h('span',{className:'hlbl'},'Current credit spend'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(wfP.currCredit))),
         h('div',{className:'hrow'},h('span',{className:'hlbl'},'Freely spendable'),h('span',{className:'hval'},fmt(wfP.afterSav))),
         h('div',{className:'hrow'},h('span',{className:'hlbl'},'Debit var left'),h('span',{className:'hval'},fmt(wfP.dVarLeft)))
       )
@@ -620,7 +674,7 @@ function Checkin(props){
       busy?'Saving\u2026':hasBalance?'\u2713 Save Balances':'Enter a balance above'),
 
     h('div',{className:'sh'},'Log Debit Variable Spend'),
-    h('div',{className:'note inf mb'},'Cash or debit card purchases not on credit cards'),
+    h('div',{className:'note inf mb'},'Cash or debit purchases not on credit cards'),
     h('div',{className:'card mb'},
       h('div',{className:'mb'},
         h('div',{className:'il',style:{color:'var(--blu)'}},'Amount'),
@@ -670,7 +724,7 @@ function DebitSpendLog(props){
   );
 }
 
-// ── EXPENSES ─────────────────────────────────────────────────────────
+// ── EXPENSES ────────────────────────────────────────────────────────
 function Expenses(props){
   var s=props.s,save=props.save,toast=props.toast;
   var _tab=useState('fixed'),tab=_tab[0],setTab=_tab[1];
@@ -699,7 +753,7 @@ function Expenses(props){
 
     tab==='fixed'&&h('div',null,
       unpaidFixedAmt(s)>0
-        ?h('div',{className:'note wn'},'\uD83D\uDD14 '+fmt(unpaidFixedAmt(s))+' still to pay (from debit)')
+        ?h('div',{className:'note wn'},'\uD83D\uDD14 '+fmt(unpaidFixedAmt(s))+' still to pay')
         :h('div',{className:'note gd'},'\u2713 All fixed expenses paid'),
       h('div',{className:'card'},
         s.fixed.map(function(f,i){
@@ -753,7 +807,7 @@ function Expenses(props){
   );
 }
 
-// ── SAVINGS & DEBTS ───────────────────────────────────────────────────
+// ── SAVINGS & DEBTS ─────────────────────────────────────────────────
 function SavingsDebts(props){
   var s=props.s,save=props.save,toast=props.toast;
   return h('div',{className:'page'},
@@ -774,7 +828,7 @@ function SavingsDebts(props){
     h('div',{className:'sh'},'Debts'),
     unpaidDebts(s)>0
       ?h('div',{className:'note wn mb'},'\uD83D\uDCCB '+fmt(unpaidDebts(s))+' outstanding')
-      :h('div',{className:'note gd mb'},'\u2713 All debts settled'),
+      :h('div',{className:'note gd mb'},'\u2713 All debts cleared'),
     h('div',{className:'gap mb'},
       s.debts.map(function(d,i){
         return h('div',{key:i,className:'card'},
@@ -784,7 +838,7 @@ function SavingsDebts(props){
                 var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{name:e.target.value}):x;});
                 save(Object.assign({},s,{debts:dts}));
               }}),
-              h('input',{type:'number',value:d.amount,inputMode:'numeric',onChange:function(e){
+              h('input',{type:'number',value:d.amount||'',inputMode:'numeric',onChange:function(e){
                 var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{amount:Number(e.target.value)}):x;});
                 save(Object.assign({},s,{debts:dts}));
               }})
@@ -805,16 +859,36 @@ function SavingsDebts(props){
   );
 }
 
-// ── SETTINGS ─────────────────────────────────────────────────────────
+// ── SETTINGS ────────────────────────────────────────────────────────
 function Settings(props){
   var s=props.s,save=props.save,toast=props.toast;
   return h('div',{className:'page'},
     h('div',{style:{fontSize:'1.1rem',fontWeight:800,padding:'.5rem 0 .75rem'}},'Settings'),
 
-    h('div',{className:'sh'},'Income'),
+    h('div',{className:'sh'},'Salary / Starting Balance'),
+    h('div',{className:'note inf mb'},'\uD83D\uDCB0 This is your monthly salary — it sets the opening debit balance'),
     h('div',{className:'card mb'},
-      h('div',{className:'il'},'Monthly Income'),
-      h('input',{type:'number',value:s.base_budget,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{base_budget:Number(e.target.value)}));}})
+      h('div',{className:'il'},'Monthly Salary'),
+      h('input',{type:'number',value:s.salary||0,inputMode:'numeric',onChange:function(e){
+        var sal=Number(e.target.value);
+        save(Object.assign({},s,{
+          salary:sal,
+          accounts:Object.assign({},s.accounts,{debit:Object.assign({},s.accounts.debit,{opening:sal})})
+        }));
+      }})
+    ),
+
+    h('div',{className:'sh'},'Previous Month Credit Bills'),
+    h('div',{className:'note wn mb'},'\uD83D\uDDD3 Bills from last month that will be paid from debit this month'),
+    h('div',{className:'card gap mb'},
+      h('div',null,h('div',{className:'il',style:{color:'var(--blu)'}},'SBI Previous Bill'),
+        h('input',{type:'number',value:s.prev_sbi_bill||0,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{prev_sbi_bill:Number(e.target.value)}));}})),
+      h('div',null,h('div',{className:'il',style:{color:'var(--grn)'}},'YES Previous Bill'),
+        h('input',{type:'number',value:s.prev_yes_bill||0,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{prev_yes_bill:Number(e.target.value)}));}})),
+      prevBillTotal(s)>0&&h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'.4rem .6rem',background:'var(--pnk-bg)',borderRadius:8,border:'1px solid var(--pnk-bd)'}},
+        h('span',{style:{fontSize:'.72rem',color:'var(--pnk)',fontWeight:600}},'Total prev bills'),
+        h('span',{style:{fontFamily:'var(--mono)',fontSize:'.78rem',fontWeight:700,color:'var(--pnk)'}},fmt(prevBillTotal(s)))
+      )
     ),
 
     h('div',{className:'sh'},'Additional Income'),
@@ -823,11 +897,11 @@ function Settings(props){
         return h('div',{key:i,className:'card'},
           h('div',{className:'row'},
             h('div',{className:'f1 gap'},
-              h('input',{type:'text',placeholder:'Source',value:inc.source,onChange:function(e){
+              h('input',{type:'text',placeholder:'Source',value:inc.source||'',onChange:function(e){
                 var ai=s.additional_income.map(function(x,j){return j===i?Object.assign({},x,{source:e.target.value}):x;});
                 save(Object.assign({},s,{additional_income:ai}));
               }}),
-              h('input',{type:'number',placeholder:'Amount',value:inc.amount,inputMode:'numeric',onChange:function(e){
+              h('input',{type:'number',placeholder:'Amount',value:inc.amount||0,inputMode:'numeric',onChange:function(e){
                 var ai=s.additional_income.map(function(x,j){return j===i?Object.assign({},x,{amount:Number(e.target.value)}):x;});
                 save(Object.assign({},s,{additional_income:ai}));
               }})
@@ -849,7 +923,7 @@ function Settings(props){
     h('div',{className:'sh'},'Savings Target'),
     h('div',{className:'card mb'},
       h('div',{className:'il'},'Monthly Savings'),
-      h('input',{type:'number',value:s.savings.budget,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{savings:Object.assign({},s.savings,{budget:Number(e.target.value)})}));}})
+      h('input',{type:'number',value:s.savings.budget||0,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{savings:Object.assign({},s.savings,{budget:Number(e.target.value)})}));}})
     ),
 
     h('div',{className:'sh'},'Credit Limits'),
@@ -858,24 +932,18 @@ function Settings(props){
       h('div',null,h('div',{className:'il'},'YES Limit'),h('input',{type:'number',value:s.accounts.yes.limit,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{yes:Object.assign({},s.accounts.yes,{limit:Number(e.target.value)})})}));}}))
     ),
 
-    h('div',{className:'sh'},'Opening Balance'),
-    h('div',{className:'note inf mb'},'\uD83D\uDCCC Set once at month start — used to calculate predicted balance'),
-    h('div',{className:'card mb'},
-      h('div',{className:'il'},'Debit Opening Balance'),
-      h('input',{type:'number',value:s.accounts.debit.opening,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{debit:Object.assign({},s.accounts.debit,{opening:Number(e.target.value)})})}));}})
-    ),
-
     h('div',{className:'sh'},'Month Reset'),
-    h('div',{className:'note wn mb'},'\u26A0 Resets fixed paid, savings, and spend log for new month'),
+    h('div',{className:'note wn mb'},'\u26A0 Resets fixed paid, savings, spend log and prev bills for new month'),
     h('button',{className:'btn bs mb',onClick:function(){
-      if(!confirm('Start new month? This resets fixed, savings, and spend log.')) return;
+      if(!confirm('Start new month? This resets fixed, savings, spend log and prev bills.')) return;
       var ns=Object.assign({},s,{
         debit_spend_log:[],
         savings:Object.assign({},s.savings,{done:false}),
         fixed:s.fixed.map(function(f){return Object.assign({},f,{paid:false});}),
         debts:s.debts.map(function(d){return Object.assign({},d,{paid:false});}),
+        prev_sbi_bill:0,prev_yes_bill:0,prev_bill_paid:false,
         accounts:Object.assign({},s.accounts,{
-          debit:{opening:s.accounts.debit.balance,balance:s.accounts.debit.balance},
+          debit:{opening:s.salary||0,balance:s.salary||0},
           sbi:Object.assign({},s.accounts.sbi,{available:s.accounts.sbi.limit}),
           yes:Object.assign({},s.accounts.yes,{available:s.accounts.yes.limit}),
         }),
@@ -893,10 +961,10 @@ function Settings(props){
   );
 }
 
-// ── APP ───────────────────────────────────────────────────────────────
+// ── APP ─────────────────────────────────────────────────────────────
 function App(){
   var _st=useState(null),state=_st[0],setState=_st[1];
-  var _pg=useState('checkin'),page=_pg[0],setPage=_pg[1];
+  var _pg=useState('overview'),page=_pg[0],setPage=_pg[1];
   var _tm=useState(''),tmsg=_tm[0],setTmsg=_tm[1];
   var timer=useRef(null);
 
