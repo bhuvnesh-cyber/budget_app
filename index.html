@@ -304,6 +304,7 @@ function totIncome(s){
 function paidFixedAmt(s){return s.fixed.filter(function(f){return f.paid;}).reduce(function(a,f){return a+f.budget;},0);}
 function unpaidFixedAmt(s){return s.fixed.filter(function(f){return !f.paid;}).reduce(function(a,f){return a+f.budget;},0);}
 function totVarBud(s){return s.variable.reduce(function(a,v){return a+v.budget;},0);}
+function paidDebts(s){return s.debts.filter(function(d){return d.paid;}).reduce(function(a,d){return a+d.amount;},0);}
 function unpaidDebts(s){return s.debts.filter(function(d){return !d.paid;}).reduce(function(a,d){return a+d.amount;},0);}
 
 // Current month credit card spend (limit - available - cashback)
@@ -318,24 +319,27 @@ function prevBillTotal(s){return (s.prev_sbi_bill||0)+(s.prev_yes_bill||0);}
 function debitVarSpent(s){return (s.debit_spend_log||[]).reduce(function(a,e){return a+e.amount;},0);}
 function totVarSpent(s){return sbiSpent(s)+yesSpent(s)+debitVarSpent(s);}
 
-// Predicted debit = opening − paid fixed − debit var spent − savings (if done) − prev bill (if paid)
+// Predicted debit = opening − paid fixed − paid debts − debit var spent − savings (if done) − prev bill (if paid)
 function predictedDebit(s){
   var sav=s.savings.done?s.savings.budget:0;
-  return s.accounts.debit.opening - paidFixedAmt(s) - debitVarSpent(s) - sav - (s.prev_bill_paid?prevBillTotal(s):0);
+  return s.accounts.debit.opening - paidFixedAmt(s) - paidDebts(s) - debitVarSpent(s) - sav - (s.prev_bill_paid?prevBillTotal(s):0);
 }
 
 /*
   WATERFALL:
-  Start: actual debit balance (entered in check-in)
+  Start: actual debit balance
   + cash
-  − prev month credit bills (if not yet paid)   ← NEW
+  − prev month credit bills (if not yet paid)
   − current month credit bills (SBI + YES)
   − unpaid fixed expenses
-  − pending debts
-  − savings
+  − unpaid debts (still to pay)
+  − savings (if not yet done)
   = freely spendable
   − debit variable budget
   = surplus / shortfall
+
+  Note: paid debts already left the account — reflected in the actual balance drop.
+        unpaid debts = still coming out of debit.
 */
 function waterfall(s){
   var balance=s.accounts.debit.balance||0;
