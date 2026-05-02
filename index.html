@@ -638,6 +638,12 @@ function Checkin(props){
   var hasBalance=dv!==''||sv!==''||yv!=='';
   var hasSpend=sa!==''&&Number(sa)>0;
 
+  // Predicted = opening − paid fixed − paid debts − debit var spent − savings done
+  var pred=predictedDebit(s);
+  var newBal=dv!==''?Number(dv):null;
+  var gap=newBal!==null?pred-newBal:null; // positive = balance dropped more than expected
+  var deposit=newBal!==null&&gap!==null&&gap<0?-gap:0; // balance higher than predicted
+
   var prevS=useMemo(function(){
     return Object.assign({},s,{
       accounts:Object.assign({},s.accounts,{
@@ -653,8 +659,14 @@ function Checkin(props){
     if(!hasBalance||busy) return;
     setBusy(true);
     var now=new Date().toISOString();
+    var newLog=(s.debit_spend_log||[]).slice();
+    // Auto-log the gap as untracked spend
+    if(newBal!==null&&gap!==null&&gap>50){
+      newLog.push({amount:Math.round(gap),note:'Untracked spend (balance gap)',ts:now});
+    }
     var ns=Object.assign({},s,{
       updated_at:now,
+      debit_spend_log:newLog,
       accounts:Object.assign({},s.accounts,{
         debit:{opening:s.accounts.debit.opening,balance:dv!==''?Number(dv):s.accounts.debit.balance},
         sbi:Object.assign({},s.accounts.sbi,{available:sv!==''?Number(sv):s.accounts.sbi.available}),
@@ -692,6 +704,7 @@ function Checkin(props){
     ),
 
     h('div',{className:'card mb'},
+      // Debit balance
       h('div',{className:'mb'},
         h('div',{className:'il',style:{color:'var(--acc)'}},'🏦 Debit Balance'),
         h('div',{className:'bigwrap'},
@@ -699,9 +712,22 @@ function Checkin(props){
           h('input',{className:'biginp',type:'number',inputMode:'numeric',
             placeholder:String(s.accounts.debit.balance||0),
             value:dv,onChange:function(e){setDv(e.target.value);}})
+        ),
+        // Predicted row
+        h('div',{className:'sanity'},
+          h('span',{style:{fontSize:'.65rem',color:'var(--acc)'}},'Predicted balance'),
+          h('span',{style:{fontFamily:'var(--mono)',fontSize:'.78rem',fontWeight:700,color:'var(--acc)'}},fmt(pred))
+        ),
+        // Gap hint
+        gap!==null&&gap>50&&h('div',{style:{marginTop:4,fontSize:'.68rem',fontFamily:'var(--mono)',color:'var(--red)'}},
+          '\u2193 '+fmt(gap)+' untracked \u2192 will auto-log on save'
+        ),
+        deposit>50&&h('div',{style:{marginTop:4,fontSize:'.68rem',fontFamily:'var(--mono)',color:'var(--grn)'}},
+          '\u2191 '+fmt(deposit)+' above predicted (income/deposit?)'
         )
       ),
       h('hr'),
+      // SBI
       h('div',{className:'mb'},
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}},
           h('div',{className:'il',style:{marginBottom:0,color:'var(--blu)'}},'💳 SBI Available'),
@@ -716,6 +742,7 @@ function Checkin(props){
         sbiSpent(prevS)>0&&h('div',{style:{marginTop:4,fontSize:'.7rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'Bill so far: '+fmt(sbiSpent(prevS)))
       ),
       h('hr'),
+      // YES
       h('div',null,
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}},
           h('div',{className:'il',style:{marginBottom:0,color:'var(--grn)'}},'💳 YES Available'),
@@ -731,6 +758,7 @@ function Checkin(props){
       )
     ),
 
+    // Preview after save
     hasBalance&&h('div',{className:'card mb',style:{
       background:wfP.short>0?'linear-gradient(135deg,#FEF2F2,#FEE2E2)':'linear-gradient(135deg,#ECFDF5,#D1FAE5)',
       borderColor:wfP.short>0?'var(--red-bd)':'var(--grn-bd)'
