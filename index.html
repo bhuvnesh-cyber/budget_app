@@ -142,6 +142,13 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
 .hlbl{color:var(--m1);font-weight:500}
 .hval{font-family:var(--mono);font-weight:700;font-size:.78rem}
 
+/* NEW: dual shortfall banner inside hero */
+.dual-short{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.55rem 0 .5rem}
+.ds-box{border-radius:10px;padding:.45rem .6rem;border:1px solid}
+.ds-lbl{font-size:.52rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px}
+.ds-val{font-family:var(--mono);font-size:1.15rem;font-weight:700;line-height:1}
+.ds-sub{font-size:.58rem;margin-top:3px;opacity:.8}
+
 .log-entry{display:flex;justify-content:space-between;align-items:center;padding:.6rem .9rem;border-bottom:1px solid var(--bd)}
 .log-entry:last-child{border-bottom:none}
 .log-time{font-size:.62rem;color:var(--m2);font-family:var(--mono);margin-top:2px}
@@ -199,10 +206,8 @@ var lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
 var dLeft=Math.max(1,lastDay-today.getDate());
 var wLeft=Math.max(1,Math.ceil(dLeft/7));
 
-// VERSION 11 — salary = opening balance; prev month credit bill separate
 var DEFAULT={
   version:11,
-  // salary is the opening/starting debit balance each month
   salary:102844,
   additional_income:[{source:'Bank Interest',amount:0}],
   fixed:[
@@ -228,14 +233,11 @@ var DEFAULT={
   savings:{budget:15000,done:false},
   debts:[{name:'',amount:0,paid:false}],
   accounts:{
-    // debit.balance = actual balance you enter via check-in
-    // debit.opening = salary (auto-set from salary field at month start)
     debit:{opening:102844,balance:0},
     sbi:  {limit:200000,available:200000,cashback:0},
     yes:  {limit:510000,available:510000,cashback:0},
   },
   cash:0,
-  // Previous month unpaid credit card bills — paid from debit this month
   prev_sbi_bill:0,
   prev_yes_bill:0,
   prev_bill_paid:false,
@@ -257,7 +259,6 @@ function migrate(s){
   if(s.prev_sbi_bill===undefined) s.prev_sbi_bill=0;
   if(s.prev_yes_bill===undefined) s.prev_yes_bill=0;
   if(s.prev_bill_paid===undefined) s.prev_bill_paid=false;
-  // salary field — if old data has base_budget, keep it as salary
   if(s.salary===undefined) s.salary=s.base_budget||DEFAULT.salary;
   if(needsReset){
     s.fixed=JSON.parse(JSON.stringify(DEFAULT.fixed)).map(function(df){
@@ -307,64 +308,37 @@ function totVarBud(s){return s.variable.reduce(function(a,v){return a+v.budget;}
 function paidDebts(s){return s.debts.filter(function(d){return d.paid;}).reduce(function(a,d){return a+d.amount;},0);}
 function unpaidDebts(s){return s.debts.filter(function(d){return !d.paid;}).reduce(function(a,d){return a+d.amount;},0);}
 
-// Current month credit card spend (limit - available - cashback)
 function sbiSpent(s){return Math.max(0,s.accounts.sbi.limit-s.accounts.sbi.available-(s.accounts.sbi.cashback||0));}
 function yesSpent(s){return Math.max(0,s.accounts.yes.limit-s.accounts.yes.available-(s.accounts.yes.cashback||0));}
 function totCurrCreditSpent(s){return sbiSpent(s)+yesSpent(s);}
-
-// Previous month bills to pay from debit
 function prevBillTotal(s){return (s.prev_sbi_bill||0)+(s.prev_yes_bill||0);}
-
-// Debit variable spend log
 function debitVarSpent(s){return (s.debit_spend_log||[]).reduce(function(a,e){return a+e.amount;},0);}
 function totVarSpent(s){return sbiSpent(s)+yesSpent(s)+debitVarSpent(s);}
 
-// Predicted debit = opening − paid fixed − paid debts − debit var spent − savings (if done) − prev bill (if paid)
 function predictedDebit(s){
   var sav=s.savings.done?s.savings.budget:0;
   return s.accounts.debit.opening - paidFixedAmt(s) - paidDebts(s) - debitVarSpent(s) - sav - (s.prev_bill_paid?prevBillTotal(s):0);
 }
 
-/*
-  SURPLUS = (Debit + Cash) − fixed remaining − variable remaining − credit bills due
-  
-  Variable remaining = budget not yet spent (debit var remaining + credit var remaining)
-  Credit bills due   = what's already spent on credit this month (will come from debit when bill arrives)
-  
-  These are separate:
-  - varRem = how much budget is left to spend going forward
-  - creditBillsDue = what's already been spent on credit (already consumed budget, now needs debit payment)
-*/
 function waterfall(s){
   var balance=s.accounts.debit.balance||0;
   var cash=s.cash||0;
   var total=balance+cash;
 
-  // Fixed: only unpaid remain
   var fixedRem=unpaidFixedAmt(s);
 
-  // Debit variable: budget minus what's already spent via debit
   var dVarBud=s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
   var dVarSpent=debitVarSpent(s);
   var dVarRem=Math.max(0,dVarBud-dVarSpent);
 
-  // Credit variable: budget minus what's already spent on credit cards
   var cVarBud=s.variable.filter(function(v){return v.card!=='Debit';}).reduce(function(a,v){return a+v.budget;},0);
   var cVarSpent=sbiSpent(s)+yesSpent(s);
   var cVarRem=Math.max(0,cVarBud-cVarSpent);
 
-  // Credit bills due = what's already spent on credit (needs debit payment at month end)
   var creditBillsDue=cVarSpent;
 
-  // Prev month bills (unpaid)
   var prevBill=s.prev_bill_paid?0:prevBillTotal(s);
 
-  // Deduct from debit+cash:
-  // 1. fixed still to pay
-  // 2. debit variable still to spend
-  // 3. credit variable still to spend (you'll spend this on card but it's from your budget)
-  // 4. credit already spent (bill will arrive)
-  // 5. prev month bill
   var afterFixed=total-fixedRem;
   var afterDVar=afterFixed-dVarRem;
   var afterCVar=afterDVar-cVarRem;
@@ -373,6 +347,11 @@ function waterfall(s){
 
   var savPend=s.savings.done?0:s.savings.budget;
   var debtPend=unpaidDebts(s);
+
+  // ── ACTUAL (no future budget projections) ──────────────────────
+  // How much is left right now after paying only what's ALREADY spent on credit
+  // Does NOT subtract remaining budget — just: can you cover bills you've incurred?
+  var actualNet=total-creditBillsDue-prevBill;
 
   return{
     balance:balance,cash:cash,total:total,
@@ -383,7 +362,9 @@ function waterfall(s){
     creditBillsDue:creditBillsDue,afterCredit:afterCredit,
     prevBill:prevBill,
     savPend:savPend,debtPend:debtPend,
-    surplus:net>0?net:0,short:net<0?-net:0
+    surplus:net>0?net:0,short:net<0?-net:0,
+    // Actual = only bills already incurred subtracted from current balance
+    actualSurplus:actualNet>0?actualNet:0,actualShort:actualNet<0?-actualNet:0
   };
 }
 
@@ -475,7 +456,7 @@ function WaterfallCard(props){
     ),
     h('div',{className:'wfr fin'},
       h('span',{className:'wfl',style:{fontWeight:700,color:wf.short>0?'var(--red)':'var(--grn)'}},
-        wf.short>0?'\u26A0 Short by':'\u2713 Surplus'),
+        wf.short>0?'\u26A0 Short by (budget)':'\u2713 Surplus (budget)'),
       h('span',{className:'wfv',style:{fontSize:'1.05rem',color:wf.short>0?'var(--red)':'var(--grn)'}},
         fmt(wf.short>0?wf.short:wf.surplus))
     ),
@@ -490,22 +471,55 @@ function WaterfallCard(props){
 
 // ── Hero ────────────────────────────────────────────────────────────
 function Hero(props){
-  var s=props.s,wf=waterfall(s),ok=wf.short===0;
-  var hbg=ok?'linear-gradient(135deg,#ECFDF5,#D1FAE5)':'linear-gradient(135deg,#FEF2F2,#FEE2E2)';
-  var hbc=ok?'var(--grn-bd)':'var(--red-bd)';
-  return h('div',{className:'hero',style:{background:hbg,borderColor:hbc,color:ok?'var(--grn)':'var(--red)'}},
-    h('div',{className:'hero-lbl'},ok?'Covered \u00B7 Surplus':'Not covered \u00B7 Short by'),
-    h('div',{className:'hero-amt'},fmt(ok?wf.surplus:wf.short)),
-    h('div',{style:{borderTop:'1px solid '+(ok?'var(--grn-bd)':'var(--red-bd)'),paddingTop:'.5rem',display:'flex',flexDirection:'column',gap:2}},
+  var s=props.s,wf=waterfall(s);
+  var budgetOk=wf.short===0;
+  var actualOk=wf.actualShort===0;
+
+  // Hero background based on budget shortfall (more conservative)
+  var hbg=budgetOk?'linear-gradient(135deg,#ECFDF5,#D1FAE5)':'linear-gradient(135deg,#FEF2F2,#FEE2E2)';
+  var hbc=budgetOk?'var(--grn-bd)':'var(--red-bd)';
+
+  return h('div',{className:'hero',style:{background:hbg,borderColor:hbc,color:budgetOk?'var(--grn)':'var(--red)'}},
+
+    // ── Dual shortfall boxes ────────────────────────────────────
+    h('div',{className:'dual-short'},
+      // LEFT: Actual (bills already incurred vs balance)
+      h('div',{className:'ds-box',style:{
+        background:actualOk?'rgba(5,150,105,.08)':'rgba(220,38,38,.08)',
+        borderColor:actualOk?'var(--grn-bd)':'var(--red-bd)'
+      }},
+        h('div',{className:'ds-lbl',style:{color:actualOk?'var(--grn)':'var(--red)'}},
+          actualOk?'\u2713 Actual free':'Actual short'),
+        h('div',{className:'ds-val',style:{color:actualOk?'var(--grn)':'var(--red)'}},
+          fmt(actualOk?wf.actualSurplus:wf.actualShort)),
+        h('div',{className:'ds-sub',style:{color:actualOk?'var(--grn)':'var(--red)'}},
+          'bal \u2212 bills due')
+      ),
+      // RIGHT: Budget (including remaining budgets)
+      h('div',{className:'ds-box',style:{
+        background:budgetOk?'rgba(5,150,105,.08)':'rgba(220,38,38,.08)',
+        borderColor:budgetOk?'var(--grn-bd)':'var(--red-bd)'
+      }},
+        h('div',{className:'ds-lbl',style:{color:budgetOk?'var(--grn)':'var(--red)'}},
+          budgetOk?'\u2713 Budget free':'Budget short'),
+        h('div',{className:'ds-val',style:{color:budgetOk?'var(--grn)':'var(--red)'}},
+          fmt(budgetOk?wf.surplus:wf.short)),
+        h('div',{className:'ds-sub',style:{color:budgetOk?'var(--grn)':'var(--red)'}},
+          'incl. unspent budget')
+      )
+    ),
+
+    // ── Breakdown lines ─────────────────────────────────────────
+    h('div',{style:{borderTop:'1px solid '+(budgetOk?'var(--grn-bd)':'var(--red-bd)'),paddingTop:'.5rem',display:'flex',flexDirection:'column',gap:2}},
       h('div',{className:'hrow'},h('span',{className:'hlbl'},'Debit + Cash'),h('span',{className:'hval',style:{color:'var(--acc)'}},fmt(wf.total))),
       wf.fixedRem>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Fixed remaining'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(wf.fixedRem))),
       wf.dVarRem>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Debit var remaining'),h('span',{className:'hval',style:{color:'var(--blu)'}},fmt(wf.dVarRem))),
       wf.cVarRem>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Credit var remaining'),h('span',{className:'hval',style:{color:'var(--pur)'}},fmt(wf.cVarRem))),
       wf.creditBillsDue>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Credit bills due'),h('span',{className:'hval',style:{color:'var(--pnk)'}},fmt(wf.creditBillsDue))),
       wf.prevBill>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Prev month bills'),h('span',{className:'hval',style:{color:'var(--red)'}},fmt(wf.prevBill))),
-      h('div',{className:'hrow',style:{borderTop:'1px solid '+(ok?'var(--grn-bd)':'var(--red-bd)'),marginTop:4,paddingTop:4}},
-        h('span',{className:'hlbl',style:{fontWeight:700}},'= '+(ok?'Surplus':'Shortfall')),
-        h('span',{className:'hval',style:{color:ok?'var(--grn)':'var(--red)',fontSize:'.9rem'}},fmt(ok?wf.surplus:wf.short))
+      h('div',{className:'hrow',style:{borderTop:'1px solid '+(budgetOk?'var(--grn-bd)':'var(--red-bd)'),marginTop:4,paddingTop:4}},
+        h('span',{className:'hlbl',style:{fontWeight:700}},'= Budget '+(budgetOk?'free':'short')),
+        h('span',{className:'hval',style:{color:budgetOk?'var(--grn)':'var(--red)',fontSize:'.9rem'}},fmt(budgetOk?wf.surplus:wf.short))
       )
     )
   );
@@ -513,10 +527,16 @@ function Hero(props){
 
 function Insights(props){
   var s=props.s,wf=waterfall(s),pills=[];
-  if(wf.short>0) pills.push({t:'bd',txt:'Short '+fmt(wf.short)});
-  else pills.push({t:'gd',txt:fmt(wf.surplus)+' surplus'});
-  // Per week based on surplus (not var budget)
-  if(wf.surplus>0) pills.push({t:'inf',txt:fmt(Math.round(wf.surplus/wLeft))+'/wk free'});
+
+  // Budget status
+  if(wf.short>0) pills.push({t:'bd',txt:'Budget short '+fmt(wf.short)});
+  else pills.push({t:'gd',txt:fmt(wf.surplus)+' budget free'});
+
+  // Actual status (bills only)
+  if(wf.actualShort>0) pills.push({t:'bd',txt:'Actual short '+fmt(wf.actualShort)});
+  else pills.push({t:'inf',txt:fmt(wf.actualSurplus)+' actual free'});
+
+  if(wf.surplus>0) pills.push({t:'ac',txt:fmt(Math.round(wf.surplus/wLeft))+'/wk free'});
   if(prevBillTotal(s)>0&&!s.prev_bill_paid) pills.push({t:'pk',txt:'Prev bill '+fmt(prevBillTotal(s))+' unpaid'});
   if(unpaidFixedAmt(s)>0) pills.push({t:'wn',txt:fmt(unpaidFixedAmt(s))+' fixed pending'});
   if(!s.savings.done) pills.push({t:'pk',txt:'Savings pending'});
@@ -532,7 +552,6 @@ function Overview(props){
   var _ce=useState(false),cashEdit=_ce[0],setCashEdit=_ce[1];
   var _cv=useState(''),cv=_cv[0],setCv=_cv[1];
 
-  // Safe to spend per week = (debit + cash - credit bills due - prev bills) / weeks left
   var afterBills=Math.max(0,wf.total-wf.creditBillsDue-wf.prevBill);
   var safePerWeek=wLeft>0?Math.round(afterBills/wLeft):0;
   var safePerDay=dLeft>0?Math.round(afterBills/dLeft):0;
@@ -555,7 +574,6 @@ function Overview(props){
     h(Hero,{s:s}),
     h(Insights,{s:s}),
 
-    // 4 stat cards
     h('div',{className:'g2'},
       h('div',{className:'card sc-grn'},
         h('div',{className:'sl',style:{color:'var(--grn)'}},'Safe to Spend'),
@@ -579,7 +597,6 @@ function Overview(props){
       )
     ),
 
-    // Accounts row
     h('div',{className:'sh'},'Accounts'),
     h('div',{className:'g3'},
       h('div',{className:'acc-card',style:{borderTopColor:'var(--acc)'}},
@@ -599,7 +616,6 @@ function Overview(props){
       )
     ),
 
-    // Cash quick-edit
     h('div',{className:'card mb',style:{borderLeft:'3px solid var(--amb)'}},
       h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
         h('div',null,
@@ -638,11 +654,10 @@ function Checkin(props){
   var hasBalance=dv!==''||sv!==''||yv!=='';
   var hasSpend=sa!==''&&Number(sa)>0;
 
-  // Predicted = opening − paid fixed − paid debts − debit var spent − savings done
   var pred=predictedDebit(s);
   var newBal=dv!==''?Number(dv):null;
-  var gap=newBal!==null?pred-newBal:null; // positive = balance dropped more than expected
-  var deposit=newBal!==null&&gap!==null&&gap<0?-gap:0; // balance higher than predicted
+  var gap=newBal!==null?pred-newBal:null;
+  var deposit=newBal!==null&&gap!==null&&gap<0?-gap:0;
 
   var prevS=useMemo(function(){
     return Object.assign({},s,{
@@ -660,7 +675,6 @@ function Checkin(props){
     setBusy(true);
     var now=new Date().toISOString();
     var newLog=(s.debit_spend_log||[]).slice();
-    // Auto-log the gap as untracked spend
     if(newBal!==null&&gap!==null&&gap>50){
       newLog.push({amount:Math.round(gap),note:'Untracked spend (balance gap)',ts:now});
     }
@@ -704,7 +718,6 @@ function Checkin(props){
     ),
 
     h('div',{className:'card mb'},
-      // Debit balance
       h('div',{className:'mb'},
         h('div',{className:'il',style:{color:'var(--acc)'}},'🏦 Debit Balance'),
         h('div',{className:'bigwrap'},
@@ -713,12 +726,10 @@ function Checkin(props){
             placeholder:String(s.accounts.debit.balance||0),
             value:dv,onChange:function(e){setDv(e.target.value);}})
         ),
-        // Predicted row
         h('div',{className:'sanity'},
           h('span',{style:{fontSize:'.65rem',color:'var(--acc)'}},'Predicted balance'),
           h('span',{style:{fontFamily:'var(--mono)',fontSize:'.78rem',fontWeight:700,color:'var(--acc)'}},fmt(pred))
         ),
-        // Gap hint
         gap!==null&&gap>50&&h('div',{style:{marginTop:4,fontSize:'.68rem',fontFamily:'var(--mono)',color:'var(--red)'}},
           '\u2193 '+fmt(gap)+' untracked \u2192 will auto-log on save'
         ),
@@ -727,7 +738,6 @@ function Checkin(props){
         )
       ),
       h('hr'),
-      // SBI
       h('div',{className:'mb'},
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}},
           h('div',{className:'il',style:{marginBottom:0,color:'var(--blu)'}},'💳 SBI Available'),
@@ -742,7 +752,6 @@ function Checkin(props){
         sbiSpent(prevS)>0&&h('div',{style:{marginTop:4,fontSize:'.7rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'Bill so far: '+fmt(sbiSpent(prevS)))
       ),
       h('hr'),
-      // YES
       h('div',null,
         h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}},
           h('div',{className:'il',style:{marginBottom:0,color:'var(--grn)'}},'💳 YES Available'),
@@ -758,7 +767,6 @@ function Checkin(props){
       )
     ),
 
-    // Preview after save
     hasBalance&&h('div',{className:'card mb',style:{
       background:wfP.short>0?'linear-gradient(135deg,#FEF2F2,#FEE2E2)':'linear-gradient(135deg,#ECFDF5,#D1FAE5)',
       borderColor:wfP.short>0?'var(--red-bd)':'var(--grn-bd)'
@@ -766,7 +774,11 @@ function Checkin(props){
       h('div',{style:{fontSize:'.58rem',fontWeight:800,letterSpacing:'.1em',textTransform:'uppercase',
         color:wfP.short>0?'var(--red)':'var(--grn)',marginBottom:4}},'After saving'),
       h('div',{className:'hrow'},
-        h('span',{className:'hlbl'},'Surplus / Short'),
+        h('span',{className:'hlbl'},'Actual free / short'),
+        h('span',{className:'hval',style:{color:wfP.actualShort>0?'var(--red)':'var(--grn)',fontSize:'.9rem'}},
+          (wfP.actualShort>0?'−':'+') + fmt(wfP.actualShort>0?wfP.actualShort:wfP.actualSurplus))),
+      h('div',{className:'hrow'},
+        h('span',{className:'hlbl'},'Budget free / short'),
         h('span',{className:'hval',style:{color:wfP.short>0?'var(--red)':'var(--grn)',fontSize:'1rem'}},
           (wfP.short>0?'−':'+') + fmt(wfP.short>0?wfP.short:wfP.surplus))),
       wfP.creditBillsDue>0&&h('div',{className:'hrow'},
@@ -805,7 +817,6 @@ function DebitSpendLog(props){
   var s=props.s,save=props.save,toast=props.toast;
   var sorted=(s.debit_spend_log||[]).slice().sort(function(a,b){return new Date(b.ts)-new Date(a.ts);});
   var total=debitVarSpent(s);
-  var wf=waterfall(s);
   function remove(ts){
     var newLog=s.debit_spend_log.filter(function(e){return e.ts!==ts;});
     save(Object.assign({},s,{debit_spend_log:newLog})).then(function(){toast('Removed');});
