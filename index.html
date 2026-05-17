@@ -31,17 +31,35 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--san
 #root{display:flex;flex-direction:column;min-height:100%}
 .page{flex:1;padding:.75rem 1rem calc(var(--nav-h) + var(--safe-b) + 1.5rem);max-width:520px;margin:0 auto;width:100%}
 
-.nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));
-  background:rgba(255,255,255,.95);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-  border-top:1px solid var(--bd);display:flex;align-items:stretch;z-index:100;padding-bottom:var(--safe-b);
-  box-shadow:0 -4px 20px rgba(79,70,229,.08)}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  background:none;border:none;cursor:pointer;color:var(--m2);font-family:var(--sans);
-  font-size:.5rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:color .15s}
+/* ── IMPROVED NAV: icon-only on narrow, label on wider ─────────── */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--nav-h) + var(--safe-b));
+  background:rgba(255,255,255,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-top:1px solid var(--bd);display:flex;align-items:stretch;z-index:100;
+  padding-bottom:var(--safe-b);box-shadow:0 -4px 20px rgba(79,70,229,.08)
+}
+.nb{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;background:none;border:none;cursor:pointer;color:var(--m2);font-family:var(--sans);
+  font-size:.48rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  transition:color .15s;padding:0 2px;min-width:0;overflow:hidden
+}
 .nb.on{color:var(--acc)}
-.nb svg{width:20px;height:20px;stroke-width:1.8;fill:none;stroke:currentColor}
-.nb-dot{width:4px;height:4px;border-radius:50%;background:var(--acc);margin-top:-1px;display:none}
+.nb svg{width:22px;height:22px;stroke-width:1.8;fill:none;stroke:currentColor;flex-shrink:0}
+.nb-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:.48rem}
+/* Active indicator: pill under icon */
+.nb-dot{
+  width:18px;height:3px;border-radius:99px;background:var(--acc);
+  margin-top:1px;display:none;transition:all .2s
+}
 .nb.on .nb-dot{display:block}
+/* On very narrow screens hide label entirely, increase icon */
+@media(max-width:360px){
+  .nb-label{display:none}
+  .nb svg{width:24px;height:24px}
+  .nb{justify-content:center;gap:0}
+}
 
 .card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:.9rem 1rem;box-shadow:var(--sh)}
 .card+.card{margin-top:.5rem}
@@ -53,6 +71,31 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--san
 .sl{font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--m2);font-weight:700;margin-bottom:5px}
 .sv{font-size:1.4rem;font-weight:800;line-height:1;font-family:var(--mono);letter-spacing:-.02em}
 .ss{font-size:.66rem;color:var(--m1);margin-top:4px;font-family:var(--mono)}
+
+/* ── SAFE-TO-SPEND hero card (full-width, prominent) ──────────── */
+.safe-card{
+  background:linear-gradient(135deg,#ECFDF5,#D1FAE5);
+  border:1px solid var(--grn-bd);border-radius:var(--r);
+  padding:1rem 1.1rem .85rem;margin-bottom:.5rem;box-shadow:var(--sh);
+  display:flex;justify-content:space-between;align-items:flex-end
+}
+.safe-card.warn{background:linear-gradient(135deg,#FFFBEB,#FEF3C7);border-color:var(--amb-bd)}
+.safe-card.danger{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border-color:var(--red-bd)}
+.safe-main{flex:1}
+.safe-lbl{font-size:.56rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--grn);margin-bottom:.25rem}
+.safe-card.warn .safe-lbl{color:var(--amb)}
+.safe-card.danger .safe-lbl{color:var(--red)}
+.safe-amt{font-family:var(--mono);font-size:2.2rem;font-weight:700;letter-spacing:-.03em;
+  line-height:1;color:var(--grn)}
+.safe-card.warn .safe-amt{color:var(--amb)}
+.safe-card.danger .safe-amt{color:var(--red)}
+.safe-sub{font-size:.67rem;color:var(--grn);margin-top:.3rem;font-family:var(--mono)}
+.safe-card.warn .safe-sub{color:var(--amb)}
+.safe-card.danger .safe-sub{color:var(--red)}
+.safe-side{text-align:right;padding-left:.75rem}
+.safe-side-lbl{font-size:.52rem;color:var(--m2);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.safe-side-val{font-family:var(--mono);font-size:.82rem;font-weight:700}
 
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem}
@@ -126,28 +169,62 @@ hr{border:none;border-top:1px solid var(--bd);margin:.75rem 0}
 .gap{display:flex;flex-direction:column;gap:.45rem}
 .mb{margin-bottom:.5rem}
 
+/* ── IMPROVED WATERFALL: indented, step-line style ─────────────── */
 .wf{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem;box-shadow:var(--sh)}
-.wfr{display:flex;justify-content:space-between;align-items:center;padding:.65rem .9rem;border-bottom:1px solid var(--bd)}
+.wfr{display:flex;justify-content:space-between;align-items:center;padding:.6rem .9rem;border-bottom:1px solid var(--bd)}
 .wfr:last-child{border-bottom:none}
 .wfl{color:var(--m1);font-weight:500;font-size:.72rem}
 .wfv{font-family:var(--mono);font-weight:600;font-size:.78rem}
 .wfr.hd{background:linear-gradient(135deg,var(--acc-bg),var(--pur-bg))}
 .wfr.fin{background:var(--s2)}
 
-.hero{border-radius:var(--r);padding:1.2rem 1.1rem 1rem;margin-bottom:.75rem;border:1px solid;box-shadow:var(--shm);position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;opacity:.07;background:currentColor}
-.hero-amt{font-family:var(--mono);font-size:2.1rem;font-weight:700;line-height:1;letter-spacing:-.03em;margin:.2rem 0 .65rem}
-.hero-lbl{font-size:.58rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
-.hrow{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:.75rem}
+/* Step rows: indented with connector line */
+.wf-step{display:flex;align-items:stretch;padding:.0;border-bottom:1px solid var(--bd)}
+.wf-step:last-of-type{border-bottom:none}
+.wf-connector{width:32px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:.55rem 0}
+.wf-line{width:2px;flex:1;background:var(--bd);border-radius:1px}
+.wf-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin:.25rem 0}
+.wf-body{flex:1;padding:.55rem .9rem .55rem 0;display:flex;justify-content:space-between;align-items:center}
+.wf-lbl{font-size:.72rem;font-weight:600;color:var(--m1)}
+.wf-sub{font-size:.58rem;color:var(--m2);font-family:var(--mono);margin-top:2px}
+.wf-minus{font-size:.6rem;font-family:var(--mono);margin-top:2px}
+.wf-right{text-align:right}
+.wf-after-lbl{font-size:.52rem;color:var(--m2);letter-spacing:.06em;text-transform:uppercase}
+.wf-after-val{font-family:var(--mono);font-weight:700;font-size:.82rem;margin-top:1px}
+
+/* ── HERO: single prominent number + toggle ────────────────────── */
+.hero{border-radius:var(--r);padding:1.1rem 1.1rem .9rem;margin-bottom:.65rem;border:1px solid;box-shadow:var(--shm);position:relative;overflow:hidden}
+.hero-inner{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem}
+.hero-left{flex:1;min-width:0}
+.hero-label{font-size:.58rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;opacity:.8;margin-bottom:.25rem}
+.hero-amt{font-family:var(--mono);font-size:2.2rem;font-weight:700;line-height:1;letter-spacing:-.03em;margin-bottom:.35rem}
+.hero-mode-toggle{display:flex;background:rgba(0,0,0,.07);border-radius:99px;padding:2px;gap:2px;flex-shrink:0;margin-top:2px}
+.hero-mode-btn{border:none;background:transparent;cursor:pointer;padding:3px 10px;border-radius:99px;
+  font-size:.55rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  color:inherit;opacity:.6;transition:all .15s;font-family:var(--sans)}
+.hero-mode-btn.on{background:rgba(255,255,255,.55);opacity:1;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.hero-breakdown{border-top:1px solid;padding-top:.5rem;margin-top:.1rem;display:flex;flex-direction:column;gap:2px}
+.hrow{display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:.75rem}
 .hlbl{color:var(--m1);font-weight:500}
 .hval{font-family:var(--mono);font-weight:700;font-size:.78rem}
+.hero-footer{font-size:.65rem;opacity:.75;font-family:var(--mono);margin-top:.35rem}
 
-/* NEW: dual shortfall banner inside hero */
-.dual-short{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.55rem 0 .5rem}
-.ds-box{border-radius:10px;padding:.45rem .6rem;border:1px solid}
-.ds-lbl{font-size:.52rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px}
-.ds-val{font-family:var(--mono);font-size:1.15rem;font-weight:700;line-height:1}
-.ds-sub{font-size:.58rem;margin-top:3px;opacity:.8}
+.hero.ok{background:linear-gradient(135deg,#ECFDF5,#D1FAE5);border-color:var(--grn-bd);color:var(--grn)}
+.hero.short{background:linear-gradient(135deg,#FEF2F2,#FEE2E2);border-color:var(--red-bd);color:var(--red)}
+
+/* ── EMPTY STATES ──────────────────────────────────────────────── */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:2.2rem 1rem;text-align:center;gap:.6rem;
+  background:var(--s1);border:1px dashed var(--bd2);border-radius:var(--r)
+}
+.empty-icon{
+  width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:1.4rem;
+  background:var(--s3);margin-bottom:.2rem
+}
+.empty-title{font-size:.88rem;font-weight:700;color:var(--m1)}
+.empty-body{font-size:.72rem;color:var(--m2);max-width:220px;line-height:1.5}
 
 .log-entry{display:flex;justify-content:space-between;align-items:center;padding:.6rem .9rem;border-bottom:1px solid var(--bd)}
 .log-entry:last-child{border-bottom:none}
@@ -324,35 +401,23 @@ function waterfall(s){
   var balance=s.accounts.debit.balance||0;
   var cash=s.cash||0;
   var total=balance+cash;
-
   var fixedRem=unpaidFixedAmt(s);
-
   var dVarBud=s.variable.filter(function(v){return v.card==='Debit';}).reduce(function(a,v){return a+v.budget;},0);
   var dVarSpent=debitVarSpent(s);
   var dVarRem=Math.max(0,dVarBud-dVarSpent);
-
   var cVarBud=s.variable.filter(function(v){return v.card!=='Debit';}).reduce(function(a,v){return a+v.budget;},0);
   var cVarSpent=sbiSpent(s)+yesSpent(s);
   var cVarRem=Math.max(0,cVarBud-cVarSpent);
-
   var creditBillsDue=cVarSpent;
-
   var prevBill=s.prev_bill_paid?0:prevBillTotal(s);
-
   var afterFixed=total-fixedRem;
   var afterDVar=afterFixed-dVarRem;
   var afterCVar=afterDVar-cVarRem;
   var afterCredit=afterCVar-creditBillsDue;
   var net=afterCredit-prevBill;
-
   var savPend=s.savings.done?0:s.savings.budget;
   var debtPend=unpaidDebts(s);
-
-  // ── ACTUAL (no future budget projections) ──────────────────────
-  // How much is left right now after paying only what's ALREADY spent on credit
-  // Does NOT subtract remaining budget — just: can you cover bills you've incurred?
   var actualNet=total-creditBillsDue-prevBill;
-
   return{
     balance:balance,cash:cash,total:total,
     fixedRem:fixedRem,afterFixed:afterFixed,
@@ -363,7 +428,6 @@ function waterfall(s){
     prevBill:prevBill,
     savPend:savPend,debtPend:debtPend,
     surplus:net>0?net:0,short:net<0?-net:0,
-    // Actual = only bills already incurred subtracted from current balance
     actualSurplus:actualNet>0?actualNet:0,actualShort:actualNet<0?-actualNet:0
   };
 }
@@ -384,76 +448,66 @@ function UpdatedAt(props){
   return h('span',{className:'upd'},h('span',{className:'dot',style:{background:r.dot}}),r.label);
 }
 
-// ── Waterfall Card ──────────────────────────────────────────────────
+// ── IMPROVED Empty State ────────────────────────────────────────────
+function EmptyState(props){
+  return h('div',{className:'empty-state'},
+    h('div',{className:'empty-icon'},props.icon||'📭'),
+    h('div',{className:'empty-title'},props.title||'Nothing here yet'),
+    h('div',{className:'empty-body'},props.body||'Items you add will appear here.')
+  );
+}
+
+// ── IMPROVED Waterfall Card: indented step-lines ────────────────────
 function WaterfallCard(props){
   var s=props.s,wf=waterfall(s);
+
+  function StepRow(srProps){
+    return h('div',{className:'wf-step'},
+      h('div',{className:'wf-connector'},
+        srProps.topLine&&h('div',{className:'wf-line'}),
+        h('div',{className:'wf-dot',style:{background:srProps.dotColor||'var(--bd2)'}}),
+        srProps.bottomLine&&h('div',{className:'wf-line'})
+      ),
+      h('div',{className:'wf-body'},
+        h('div',null,
+          h('div',{className:'wf-lbl',style:{color:srProps.lblColor||'var(--m1)'}},srProps.label),
+          srProps.sub1&&h('div',{className:'wf-sub'},srProps.sub1),
+          srProps.minus&&h('div',{className:'wf-minus',style:{color:srProps.dotColor||'var(--m2)'}},'\u2212 '+srProps.minus)
+        ),
+        h('div',{className:'wf-right'},
+          h('div',{className:'wf-after-lbl'},'after'),
+          h('div',{className:'wf-after-val',style:{color:srProps.afterVal<0?'var(--red)':'var(--grn)'}},fmt(srProps.afterVal))
+        )
+      )
+    );
+  }
+
+  var hasSteps=wf.fixedRem>0||wf.dVarRem>0||wf.cVarRem>0||wf.creditBillsDue>0||wf.prevBill>0;
+  var steps=[];
+  var runningAfter=wf.total;
+  if(wf.fixedRem>0){runningAfter=wf.afterFixed;steps.push({label:'Fixed remaining',sub1:fmt(paidFixedAmt(s))+' already paid',minus:fmt(wf.fixedRem),dotColor:'var(--amb)',afterVal:runningAfter});}
+  if(wf.dVarRem>0){runningAfter=wf.afterDVar;steps.push({label:'Debit var remaining',sub1:fmt(wf.dVarSpent)+' spent of '+fmt(wf.dVarBud),minus:fmt(wf.dVarRem),dotColor:'var(--blu)',afterVal:runningAfter});}
+  if(wf.cVarRem>0){runningAfter=wf.afterCVar;steps.push({label:'Credit var remaining',sub1:fmt(wf.cVarSpent)+' spent of '+fmt(wf.cVarBud),minus:fmt(wf.cVarRem),dotColor:'var(--pur)',afterVal:runningAfter});}
+  if(wf.creditBillsDue>0){runningAfter=wf.afterCredit;steps.push({label:'Credit bills due',sub1:'SBI '+fmt(sbiSpent(s))+' + YES '+fmt(yesSpent(s)),minus:fmt(wf.creditBillsDue),dotColor:'var(--pnk)',afterVal:runningAfter});}
+  if(wf.prevBill>0){runningAfter=runningAfter-wf.prevBill;steps.push({label:'Prev month bill (unpaid)',minus:fmt(wf.prevBill),dotColor:'var(--red)',afterVal:runningAfter});}
+
   return h('div',{className:'wf'},
+    // Header: debit balance
     h('div',{className:'wfr hd'},
-      h('span',{className:'wfl',style:{color:'var(--acc)',fontWeight:700}},'Debit balance'),
-      h('span',{className:'wfv',style:{color:'var(--acc)'}},fmt(wf.balance))
-    ),
-    wf.cash>0&&h('div',{className:'wfr',style:{background:'var(--grn-bg)'}},
-      h('span',{className:'wfl',style:{color:'var(--grn)'}},'+ Cash on hand'),
-      h('span',{className:'wfv',style:{color:'var(--grn)'}},fmt(wf.cash))
-    ),
-    h('div',{className:'wfr',style:{background:'var(--s2)'}},
-      h('span',{className:'wfl',style:{fontWeight:700}},'Total available'),
-      h('span',{className:'wfv',style:{fontWeight:700}},fmt(wf.total))
-    ),
-    wf.fixedRem>0&&h('div',{className:'wfr',style:{borderLeft:'3px solid var(--amb)'}},
       h('div',null,
-        h('div',{className:'wfl'},'Fixed remaining'),
-        h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},fmt(paidFixedAmt(s))+' already paid'),
-        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--amb)',marginTop:1}},'− '+fmt(wf.fixedRem))
+        h('div',{className:'wfl',style:{color:'var(--acc)',fontWeight:700}},'Debit balance'),
+        wf.cash>0&&h('div',{style:{fontSize:'.6rem',color:'var(--grn)',fontFamily:'var(--mono)',marginTop:2}},'+'+fmt(wf.cash)+' cash')
       ),
       h('div',{style:{textAlign:'right'}},
-        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'after'),
-        h('div',{className:'wfv',style:{color:wf.afterFixed<0?'var(--red)':'var(--grn)'}},fmt(wf.afterFixed))
+        h('div',{className:'wfv',style:{color:'var(--acc)'}},fmt(wf.balance)),
+        wf.cash>0&&h('div',{style:{fontSize:'.68rem',fontFamily:'var(--mono)',fontWeight:700,color:'var(--m1)',marginTop:2}},'total '+fmt(wf.total))
       )
     ),
-    wf.dVarRem>0&&h('div',{className:'wfr',style:{borderLeft:'3px solid var(--blu)'}},
-      h('div',null,
-        h('div',{className:'wfl'},'Debit var remaining'),
-        h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},fmt(wf.dVarSpent)+' spent of '+fmt(wf.dVarBud)),
-        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--blu)',marginTop:1}},'− '+fmt(wf.dVarRem))
-      ),
-      h('div',{style:{textAlign:'right'}},
-        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'after'),
-        h('div',{className:'wfv',style:{color:wf.afterDVar<0?'var(--red)':'var(--grn)'}},fmt(wf.afterDVar))
-      )
-    ),
-    wf.cVarRem>0&&h('div',{className:'wfr',style:{borderLeft:'3px solid var(--pur)'}},
-      h('div',null,
-        h('div',{className:'wfl'},'Credit var remaining'),
-        h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},fmt(wf.cVarSpent)+' spent of '+fmt(wf.cVarBud)),
-        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--pur)',marginTop:1}},'− '+fmt(wf.cVarRem))
-      ),
-      h('div',{style:{textAlign:'right'}},
-        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'after'),
-        h('div',{className:'wfv',style:{color:wf.afterCVar<0?'var(--red)':'var(--grn)'}},fmt(wf.afterCVar))
-      )
-    ),
-    wf.creditBillsDue>0&&h('div',{className:'wfr',style:{borderLeft:'3px solid var(--pnk)'}},
-      h('div',null,
-        h('div',{className:'wfl'},'Credit bills due (already spent)'),
-        h('div',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},'SBI '+fmt(sbiSpent(s))+' + YES '+fmt(yesSpent(s))),
-        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--pnk)',marginTop:1}},'− '+fmt(wf.creditBillsDue))
-      ),
-      h('div',{style:{textAlign:'right'}},
-        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'after'),
-        h('div',{className:'wfv',style:{color:wf.afterCredit<0?'var(--red)':'var(--grn)'}},fmt(wf.afterCredit))
-      )
-    ),
-    wf.prevBill>0&&h('div',{className:'wfr',style:{borderLeft:'3px solid var(--red)'}},
-      h('div',null,
-        h('div',{className:'wfl'},'Prev month bill (unpaid)'),
-        h('div',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',color:'var(--red)',marginTop:1}},'− '+fmt(wf.prevBill))
-      ),
-      h('div',{style:{textAlign:'right'}},
-        h('div',{style:{fontSize:'.55rem',color:'var(--m2)'}},'after'),
-        h('div',{className:'wfv',style:{color:(wf.afterCredit-wf.prevBill)<0?'var(--red)':'var(--grn)'}},fmt(wf.afterCredit-wf.prevBill))
-      )
-    ),
+    // Step rows
+    hasSteps&&steps.map(function(st,i){
+      return h(StepRow,Object.assign({key:i,topLine:i>0,bottomLine:i<steps.length-1},st));
+    }),
+    // Final result
     h('div',{className:'wfr fin'},
       h('span',{className:'wfl',style:{fontWeight:700,color:wf.short>0?'var(--red)':'var(--grn)'}},
         wf.short>0?'\u26A0 Short by (budget)':'\u2713 Surplus (budget)'),
@@ -468,58 +522,46 @@ function WaterfallCard(props){
   );
 }
 
-
-// ── Hero ────────────────────────────────────────────────────────────
+// ── IMPROVED Hero: single number + budget/actual toggle ─────────────
 function Hero(props){
   var s=props.s,wf=waterfall(s);
-  var budgetOk=wf.short===0;
-  var actualOk=wf.actualShort===0;
+  var _mode=useState('budget'),mode=_mode[0],setMode=_mode[1];
 
-  // Hero background based on budget shortfall (more conservative)
-  var hbg=budgetOk?'linear-gradient(135deg,#ECFDF5,#D1FAE5)':'linear-gradient(135deg,#FEF2F2,#FEE2E2)';
-  var hbc=budgetOk?'var(--grn-bd)':'var(--red-bd)';
+  var isBudget=mode==='budget';
+  var isShort=isBudget?(wf.short>0):(wf.actualShort>0);
+  var amount=isBudget?(wf.short>0?wf.short:wf.surplus):(wf.actualShort>0?wf.actualShort:wf.actualSurplus);
+  var heroClass='hero '+(isShort?'short':'ok');
 
-  return h('div',{className:'hero',style:{background:hbg,borderColor:hbc,color:budgetOk?'var(--grn)':'var(--red)'}},
+  var borderClr=isShort?'var(--red-bd)':'var(--grn-bd)';
 
-    // ── Dual shortfall boxes ────────────────────────────────────
-    h('div',{className:'dual-short'},
-      // LEFT: Actual (bills already incurred vs balance)
-      h('div',{className:'ds-box',style:{
-        background:actualOk?'rgba(5,150,105,.08)':'rgba(220,38,38,.08)',
-        borderColor:actualOk?'var(--grn-bd)':'var(--red-bd)'
-      }},
-        h('div',{className:'ds-lbl',style:{color:actualOk?'var(--grn)':'var(--red)'}},
-          actualOk?'\u2713 Actual free':'Actual short'),
-        h('div',{className:'ds-val',style:{color:actualOk?'var(--grn)':'var(--red)'}},
-          fmt(actualOk?wf.actualSurplus:wf.actualShort)),
-        h('div',{className:'ds-sub',style:{color:actualOk?'var(--grn)':'var(--red)'}},
-          'bal \u2212 bills due')
+  return h('div',{className:heroClass},
+    h('div',{className:'hero-inner'},
+      h('div',{className:'hero-left'},
+        h('div',{className:'hero-label'},isShort?(isBudget?'Budget short':'Actual short'):(isBudget?'Budget free':'Actual free')),
+        h('div',{className:'hero-amt'},fmt(amount))
       ),
-      // RIGHT: Budget (including remaining budgets)
-      h('div',{className:'ds-box',style:{
-        background:budgetOk?'rgba(5,150,105,.08)':'rgba(220,38,38,.08)',
-        borderColor:budgetOk?'var(--grn-bd)':'var(--red-bd)'
-      }},
-        h('div',{className:'ds-lbl',style:{color:budgetOk?'var(--grn)':'var(--red)'}},
-          budgetOk?'\u2713 Budget free':'Budget short'),
-        h('div',{className:'ds-val',style:{color:budgetOk?'var(--grn)':'var(--red)'}},
-          fmt(budgetOk?wf.surplus:wf.short)),
-        h('div',{className:'ds-sub',style:{color:budgetOk?'var(--grn)':'var(--red)'}},
-          'incl. unspent budget')
+      h('div',{style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4}},
+        h('div',{className:'hero-mode-toggle'},
+          h('button',{className:'hero-mode-btn'+(mode==='budget'?' on':''),onClick:function(){setMode('budget');}},
+            'Budget'),
+          h('button',{className:'hero-mode-btn'+(mode==='actual'?' on':''),onClick:function(){setMode('actual');}},
+            'Actual')
+        ),
+        h('div',{style:{fontSize:'.6rem',color:'inherit',opacity:.7,textAlign:'right',fontFamily:'var(--mono)'}},
+          isBudget?'incl. unspent budget':'bills incurred only')
       )
     ),
-
-    // ── Breakdown lines ─────────────────────────────────────────
-    h('div',{style:{borderTop:'1px solid '+(budgetOk?'var(--grn-bd)':'var(--red-bd)'),paddingTop:'.5rem',display:'flex',flexDirection:'column',gap:2}},
+    h('div',{className:'hero-breakdown',style:{borderTopColor:borderClr}},
       h('div',{className:'hrow'},h('span',{className:'hlbl'},'Debit + Cash'),h('span',{className:'hval',style:{color:'var(--acc)'}},fmt(wf.total))),
       wf.fixedRem>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Fixed remaining'),h('span',{className:'hval',style:{color:'var(--amb)'}},fmt(wf.fixedRem))),
-      wf.dVarRem>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Debit var remaining'),h('span',{className:'hval',style:{color:'var(--blu)'}},fmt(wf.dVarRem))),
-      wf.cVarRem>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Credit var remaining'),h('span',{className:'hval',style:{color:'var(--pur)'}},fmt(wf.cVarRem))),
+      !isBudget&&wf.dVarRem>0&&h('div',{className:'hrow',style:{opacity:.5}},h('span',{className:'hlbl'},'(debit var remaining)'),h('span',{className:'hval',style:{color:'var(--blu)'}},fmt(wf.dVarRem))),
+      isBudget&&wf.dVarRem>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Debit var remaining'),h('span',{className:'hval',style:{color:'var(--blu)'}},fmt(wf.dVarRem))),
+      isBudget&&wf.cVarRem>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Credit var remaining'),h('span',{className:'hval',style:{color:'var(--pur)'}},fmt(wf.cVarRem))),
       wf.creditBillsDue>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Credit bills due'),h('span',{className:'hval',style:{color:'var(--pnk)'}},fmt(wf.creditBillsDue))),
       wf.prevBill>0&&h('div',{className:'hrow'},h('span',{className:'hlbl'},'− Prev month bills'),h('span',{className:'hval',style:{color:'var(--red)'}},fmt(wf.prevBill))),
-      h('div',{className:'hrow',style:{borderTop:'1px solid '+(budgetOk?'var(--grn-bd)':'var(--red-bd)'),marginTop:4,paddingTop:4}},
-        h('span',{className:'hlbl',style:{fontWeight:700}},'= Budget '+(budgetOk?'free':'short')),
-        h('span',{className:'hval',style:{color:budgetOk?'var(--grn)':'var(--red)',fontSize:'.9rem'}},fmt(budgetOk?wf.surplus:wf.short))
+      h('div',{className:'hrow',style:{borderTop:'1px solid '+borderClr,marginTop:4,paddingTop:4}},
+        h('span',{className:'hlbl',style:{fontWeight:700}},'= '+(isShort?'Short':'Free')),
+        h('span',{className:'hval',style:{color:isShort?'var(--red)':'var(--grn)',fontSize:'.9rem'}},fmt(amount))
       )
     )
   );
@@ -527,15 +569,10 @@ function Hero(props){
 
 function Insights(props){
   var s=props.s,wf=waterfall(s),pills=[];
-
-  // Budget status
   if(wf.short>0) pills.push({t:'bd',txt:'Budget short '+fmt(wf.short)});
   else pills.push({t:'gd',txt:fmt(wf.surplus)+' budget free'});
-
-  // Actual status (bills only)
   if(wf.actualShort>0) pills.push({t:'bd',txt:'Actual short '+fmt(wf.actualShort)});
   else pills.push({t:'inf',txt:fmt(wf.actualSurplus)+' actual free'});
-
   if(wf.surplus>0) pills.push({t:'ac',txt:fmt(Math.round(wf.surplus/wLeft))+'/wk free'});
   if(prevBillTotal(s)>0&&!s.prev_bill_paid) pills.push({t:'pk',txt:'Prev bill '+fmt(prevBillTotal(s))+' unpaid'});
   if(unpaidFixedAmt(s)>0) pills.push({t:'wn',txt:fmt(unpaidFixedAmt(s))+' fixed pending'});
@@ -555,6 +592,7 @@ function Overview(props){
   var afterBills=Math.max(0,wf.total-wf.creditBillsDue-wf.prevBill);
   var safePerWeek=wLeft>0?Math.round(afterBills/wLeft):0;
   var safePerDay=dLeft>0?Math.round(afterBills/dLeft):0;
+  var safeClass=safePerWeek<1000?'danger':safePerWeek<3000?'warn':'';
 
   function saveCash(){
     if(cv==='') return setCashEdit(false);
@@ -574,12 +612,23 @@ function Overview(props){
     h(Hero,{s:s}),
     h(Insights,{s:s}),
 
-    h('div',{className:'g2'},
-      h('div',{className:'card sc-grn'},
-        h('div',{className:'sl',style:{color:'var(--grn)'}},'Safe to Spend'),
-        h('div',{className:'sv',style:{color:safePerWeek<2000?'var(--amb)':'var(--grn)'}},fmt(safePerWeek)),
-        h('div',{className:'ss'},fmt(safePerDay)+'/day \u00B7 after bills')
+    // IMPROVED: Safe-to-spend full-width hero card
+    h('div',{className:'safe-card '+safeClass},
+      h('div',{className:'safe-main'},
+        h('div',{className:'safe-lbl'},'Safe to Spend'),
+        h('div',{className:'safe-amt'},fmt(safePerWeek)),
+        h('div',{className:'safe-sub'},fmt(safePerDay)+'/day \u00B7 after bills')
       ),
+      h('div',{className:'safe-side'},
+        h('div',{className:'safe-side-lbl'},'Weeks left'),
+        h('div',{className:'safe-side-val'},wLeft),
+        h('div',{className:'safe-side-lbl',style:{marginTop:8}},'Days left'),
+        h('div',{className:'safe-side-val'},dLeft)
+      )
+    ),
+
+    // Secondary 2-col stats
+    h('div',{className:'g2'},
       h('div',{className:'card sc-pnk'},
         h('div',{className:'sl',style:{color:'var(--pnk)'}},'Credit Spent'),
         h('div',{className:'sv',style:{color:'var(--pnk)'}},fmt(totCurrCreditSpent(s))),
@@ -594,6 +643,28 @@ function Overview(props){
         h('div',{className:'sl',style:{color:'var(--pur)'}},'Var Spent'),
         h('div',{className:'sv',style:{color:tvs>tvb?'var(--red)':'var(--pur)'}},fmt(tvs)),
         h('div',{className:'ss'},'of '+fmt(tvb)+' budget')
+      ),
+      h('div',{className:'card sc-amb'},
+        h('div',{className:'sl',style:{color:'var(--amb)'}},'Cash'),
+        h('div',{className:'sv',style:{color:'var(--amb)'}},fmt(s.cash||0)),
+        h('div',{className:'ss'},
+          cashEdit
+            ? h('span',null,'editing…')
+            : h('span',{style:{cursor:'pointer',textDecoration:'underline'},
+                onClick:function(){setCv(String(s.cash||0));setCashEdit(true);}
+              },'edit')
+        )
+      )
+    ),
+    cashEdit&&h('div',{className:'card mb',style:{borderLeft:'3px solid var(--amb)'}},
+      h('div',{style:{display:'flex',gap:6,alignItems:'center'}},
+        h('input',{type:'number',inputMode:'numeric',value:cv,autoFocus:true,
+          style:{flex:1,padding:'.3rem .5rem',fontSize:'.85rem',borderRadius:6,border:'1.5px solid var(--acc)',background:'var(--s2)',fontFamily:'var(--mono)',color:'var(--tx)',outline:'none'},
+          onChange:function(e){setCv(e.target.value);},
+          onKeyDown:function(e){if(e.key==='Enter')saveCash();if(e.key==='Escape')setCashEdit(false);}
+        }),
+        h('button',{className:'btn bp',style:{width:'auto',padding:'.3rem .7rem',margin:0,fontSize:'.75rem'},onClick:saveCash},'Save'),
+        h('button',{className:'bdng',onClick:function(){setCashEdit(false);setCv('');}},'\u2715')
       )
     ),
 
@@ -613,26 +684,6 @@ function Overview(props){
         h('div',{className:'sl',style:{color:'var(--grn)'}},'YES'),
         h('div',{style:{fontFamily:'var(--mono)',fontSize:'1rem',fontWeight:700,color:'var(--grn)'}},fmt(s.accounts.yes.available)),
         h('div',{className:'ss'},fmt(yesSpent(s))+' spent')
-      )
-    ),
-
-    h('div',{className:'card mb',style:{borderLeft:'3px solid var(--amb)'}},
-      h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
-        h('div',null,
-          h('div',{className:'sl',style:{color:'var(--amb)'}},'Cash on hand'),
-          h('div',{style:{fontFamily:'var(--mono)',fontSize:'1.1rem',fontWeight:700,color:'var(--amb)'}},fmt(s.cash||0))
-        ),
-        cashEdit
-          ? h('div',{style:{display:'flex',gap:6,alignItems:'center'}},
-              h('input',{type:'number',inputMode:'numeric',value:cv,autoFocus:true,
-                style:{width:100,padding:'.3rem .5rem',fontSize:'.85rem',borderRadius:6,border:'1.5px solid var(--acc)',background:'var(--s2)',fontFamily:'var(--mono)',color:'var(--tx)',outline:'none'},
-                onChange:function(e){setCv(e.target.value);},
-                onKeyDown:function(e){if(e.key==='Enter')saveCash();if(e.key==='Escape')setCashEdit(false);}
-              }),
-              h('button',{className:'btn bp',style:{width:'auto',padding:'.3rem .7rem',margin:0,fontSize:'.75rem'},onClick:saveCash},'Save'),
-              h('button',{className:'bdng',onClick:function(){setCashEdit(false);setCv('');}},'\u2715')
-            )
-          : h('button',{className:'bs btn',style:{width:'auto',padding:'.3rem .8rem',margin:0,fontSize:'.75rem'},onClick:function(){setCv(String(s.cash||0));setCashEdit(true);}},'Edit')
       )
     ),
 
@@ -675,7 +726,7 @@ function Checkin(props){
     setBusy(true);
     var now=new Date().toISOString();
     var newLog=(s.debit_spend_log||[]).slice();
-    if(newBal!==null&&gap!==null&&gap>50){
+    if(newBal!==null&&gap!==null&&gap>200){
       newLog.push({amount:Math.round(gap),note:'Untracked spend (balance gap)',ts:now});
     }
     var ns=Object.assign({},s,{
@@ -730,10 +781,10 @@ function Checkin(props){
           h('span',{style:{fontSize:'.65rem',color:'var(--acc)'}},'Predicted balance'),
           h('span',{style:{fontFamily:'var(--mono)',fontSize:'.78rem',fontWeight:700,color:'var(--acc)'}},fmt(pred))
         ),
-        gap!==null&&gap>50&&h('div',{style:{marginTop:4,fontSize:'.68rem',fontFamily:'var(--mono)',color:'var(--red)'}},
+        gap!==null&&gap>200&&h('div',{style:{marginTop:4,fontSize:'.68rem',fontFamily:'var(--mono)',color:'var(--red)'}},
           '\u2193 '+fmt(gap)+' untracked \u2192 will auto-log on save'
         ),
-        deposit>50&&h('div',{style:{marginTop:4,fontSize:'.68rem',fontFamily:'var(--mono)',color:'var(--grn)'}},
+        deposit>200&&h('div',{style:{marginTop:4,fontSize:'.68rem',fontFamily:'var(--mono)',color:'var(--grn)'}},
           '\u2191 '+fmt(deposit)+' above predicted (income/deposit?)'
         )
       ),
@@ -776,11 +827,11 @@ function Checkin(props){
       h('div',{className:'hrow'},
         h('span',{className:'hlbl'},'Actual free / short'),
         h('span',{className:'hval',style:{color:wfP.actualShort>0?'var(--red)':'var(--grn)',fontSize:'.9rem'}},
-          (wfP.actualShort>0?'−':'+') + fmt(wfP.actualShort>0?wfP.actualShort:wfP.actualSurplus))),
+          (wfP.actualShort>0?'\u2212':'+') + fmt(wfP.actualShort>0?wfP.actualShort:wfP.actualSurplus))),
       h('div',{className:'hrow'},
         h('span',{className:'hlbl'},'Budget free / short'),
         h('span',{className:'hval',style:{color:wfP.short>0?'var(--red)':'var(--grn)',fontSize:'1rem'}},
-          (wfP.short>0?'−':'+') + fmt(wfP.short>0?wfP.short:wfP.surplus))),
+          (wfP.short>0?'\u2212':'+') + fmt(wfP.short>0?wfP.short:wfP.surplus))),
       wfP.creditBillsDue>0&&h('div',{className:'hrow'},
         h('span',{className:'hlbl'},'Credit bills due'),
         h('span',{className:'hval',style:{color:'var(--pnk)'}},fmt(wfP.creditBillsDue)))
@@ -806,10 +857,10 @@ function Checkin(props){
     ),
     h('button',{className:'btn bp',onClick:doAddSpend,disabled:busy||!hasSpend},busy?'Saving\u2026':'+ Log Spend'),
 
-    s.debit_spend_log&&s.debit_spend_log.length>0&&h('div',null,
-      h('div',{className:'sh'},'Spend History'),
-      h(DebitSpendLog,{s:s,save:save,toast:toast})
-    )
+    h('div',{className:'sh'},'Spend History'),
+    s.debit_spend_log&&s.debit_spend_log.length>0
+      ? h(DebitSpendLog,{s:s,save:save,toast:toast})
+      : h(EmptyState,{icon:'🧾',title:'No spends logged',body:'Debit and cash purchases you log will show up here.'})
   );
 }
 
@@ -870,36 +921,38 @@ function Expenses(props){
       unpaidFixedAmt(s)>0
         ?h('div',{className:'note wn'},'\uD83D\uDD14 '+fmt(unpaidFixedAmt(s))+' still to pay')
         :h('div',{className:'note gd'},'\u2713 All fixed expenses paid'),
-      h('div',{className:'card'},
-        s.fixed.map(function(f,i){
-          return h('div',{key:i,className:'er'},
-            h('div',{className:'eh'},
-              h('div',{className:'en'},
-                h('span',{style:{fontSize:'.75rem'}},f.paid?'\uD83D\uDFE2':'\u26AA'),
-                f.category
-              ),
-              h(Tog,{v:f.paid,onChange:function(v){
-                var fx=s.fixed.map(function(x,j){return j===i?Object.assign({},x,{paid:v}):x;});
-                save(Object.assign({},s,{fixed:fx}));
-                toast(f.category+(v?' paid':' unpaid'));
-              }})
-            ),
-            h('div',{style:{display:'flex',alignItems:'center',gap:6,marginTop:4}},
-              h('span',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',flexShrink:0}},'\u20B9'),
-              h('input',{
-                type:'number',inputMode:'numeric',
-                value:f.budget||0,
-                style:{padding:'.3rem .5rem',fontSize:'.8rem',borderRadius:6,flex:1},
-                onChange:function(e){
-                  var fx=s.fixed.map(function(x,j){return j===i?Object.assign({},x,{budget:Number(e.target.value)}):x;});
+      s.fixed.length===0
+        ? h(EmptyState,{icon:'🏠',title:'No fixed expenses',body:'Add fixed monthly bills in Settings.'})
+        : h('div',{className:'card'},
+          s.fixed.map(function(f,i){
+            return h('div',{key:i,className:'er'},
+              h('div',{className:'eh'},
+                h('div',{className:'en'},
+                  h('span',{style:{fontSize:'.75rem'}},f.paid?'\uD83D\uDFE2':'\u26AA'),
+                  f.category
+                ),
+                h(Tog,{v:f.paid,onChange:function(v){
+                  var fx=s.fixed.map(function(x,j){return j===i?Object.assign({},x,{paid:v}):x;});
                   save(Object.assign({},s,{fixed:fx}));
-                }
-              })
-            ),
-            h(Bar,{sp:f.paid?f.budget:0,bud:f.budget})
-          );
-        })
-      ),
+                  toast(f.category+(v?' paid':' unpaid'));
+                }})
+              ),
+              h('div',{style:{display:'flex',alignItems:'center',gap:6,marginTop:4}},
+                h('span',{style:{fontSize:'.6rem',color:'var(--m2)',fontFamily:'var(--mono)',flexShrink:0}},'\u20B9'),
+                h('input',{
+                  type:'number',inputMode:'numeric',
+                  value:f.budget||0,
+                  style:{padding:'.3rem .5rem',fontSize:'.8rem',borderRadius:6,flex:1},
+                  onChange:function(e){
+                    var fx=s.fixed.map(function(x,j){return j===i?Object.assign({},x,{budget:Number(e.target.value)}):x;});
+                    save(Object.assign({},s,{fixed:fx}));
+                  }
+                })
+              ),
+              h(Bar,{sp:f.paid?f.budget:0,bud:f.budget})
+            );
+          })
+        ),
       h('div',{style:{marginTop:'.5rem',padding:'.5rem .9rem',background:'var(--acc-bg)',borderRadius:'var(--rs)',border:'1px solid var(--acc-bd)',display:'flex',justifyContent:'space-between',alignItems:'center'}},
         h('span',{style:{fontSize:'.72rem',color:'var(--acc)',fontWeight:600}},'Total fixed budget'),
         h('span',{style:{fontFamily:'var(--mono)',fontSize:'.78rem',fontWeight:700,color:'var(--acc)'}},fmt(s.fixed.reduce(function(a,f){return a+f.budget;},0)))
@@ -921,24 +974,26 @@ function Expenses(props){
       ),
       h('div',{className:'note inf',style:{marginBottom:'.75rem'}},
         'SBI '+fmt(sbiSpent(s))+' \u00B7 YES '+fmt(yesSpent(s))+' \u00B7 Debit '+fmt(debitVarSpent(s))),
-      h('div',{className:'card'},
-        varWithSpent.map(function(v,i){
-          var rem=v.budget-v.spent;
-          var chipCls=v.card==='SBI'?'csbi':v.card==='YES'?'cyes':'cdeb';
-          return h('div',{key:i,className:'er'},
-            h('div',{className:'eh'},
-              h('div',{className:'en'},v.category,h('span',{className:'chip '+chipCls},v.card)),
-              h('span',{style:{fontFamily:'var(--mono)',fontSize:'.72rem',color:rem>=0?'var(--grn)':'var(--red)',fontWeight:700}},
-                rem>=0?fmt(rem)+' left':fmt(-rem)+' over')
-            ),
-            h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:4}},
-              h('span',{style:{fontSize:'.68rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'spent '+fmt(v.spent)),
-              h('span',{style:{fontSize:'.68rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'of '+fmt(v.budget))
-            ),
-            h(Bar,{sp:v.spent,bud:v.budget})
-          );
-        })
-      )
+      varWithSpent.length===0
+        ? h(EmptyState,{icon:'💳',title:'No variable expenses',body:'Add variable expense categories in Settings.'})
+        : h('div',{className:'card'},
+          varWithSpent.map(function(v,i){
+            var rem=v.budget-v.spent;
+            var chipCls=v.card==='SBI'?'csbi':v.card==='YES'?'cyes':'cdeb';
+            return h('div',{key:i,className:'er'},
+              h('div',{className:'eh'},
+                h('div',{className:'en'},v.category,h('span',{className:'chip '+chipCls},v.card)),
+                h('span',{style:{fontFamily:'var(--mono)',fontSize:'.72rem',color:rem>=0?'var(--grn)':'var(--red)',fontWeight:700}},
+                  rem>=0?fmt(rem)+' left':fmt(-rem)+' over')
+              ),
+              h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:4}},
+                h('span',{style:{fontSize:'.68rem',color:'var(--pnk)',fontFamily:'var(--mono)'}},'spent '+fmt(v.spent)),
+                h('span',{style:{fontSize:'.68rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'of '+fmt(v.budget))
+              ),
+              h(Bar,{sp:v.spent,bud:v.budget})
+            );
+          })
+        )
     )
   );
 }
@@ -946,6 +1001,7 @@ function Expenses(props){
 // ── SAVINGS & DEBTS ─────────────────────────────────────────────────
 function SavingsDebts(props){
   var s=props.s,save=props.save,toast=props.toast;
+  var hasRealDebts=s.debts.some(function(d){return d.name||d.amount>0;});
   return h('div',{className:'page'},
     h('div',{style:{fontSize:'1.1rem',fontWeight:800,padding:'.5rem 0 .75rem'}},'Savings & Debts'),
     h('div',{className:'sh'},'Savings'),
@@ -965,32 +1021,34 @@ function SavingsDebts(props){
     unpaidDebts(s)>0
       ?h('div',{className:'note wn mb'},'\uD83D\uDCCB '+fmt(unpaidDebts(s))+' outstanding')
       :h('div',{className:'note gd mb'},'\u2713 All debts cleared'),
-    h('div',{className:'gap mb'},
-      s.debts.map(function(d,i){
-        return h('div',{key:i,className:'card'},
-          h('div',{className:'row'},
-            h('div',{className:'f1 gap'},
-              h('input',{type:'text',value:d.name,placeholder:'Debt name',onChange:function(e){
-                var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{name:e.target.value}):x;});
-                save(Object.assign({},s,{debts:dts}));
-              }}),
-              h('input',{type:'number',value:d.amount||'',inputMode:'numeric',onChange:function(e){
-                var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{amount:Number(e.target.value)}):x;});
-                save(Object.assign({},s,{debts:dts}));
-              }})
-            ),
-            h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:6}},
-              h(Tog,{v:!!d.paid,onChange:function(v){
-                var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{paid:v}):x;});
-                save(Object.assign({},s,{debts:dts}));
-              }}),
-              h('span',{style:{fontSize:'.58rem',color:'var(--m2)'}},d.paid?'paid':'unpaid'),
-              h('button',{className:'bdng',onClick:function(){save(Object.assign({},s,{debts:s.debts.filter(function(_,j){return j!==i;})}));}},'\u2715')
+    !hasRealDebts
+      ? h(EmptyState,{icon:'🎉',title:'No debts tracked',body:'Add a debt below to track what you owe.'})
+      : h('div',{className:'gap mb'},
+        s.debts.map(function(d,i){
+          return h('div',{key:i,className:'card'},
+            h('div',{className:'row'},
+              h('div',{className:'f1 gap'},
+                h('input',{type:'text',value:d.name,placeholder:'Debt name',onChange:function(e){
+                  var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{name:e.target.value}):x;});
+                  save(Object.assign({},s,{debts:dts}));
+                }}),
+                h('input',{type:'number',value:d.amount||'',inputMode:'numeric',onChange:function(e){
+                  var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{amount:Number(e.target.value)}):x;});
+                  save(Object.assign({},s,{debts:dts}));
+                }})
+              ),
+              h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:6}},
+                h(Tog,{v:!!d.paid,onChange:function(v){
+                  var dts=s.debts.map(function(x,j){return j===i?Object.assign({},x,{paid:v}):x;});
+                  save(Object.assign({},s,{debts:dts}));
+                }}),
+                h('span',{style:{fontSize:'.58rem',color:'var(--m2)'}},d.paid?'paid':'unpaid'),
+                h('button',{className:'bdng',onClick:function(){save(Object.assign({},s,{debts:s.debts.filter(function(_,j){return j!==i;})}));}},'\u2715')
+              )
             )
-          )
-        );
-      })
-    ),
+          );
+        })
+      ),
     h('button',{className:'btn bs',onClick:function(){save(Object.assign({},s,{debts:s.debts.concat([{name:'',amount:0,paid:false}])}));}},'\uFF0B Add Debt')
   );
 }
@@ -1000,7 +1058,6 @@ function Settings(props){
   var s=props.s,save=props.save,toast=props.toast;
   return h('div',{className:'page'},
     h('div',{style:{fontSize:'1.1rem',fontWeight:800,padding:'.5rem 0 .75rem'}},'Settings'),
-
     h('div',{className:'sh'},'Salary / Starting Balance'),
     h('div',{className:'note inf mb'},'\uD83D\uDCB0 This is your monthly salary — it sets the opening debit balance'),
     h('div',{className:'card mb'},
@@ -1013,7 +1070,6 @@ function Settings(props){
         }));
       }})
     ),
-
     h('div',{className:'sh'},'Additional Income'),
     h('div',{className:'gap mb'},
       s.additional_income.map(function(inc,i){
@@ -1035,26 +1091,22 @@ function Settings(props){
       })
     ),
     h('button',{className:'btn bs mb',onClick:function(){save(Object.assign({},s,{additional_income:s.additional_income.concat([{source:'',amount:0}])}));}},'\uFF0B Add Income'),
-
     h('div',{className:'sh'},'Cashback'),
     h('div',{className:'note inf mb'},'\uD83C\uDF81 Auto-deducted from credit card bill'),
     h('div',{className:'card gap mb'},
       h('div',null,h('div',{className:'il'},'SBI Cashback'),h('input',{type:'number',value:s.accounts.sbi.cashback||0,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{sbi:Object.assign({},s.accounts.sbi,{cashback:Number(e.target.value)})})}));}})),
       h('div',null,h('div',{className:'il'},'YES Cashback'),h('input',{type:'number',value:s.accounts.yes.cashback||0,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{yes:Object.assign({},s.accounts.yes,{cashback:Number(e.target.value)})})}));}}))
     ),
-
     h('div',{className:'sh'},'Savings Target'),
     h('div',{className:'card mb'},
       h('div',{className:'il'},'Monthly Savings'),
       h('input',{type:'number',value:s.savings.budget||0,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{savings:Object.assign({},s.savings,{budget:Number(e.target.value)})}));}})
     ),
-
     h('div',{className:'sh'},'Credit Limits'),
     h('div',{className:'card gap mb'},
       h('div',null,h('div',{className:'il'},'SBI Limit'),h('input',{type:'number',value:s.accounts.sbi.limit,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{sbi:Object.assign({},s.accounts.sbi,{limit:Number(e.target.value)})})}));}})),
       h('div',null,h('div',{className:'il'},'YES Limit'),h('input',{type:'number',value:s.accounts.yes.limit,inputMode:'numeric',onChange:function(e){save(Object.assign({},s,{accounts:Object.assign({},s.accounts,{yes:Object.assign({},s.accounts.yes,{limit:Number(e.target.value)})})}));}}))
     ),
-
     h('div',{className:'sh'},'Month Reset'),
     h('div',{className:'note wn mb'},'\u26A0 Resets fixed paid, savings, spend log and prev bills for new month'),
     h('button',{className:'btn bs mb',onClick:function(){
@@ -1064,7 +1116,9 @@ function Settings(props){
         savings:Object.assign({},s.savings,{done:false}),
         fixed:s.fixed.map(function(f){return Object.assign({},f,{paid:false});}),
         debts:s.debts.map(function(d){return Object.assign({},d,{paid:false});}),
-        prev_sbi_bill:0,prev_yes_bill:0,prev_bill_paid:false,
+        prev_sbi_bill:sbiSpent(s),
+        prev_yes_bill:yesSpent(s),
+        prev_bill_paid:false,
         accounts:Object.assign({},s.accounts,{
           debit:{opening:s.salary||0,balance:s.salary||0},
           sbi:Object.assign({},s.accounts.sbi,{available:s.accounts.sbi.limit}),
@@ -1074,7 +1128,6 @@ function Settings(props){
       });
       save(ns).then(function(){toast('New month started \u2713');});
     }},'\uD83D\uDD04 New Month Reset'),
-
     h('div',{className:'sh',style:{color:'var(--red)'}},'Danger Zone'),
     h('button',{className:'btn mb',style:{background:'var(--red-bg)',color:'var(--red)',border:'1px solid var(--red-bd)'},
       onClick:function(){
@@ -1118,12 +1171,13 @@ function App(){
 
   if(!state) return h('div',{className:'loading'},h('div',{className:'spinner'}),h('div',{style:{fontSize:'.72rem',color:'var(--m2)',fontFamily:'var(--mono)'}},'Loading\u2026'));
 
+  // IMPROVED: shorter nav labels + icon-only fallback handled in CSS
   var navItems=[
-    {id:'overview',label:'Overview'},
+    {id:'overview',label:'Home'},
     {id:'checkin', label:'Check-In'},
-    {id:'expenses',label:'Expenses'},
+    {id:'expenses',label:'Bills'},
     {id:'savings', label:'Debts'},
-    {id:'settings',label:'Settings'},
+    {id:'settings',label:'More'},
   ];
 
   function navIcon(id){
@@ -1143,7 +1197,9 @@ function App(){
     h('nav',{className:'nav'},
       navItems.map(function(n){
         return h('button',{key:n.id,className:'nb'+(page===n.id?' on':''),onClick:function(){setPage(n.id);}},
-          navIcon(n.id),n.label,h('span',{className:'nb-dot'})
+          navIcon(n.id),
+          h('span',{className:'nb-label'},n.label),
+          h('span',{className:'nb-dot'})
         );
       })
     ),
