@@ -2,202 +2,233 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>Spend Analyzer</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Spend Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  /* Warm off-white base — not generic gray */
-  --bg:#F5F3EF;
+  --bg:#F3F0FF;
   --s0:#FFFFFF;
-  --s1:#F0EDE8;
-  --s2:#E8E4DE;
-  --bd:#DDD8D0;
-  --bd2:#C8C2B8;
-  --tx:#1C1917;
-  --m1:#57534E;
-  --m2:#A8A29E;
+  --s1:#EDE8FF;
+  --s2:#E0D9FF;
+  --bd:#D0C7F5;
+  --bd2:#B8AEE8;
+  --tx:#1A0A3C;
+  --m1:#5B4A82;
+  --m2:#9B8EBE;
 
-  /* Teal accent — distinctive, not blue-corp */
-  --acc:#0D9488;
-  --acc-lt:#F0FDFA;
-  --acc-bd:#99F6E4;
-  --acc-dk:#0F766E;
+  /* Purple palette */
+  --p1:#7C3AED;--p2:#8B5CF6;--p3:#A78BFA;--p4:#C4B5FD;--p5:#EDE9FE;
+  --p-dk:#5B21B6;--p-lt:#F5F3FF;
 
-  --grn:#16A34A;--grn-lt:#F0FDF4;--grn-bd:#BBF7D0;
-  --red:#DC2626;--red-lt:#FEF2F2;--red-bd:#FECACA;
+  /* Accent colors */
+  --rose:#E11D48;--rose-lt:#FFF1F2;--rose-bd:#FECDD3;
+  --grn:#059669;--grn-lt:#ECFDF5;--grn-bd:#A7F3D0;
   --amb:#D97706;--amb-lt:#FFFBEB;--amb-bd:#FDE68A;
-  --pur:#7C3AED;--pur-lt:#F5F3FF;--pur-bd:#DDD6FE;
-  --pnk:#DB2777;--pnk-lt:#FDF2F8;--pnk-bd:#FBCFE8;
   --sky:#0284C7;--sky-lt:#F0F9FF;--sky-bd:#BAE6FD;
+  --pnk:#DB2777;--pnk-lt:#FDF2F8;--pnk-bd:#FBCFE8;
+  --org:#EA580C;--org-lt:#FFF7ED;--org-bd:#FED7AA;
 
   --mono:'JetBrains Mono',monospace;
   --sans:'Plus Jakarta Sans',sans-serif;
   --r:16px;--rs:10px;
-  --nav-h:64px;
+  --nav-h:66px;
   --safe-b:env(safe-area-inset-bottom,0px);
-  --sh:0 1px 3px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.03);
-  --shm:0 4px 20px rgba(13,148,136,.12),0 1px 4px rgba(0,0,0,.06);
+  --sh:0 2px 8px rgba(124,58,237,.08),0 1px 3px rgba(0,0,0,.04);
+  --sh2:0 8px 28px rgba(124,58,237,.18),0 2px 8px rgba(0,0,0,.06);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--sans);overflow-x:hidden;font-size:14px;line-height:1.5}
 #root{display:flex;flex-direction:column;min-height:100%}
 
-/* ── NAV ────────────────────────────────────────────────── */
-.nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));background:rgba(255,255,255,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--bd);display:flex;align-items:stretch;z-index:100;padding-bottom:var(--safe-b);box-shadow:0 -2px 16px rgba(0,0,0,.05)}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;color:var(--m2);font-family:var(--sans);font-size:.43rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;transition:color .15s;padding:0}
-.nb.on{color:var(--acc)}
-.nb svg{width:20px;height:20px;stroke-width:1.8;fill:none;stroke:currentColor;transition:stroke .15s}
-.nb-bar{width:20px;height:2.5px;border-radius:99px;background:var(--acc);display:none;margin-top:1px}
-.nb.on .nb-bar{display:block}
+/* ── NAV ── */
+.nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));
+  background:rgba(255,255,255,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-top:1.5px solid var(--bd);display:flex;align-items:stretch;z-index:100;
+  padding-bottom:var(--safe-b);box-shadow:0 -4px 24px rgba(124,58,237,.1)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;background:none;border:none;cursor:pointer;color:var(--m2);font-family:var(--sans);
+  font-size:.42rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;transition:color .15s;padding:0}
+.nb.on{color:var(--p1)}
+.nb svg{width:21px;height:21px;stroke-width:1.8;fill:none;stroke:currentColor;transition:stroke .15s}
+.nb-pip{width:18px;height:3px;border-radius:99px;background:linear-gradient(90deg,var(--p1),var(--p2));display:none;margin-top:1px}
+.nb.on .nb-pip{display:block}
 
 .page{flex:1;padding:.5rem 1rem calc(var(--nav-h) + var(--safe-b) + 1rem);max-width:520px;margin:0 auto;width:100%}
 
-/* ── CARDS ────────────────────────────────────────────── */
-.card{background:var(--s0);border:1px solid var(--bd);border-radius:var(--r);padding:.85rem 1rem;margin-bottom:.5rem;box-shadow:var(--sh)}
+/* ── CARDS ── */
+.card{background:var(--s0);border:1.5px solid var(--bd);border-radius:var(--r);padding:.85rem 1rem;margin-bottom:.5rem;box-shadow:var(--sh)}
 
-/* ── PAGE HEADER ─────────────────────────────────────── */
+/* ── PAGE HEADER ── */
 .ph{padding:.7rem 0 .55rem;display:flex;align-items:baseline;justify-content:space-between}
-.ph-title{font-size:1.15rem;font-weight:900;color:var(--tx);letter-spacing:-.025em}
+.ph-title{font-size:1.2rem;font-weight:900;color:var(--tx);letter-spacing:-.03em}
 .ph-sub{font-size:.58rem;color:var(--m2);font-family:var(--mono)}
 
-/* ── SECTION HEAD ─────────────────────────────────────── */
-.sh{font-size:.48rem;letter-spacing:.18em;text-transform:uppercase;color:var(--acc);font-weight:900;margin:1.15rem 0 .5rem;display:flex;align-items:center;gap:.5rem}
-.sh::after{content:'';flex:1;height:1px;background:var(--bd)}
+/* ── SECTION HEADER ── */
+.sh{font-size:.46rem;letter-spacing:.18em;text-transform:uppercase;color:var(--p1);font-weight:900;
+  margin:1.1rem 0 .5rem;display:flex;align-items:center;gap:.5rem}
+.sh::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--bd),transparent)}
 
-/* ── HERO ─────────────────────────────────────────────── */
-.hero{border-radius:var(--r);padding:1.1rem;margin-bottom:.5rem;border:1px solid;position:relative;overflow:hidden}
-.hero-lbl{font-size:.48rem;font-weight:900;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.2rem;opacity:.75}
-.hero-amt{font-family:var(--mono);font-size:2.1rem;font-weight:700;line-height:1;letter-spacing:-.035em;margin-bottom:.35rem}
-.hero-sub{font-size:.6rem;font-family:var(--mono);opacity:.7}
-.hero-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-top:.75rem;padding-top:.65rem;border-top:1px solid currentColor;opacity:.9}
-.hg-lbl{font-size:.48rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;margin-bottom:.18rem;font-weight:700}
-.hg-val{font-family:var(--mono);font-weight:700;font-size:.82rem}
-.hero-ok{background:linear-gradient(140deg,#F0FDFA,#CCFBF1);border-color:#99F6E4;color:#0F766E}
-.hero-warn{background:linear-gradient(140deg,#FFFBEB,#FEF3C7);border-color:#FDE68A;color:#92400E}
-.hero-bad{background:linear-gradient(140deg,#FEF2F2,#FEE2E2);border-color:#FECACA;color:#991B1B}
+/* ── HERO ── */
+.hero{border-radius:var(--r);padding:1.1rem;margin-bottom:.5rem;border:1.5px solid;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;opacity:.12;background:currentColor}
+.hero-lbl{font-size:.46rem;font-weight:900;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.2rem;opacity:.8}
+.hero-amt{font-family:var(--mono);font-size:2.2rem;font-weight:700;line-height:1;letter-spacing:-.04em;margin-bottom:.32rem}
+.hero-sub{font-size:.6rem;font-family:var(--mono);opacity:.75}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-top:.7rem;padding-top:.6rem;border-top:1px solid currentColor;opacity:.9}
+.hg-lbl{font-size:.45rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;margin-bottom:.15rem;font-weight:800}
+.hg-val{font-family:var(--mono);font-weight:700;font-size:.8rem}
+.hero-ok{background:linear-gradient(140deg,#F0FDF4,#DCFCE7);border-color:var(--grn-bd);color:#065F46}
+.hero-warn{background:linear-gradient(140deg,#FFFBEB,#FEF9C3);border-color:var(--amb-bd);color:#78350F}
+.hero-bad{background:linear-gradient(140deg,#FFF1F2,#FFE4E6);border-color:var(--rose-bd);color:#9F1239}
+.hero-pur{background:linear-gradient(140deg,#F5F3FF,#EDE9FE);border-color:var(--p4);color:var(--p-dk)}
 
-/* ── STAT CARDS ───────────────────────────────────────── */
+/* ── STATS ── */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.45rem}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.45rem;margin-bottom:.45rem}
-.sc{background:var(--s0);border:1px solid var(--bd);border-radius:var(--r);padding:.7rem .85rem;box-shadow:var(--sh)}
-.sc-lbl{font-size:.46rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--m2);margin-bottom:.28rem}
-.sc-val{font-family:var(--mono);font-size:1.12rem;font-weight:700;line-height:1}
-.sc-sub{font-size:.56rem;color:var(--m2);margin-top:.2rem;font-family:var(--mono)}
-.sc-accent{border-top:2.5px solid}
+.sc{background:var(--s0);border:1.5px solid var(--bd);border-radius:var(--r);padding:.65rem .85rem;box-shadow:var(--sh)}
+.sc-lbl{font-size:.44rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--m2);margin-bottom:.26rem}
+.sc-val{font-family:var(--mono);font-size:1.1rem;font-weight:700;line-height:1}
+.sc-sub{font-size:.55rem;color:var(--m2);margin-top:.2rem;font-family:var(--mono)}
+.sc-top{border-top:2.5px solid}
 
-/* ── HEAT COLORS ──────────────────────────────────────── */
-/* Amount-based: teal→lime→amber→red */
-.h0{color:#0D9488}.h1{color:#059669}.h2{color:#16A34A}.h3{color:#65A30D}
+/* ── HEAT ── amounts → purple shades then warm */
+.h0{color:#7C3AED}.h1{color:#6D28D9}.h2{color:#059669}.h3{color:#0D9488}
 .h4{color:#CA8A04}.h5{color:#D97706}.h6{color:#EA580C}.h7{color:#DC2626}
 .h8{color:#B91C1C}.h9{color:#991B1B}
 
-/* ── BAR ──────────────────────────────────────────────── */
+/* ── NOTES ── */
+.note{display:flex;align-items:center;gap:7px;padding:.42rem .8rem;border-radius:var(--rs);
+  font-size:.67rem;font-weight:700;margin-bottom:.45rem;border-left:3px solid}
+.n-pur{background:var(--p-lt);border-color:var(--p1);color:var(--p-dk)}
+.n-grn{background:var(--grn-lt);border-color:var(--grn);color:#065F46}
+.n-amb{background:var(--amb-lt);border-color:var(--amb);color:#78350F}
+.n-red{background:var(--rose-lt);border-color:var(--rose);color:#9F1239}
+.n-sky{background:var(--sky-lt);border-color:var(--sky);color:var(--sky)}
+
+/* ── TAGS ── */
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;
+  font-size:.48rem;font-weight:800;letter-spacing:.04em;border:1px solid;white-space:nowrap}
+.tag-rent     {background:#EEF2FF;border-color:#C7D2FE;color:#3730A3}
+.tag-family   {background:var(--p-lt);border-color:var(--p4);color:var(--p-dk)}
+.tag-savings  {background:var(--grn-lt);border-color:var(--grn-bd);color:#065F46}
+.tag-vegetable{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
+.tag-uber     {background:var(--rose-lt);border-color:var(--rose-bd);color:var(--rose)}
+.tag-yescc    {background:var(--amb-lt);border-color:var(--amb-bd);color:#92400E}
+.tag-recharge {background:var(--sky-lt);border-color:var(--sky-bd);color:var(--sky)}
+.tag-entertainment{background:var(--pnk-lt);border-color:var(--pnk-bd);color:var(--pnk)}
+.tag-other    {background:var(--s1);border-color:var(--bd2);color:var(--m1)}
+.tag-furniture{background:var(--org-lt);border-color:var(--org-bd);color:var(--org)}
+.tag-untagged {background:var(--s2);border-color:var(--bd2);color:var(--m2)}
+
+/* ── INPUTS ── */
+input,select,textarea{width:100%;background:var(--s1);border:1.5px solid var(--bd);color:var(--tx);
+  border-radius:var(--rs);font-family:var(--sans);font-size:.8rem;font-weight:600;
+  padding:.5rem .8rem;outline:none;transition:border-color .15s,box-shadow .15s;-moz-appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
+input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(139,92,246,.15);background:var(--s0)}
+input::placeholder{color:var(--m2)}
+label{font-size:.54rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--m1);display:block;margin-bottom:4px}
+
+/* ── BUTTONS ── */
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:.6rem 1rem;
+  border-radius:var(--rs);border:none;cursor:pointer;font-family:var(--sans);font-weight:800;
+  font-size:.78rem;transition:all .12s;width:100%}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-pri{background:linear-gradient(135deg,var(--p-dk),var(--p1));color:#fff;box-shadow:0 3px 14px rgba(124,58,237,.35)}
+.btn-sec{background:var(--s0);border:1.5px solid var(--bd);color:var(--m1)}
+.btn-red{background:var(--rose-lt);border:1px solid var(--rose-bd);color:var(--rose)}
+.btn-sm{padding:.3rem .7rem;font-size:.63rem;width:auto}
+.del-btn{background:none;border:none;color:var(--m2);cursor:pointer;padding:4px 6px;
+  border-radius:6px;font-size:.78rem;transition:color .1s;flex-shrink:0}
+.del-btn:hover{color:var(--rose)}
+
+/* ── BAR ── */
 .bw{background:var(--s1);border-radius:99px;height:4px;margin-top:5px;overflow:hidden}
 .bf{height:4px;border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)}
 
-/* ── NOTES ────────────────────────────────────────────── */
-.note{display:flex;align-items:center;gap:7px;padding:.42rem .8rem;border-radius:var(--rs);font-size:.68rem;font-weight:700;margin-bottom:.45rem;border-left:3px solid}
-.n-grn{background:var(--grn-lt);border-color:var(--grn);color:var(--grn)}
-.n-teal{background:var(--acc-lt);border-color:var(--acc);color:var(--acc-dk)}
-.n-amb{background:var(--amb-lt);border-color:var(--amb);color:#92400E}
-.n-red{background:var(--red-lt);border-color:var(--red);color:var(--red)}
-.n-pur{background:var(--pur-lt);border-color:var(--pur);color:var(--pur)}
-
-/* ── TAGS ─────────────────────────────────────────────── */
-.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:.49rem;font-weight:800;letter-spacing:.04em;border:1px solid}
-.tag-rent{background:#EFF6FF;border-color:#BFDBFE;color:#1D4ED8}
-.tag-family{background:var(--pur-lt);border-color:var(--pur-bd);color:var(--pur)}
-.tag-savings{background:var(--grn-lt);border-color:var(--grn-bd);color:var(--grn)}
-.tag-vegetable{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
-.tag-uber{background:var(--red-lt);border-color:var(--red-bd);color:var(--red)}
-.tag-credit{background:var(--amb-lt);border-color:var(--amb-bd);color:#92400E}
-.tag-sbi{background:var(--sky-lt);border-color:var(--sky-bd);color:var(--sky)}
-.tag-entertainment{background:var(--pnk-lt);border-color:var(--pnk-bd);color:var(--pnk)}
-.tag-other{background:var(--s1);border-color:var(--bd2);color:var(--m1)}
-.tag-furniture{background:#FFF7ED;border-color:#FED7AA;color:#C2410C}
-.tag-untagged{background:var(--s2);border-color:var(--bd2);color:var(--m2)}
-
-/* ── INPUTS ───────────────────────────────────────────── */
-input,select,textarea{width:100%;background:var(--s1);border:1.5px solid var(--bd);color:var(--tx);border-radius:var(--rs);font-family:var(--sans);font-size:.8rem;font-weight:600;padding:.5rem .8rem;outline:none;transition:border-color .15s,box-shadow .15s;-moz-appearance:textfield}
-input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
-input:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(13,148,136,.12);background:var(--s0)}
-input::placeholder{color:var(--m2)}
-label{font-size:.55rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--m1);display:block;margin-bottom:4px}
-
-/* ── BUTTONS ──────────────────────────────────────────── */
-.btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:.6rem 1rem;border-radius:var(--rs);border:none;cursor:pointer;font-family:var(--sans);font-weight:800;font-size:.78rem;transition:all .12s;width:100%}
-.btn:active{transform:scale(.97)}
-.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.btn-pri{background:linear-gradient(135deg,var(--acc-dk),var(--acc));color:#fff;box-shadow:0 3px 12px rgba(13,148,136,.3)}
-.btn-sec{background:var(--s0);border:1.5px solid var(--bd);color:var(--m1)}
-.btn-red{background:var(--red-lt);border:1px solid var(--red-bd);color:var(--red)}
-.btn-sm{padding:.3rem .7rem;font-size:.65rem;width:auto}
-.del-btn{background:none;border:none;color:var(--m2);cursor:pointer;padding:4px 6px;border-radius:6px;font-size:.8rem;transition:color .1s;flex-shrink:0}
-.del-btn:hover{color:var(--red)}
-
-/* ── UPLOAD ───────────────────────────────────────────── */
-.upload-zone{border:2px dashed var(--bd2);border-radius:var(--r);padding:2rem 1rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--s0)}
-.upload-zone.drag,.upload-zone:hover{border-color:var(--acc);background:var(--acc-lt)}
+/* ── UPLOAD ── */
+.upload-zone{border:2px dashed var(--bd2);border-radius:var(--r);padding:2rem 1rem;
+  text-align:center;cursor:pointer;transition:all .2s;background:var(--s0)}
+.upload-zone.drag,.upload-zone:hover{border-color:var(--p2);background:var(--p-lt)}
 .upload-zone input{display:none}
 
-/* ── TRANSACTIONS ─────────────────────────────────────── */
-.txn-list{background:var(--s0);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem;box-shadow:var(--sh)}
+/* ── TRANSACTION ROWS ── */
+.txn-list{background:var(--s0);border:1.5px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem;box-shadow:var(--sh)}
 .txn-row{display:flex;align-items:flex-start;gap:.5rem;padding:.58rem .85rem;border-bottom:1px solid var(--bd);transition:background .1s}
 .txn-row:last-child{border-bottom:none}
 .txn-row:hover{background:var(--s1)}
 .txn-left{flex:1;min-width:0}
-.txn-date{font-size:.52rem;color:var(--m2);font-family:var(--mono);margin-bottom:2px}
+.txn-date{font-size:.5rem;color:var(--m2);font-family:var(--mono);margin-bottom:2px}
 .txn-recv{font-size:.72rem;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
 .txn-right{text-align:right;flex-shrink:0}
 .txn-amt{font-family:var(--mono);font-weight:700;font-size:.82rem}
-.tag-sel{background:var(--s1);border:1.5px solid var(--bd);color:var(--tx);border-radius:99px;font-family:var(--sans);font-size:.52rem;font-weight:700;padding:2px 8px;outline:none;cursor:pointer;width:auto}
-.tag-sel:focus{border-color:var(--acc)}
+.tag-sel{background:var(--s1);border:1.5px solid var(--bd);color:var(--tx);border-radius:99px;
+  font-family:var(--sans);font-size:.5rem;font-weight:800;padding:2px 8px;
+  outline:none;cursor:pointer;width:auto}
+.tag-sel:focus{border-color:var(--p2)}
 
-/* ── WATERFALL ────────────────────────────────────────── */
-.wf-row{display:flex;justify-content:space-between;align-items:center;padding:.42rem 0;border-bottom:1px solid var(--bd)}
+/* ── WATERFALL ── */
+.wf-row{display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--bd)}
 .wf-row:last-child{border-bottom:none}
-.wf-lbl{font-size:.7rem;color:var(--m1);font-weight:500}
-.wf-val{font-family:var(--mono);font-weight:700;font-size:.73rem}
+.wf-lbl{font-size:.68rem;color:var(--m1);font-weight:500}
+.wf-val{font-family:var(--mono);font-weight:700;font-size:.72rem}
 
-/* ── CATEGORY ROW ─────────────────────────────────────── */
-.cat-row{display:flex;align-items:center;gap:.5rem;padding:.5rem 0;border-bottom:1px solid var(--bd)}
+/* ── CAT ROW ── */
+.cat-row{display:flex;align-items:center;gap:.5rem;padding:.48rem 0;border-bottom:1px solid var(--bd)}
 .cat-row:last-child{border-bottom:none}
-.cat-icon{font-size:.95rem;width:26px;text-align:center;flex-shrink:0}
-.cat-name{font-size:.73rem;font-weight:700}
-.cat-count{font-size:.54rem;color:var(--m2);font-family:var(--mono)}
-.cat-amt{font-family:var(--mono);font-weight:700;font-size:.82rem}
+.cat-icon{font-size:.9rem;width:24px;text-align:center;flex-shrink:0}
+.cat-name{font-size:.72rem;font-weight:700}
+.cat-cnt{font-size:.52rem;color:var(--m2);font-family:var(--mono)}
+.cat-amt{font-family:var(--mono);font-weight:700;font-size:.8rem}
 
-/* ── TAB BAR ──────────────────────────────────────────── */
-.tab-bar{display:flex;background:var(--s1);border-radius:11px;padding:3px;margin-bottom:.7rem;gap:2px;border:1px solid var(--bd)}
-.tab{flex:1;padding:.33rem .3rem;border:none;border-radius:8px;cursor:pointer;font-family:var(--sans);font-size:.5rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--m2);background:transparent;transition:all .15s;white-space:nowrap}
-.tab.on{color:var(--acc);background:var(--s0);box-shadow:var(--sh)}
+/* ── TAB BAR ── */
+.tab-bar{display:flex;background:var(--s1);border-radius:11px;padding:3px;margin-bottom:.7rem;gap:2px;border:1.5px solid var(--bd)}
+.tab{flex:1;padding:.3rem .25rem;border:none;border-radius:8px;cursor:pointer;font-family:var(--sans);
+  font-size:.48rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--m2);background:transparent;transition:all .15s;white-space:nowrap}
+.tab.on{color:var(--p1);background:var(--s0);box-shadow:var(--sh)}
 
-/* ── INS ROW ─────────────────────────────────────────── */
-.ins-row{display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--bd)}
+/* ── INS ROW ── */
+.ins-row{display:flex;justify-content:space-between;align-items:center;padding:.42rem 0;border-bottom:1px solid var(--bd)}
 .ins-row:last-child{border-bottom:none}
-.ins-lbl{font-size:.7rem;color:var(--m1);font-weight:500}
-.ins-val{font-family:var(--mono);font-weight:700;font-size:.75rem}
+.ins-lbl{font-size:.68rem;color:var(--m1);font-weight:500}
+.ins-val{font-family:var(--mono);font-weight:700;font-size:.73rem}
 
-/* ── EMPTY ────────────────────────────────────────────── */
-.empty{display:flex;flex-direction:column;align-items:center;padding:2.2rem 1rem;text-align:center;gap:.45rem;background:var(--s0);border:1.5px dashed var(--bd2);border-radius:var(--r)}
-.empty-icon{font-size:2.2rem}
-.empty-title{font-size:.85rem;font-weight:800;color:var(--m1)}
+/* ── EMPTY ── */
+.empty{display:flex;flex-direction:column;align-items:center;padding:2.2rem 1rem;text-align:center;
+  gap:.45rem;background:var(--s0);border:1.5px dashed var(--bd2);border-radius:var(--r)}
+.empty-icon{font-size:2.2rem}.empty-title{font-size:.85rem;font-weight:800;color:var(--m1)}
 .empty-body{font-size:.68rem;color:var(--m2);max-width:200px;line-height:1.5}
 
-/* ── MONEY ITEM ───────────────────────────────────────── */
-.money-item{display:flex;align-items:center;gap:.45rem;padding:.5rem 0;border-bottom:1px solid var(--bd)}
+/* ── MONEY ITEM ── */
+.money-item{display:flex;align-items:center;gap:.45rem;padding:.48rem 0;border-bottom:1px solid var(--bd)}
 .money-item:last-child{border-bottom:none}
 
-/* ── TOAST ────────────────────────────────────────────── */
-.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 10px);left:50%;transform:translateX(-50%);background:var(--tx);color:#fff;padding:.42rem 1.2rem;border-radius:99px;font-size:.68rem;font-weight:800;z-index:200;animation:fu .18s ease;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.18)}
+/* ── WEEKEND CARD ── */
+.wknd-card{background:var(--s0);border:1.5px solid var(--pnk-bd);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem;box-shadow:var(--sh)}
+.wknd-head{display:flex;justify-content:space-between;align-items:center;padding:.6rem .85rem;
+  background:linear-gradient(135deg,var(--pnk-lt),#FDF2F8);border-bottom:1px solid var(--pnk-bd)}
+.wknd-day{display:flex;justify-content:space-between;align-items:center;padding:.42rem .85rem;border-bottom:1px solid var(--bd)}
+.wknd-day:last-child{border-bottom:none}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 10px);left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,var(--p-dk),var(--p1));color:#fff;padding:.42rem 1.2rem;
+  border-radius:99px;font-size:.68rem;font-weight:800;z-index:200;animation:fu .18s ease;
+  white-space:nowrap;box-shadow:0 4px 20px rgba(124,58,237,.35)}
 @keyframes fu{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-/* ── WEEKEND CARD ─────────────────────────────────────── */
-.weekend-card{background:var(--s0);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem;box-shadow:var(--sh)}
-.weekend-head{display:flex;justify-content:space-between;align-items:center;padding:.6rem .85rem;background:linear-gradient(135deg,var(--pnk-lt),#FDF2F8);border-bottom:1px solid var(--pnk-bd)}
-.weekend-day-row{display:flex;justify-content:space-between;align-items:center;padding:.45rem .85rem;border-bottom:1px solid var(--bd)}
-.weekend-day-row:last-child{border-bottom:none}
+/* ── PILL ── */
+.pill{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:99px;
+  font-size:.5rem;font-weight:800;letter-spacing:.05em;border:1px solid;white-space:nowrap}
+.pill-pur{background:var(--p-lt);border-color:var(--p4);color:var(--p-dk)}
+.pill-grn{background:var(--grn-lt);border-color:var(--grn-bd);color:var(--grn)}
+.pill-pnk{background:var(--pnk-lt);border-color:var(--pnk-bd);color:var(--pnk)}
+
+/* ── GRADIENT BG ACCENT ── */
+.grad-bg{background:linear-gradient(135deg,var(--p1),var(--p2));border-radius:var(--r);color:#fff;padding:1rem;margin-bottom:.5rem;box-shadow:var(--sh2)}
 
 hr{border:none;border-top:1px solid var(--bd);margin:.6rem 0}
 .row{display:flex;align-items:center;gap:.5rem}
@@ -212,68 +243,80 @@ hr{border:none;border-top:1px solid var(--bd);margin:.6rem 0}
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script>
-const {createElement:h,useState,useEffect,useCallback,useRef,useMemo}=React;
+const{createElement:h,useState,useEffect,useRef,useMemo,useCallback}=React;
 
-// ── CONSTANTS ──────────────────────────────────────────────────────────────
-const ALL_TAGS=['rent','family','savings','vegetable','uber','credit','sbi','entertainment','other','furniture','untagged'];
-const TAG_META={
-  rent:         {icon:'🏠', label:'Rent'},
-  family:       {icon:'👨‍👩‍👧', label:'Family'},
-  savings:      {icon:'💰', label:'Savings'},
-  vegetable:    {icon:'🥦', label:'Vegetable'},
-  uber:         {icon:'🚗', label:'Uber'},
-  credit:       {icon:'💳', label:'YES Credit'},
-  sbi:          {icon:'💳', label:'SBI Credit'},
-  entertainment:{icon:'🎉', label:'Entertainment'},
-  other:        {icon:'🧾', label:'Other spends'},
-  furniture:    {icon:'🪑', label:'Furniture Rent'},
-  untagged:     {icon:'❓', label:'Untagged'},
+// ── STORAGE KEYS ───────────────────────────────────────────────────────────
+const LS={
+  RAW:'sa_raw_v4',       // parsed raw transactions (JSON array)
+  TAGS:'sa_tags_v4',     // {ref: tag}
+  SET:'sa_settings_v4',  // settings object
+  MAN:'sa_manual_v4',    // manual flows
+};
+function ls_get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}
+function ls_set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+
+// ── TAG DEFINITIONS ────────────────────────────────────────────────────────
+const TAGS=['rent','family','savings','vegetable','uber','yescc','recharge','entertainment','other','furniture','untagged'];
+const TM={
+  rent:         {icon:'🏠',label:'Rent'},
+  family:       {icon:'👨‍👩‍👧',label:'Family'},
+  savings:      {icon:'💰',label:'Savings'},
+  vegetable:    {icon:'🥦',label:'Vegetable'},
+  uber:         {icon:'🚗',label:'Uber'},
+  yescc:        {icon:'💳',label:'YES CC'},
+  recharge:     {icon:'📱',label:'Recharge'},
+  entertainment:{icon:'🎉',label:'Fun'},
+  other:        {icon:'🧾',label:'Other'},
+  furniture:    {icon:'🪑',label:'Furniture'},
+  untagged:     {icon:'❓',label:'Untagged'},
 };
 
-const LS_SETTINGS='sa_s_v3';
-const LS_TAG_MAP='sa_tm_v3';
-const LS_MANUAL='sa_mn_v3';
-
-function loadLS(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}
-function saveLS(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
-
 // ── HELPERS ────────────────────────────────────────────────────────────────
-function fmt(n){return '₹'+Math.abs(Math.round(n)).toLocaleString('en-IN')}
-function fmtK(n){return n>=1000?'₹'+(n/1000).toFixed(1)+'k':'₹'+Math.round(n)}
-function pct(a,b){return b?Math.min(100,Math.round(a/b*100)):0}
+const fmt=n=>'₹'+Math.abs(Math.round(n)).toLocaleString('en-IN');
+const fmtK=n=>n>=1000?'₹'+(n/1000).toFixed(1)+'k':'₹'+Math.round(n);
+const pct=(a,b)=>b?Math.min(100,Math.round(a/b*100)):0;
 
 function parseDate(str){const[d,m,y]=str.split('/');return new Date(+y,+m-1,+d)}
-function isWeekend(date){const d=date.getDay();return d===0||d===6}
-function getWeekOfMonth(date){
-  const first=new Date(date.getFullYear(),date.getMonth(),1);
-  return Math.ceil((date.getDate()+first.getDay())/7);
+function isWeekend(d){const w=d.getDay();return w===0||w===6}
+function weekOfMonth(d){const f=new Date(d.getFullYear(),d.getMonth(),1);return Math.ceil((d.getDate()+f.getDay())/7)}
+
+// Extract display name from receiver: text after @ up to ( or end
+function cleanRecv(recv){
+  if(!recv)return recv;
+  const m=recv.match(/@([^(@]+)/);
+  return m?m[1].split('(')[0].trim():recv;
 }
 
 const HEAT_T=[100,250,500,800,1200,2000,3500,5000,10000];
-function heatCls(n){const i=HEAT_T.findIndex(t=>n<t);return 'h'+(i===-1?9:i)}
-function heatHex(n){
-  const c=['#0D9488','#059669','#16A34A','#65A30D','#CA8A04','#D97706','#EA580C','#DC2626','#B91C1C','#991B1B'];
-  const i=HEAT_T.findIndex(t=>n<t);return c[i===-1?9:i];
-}
+const HEAT_C=['#7C3AED','#6D28D9','#059669','#0D9488','#CA8A04','#D97706','#EA580C','#DC2626','#B91C1C','#991B1B'];
+function heatCls(n){const i=HEAT_T.findIndex(t=>n<t);return'h'+(i===-1?9:i)}
+function heatHex(n){const i=HEAT_T.findIndex(t=>n<t);return HEAT_C[i===-1?9:i]}
 
 // ── AUTO-TAGGER ────────────────────────────────────────────────────────────
 function autoTag(txn){
   const recv=(txn.receiver||'').toUpperCase();
+  const vpa=(txn.receiverVpa||'').toLowerCase();
   const[hh,mm]=txn.time.split(':').map(Number);
   const mins=hh*60+mm;
   const date=parseDate(txn.date);
-  const dow=date.getDay(); // 0=Sun,6=Sat
+  const dow=date.getDay();
   const we=dow===0||dow===6;
   const wd=dow>=1&&dow<=5;
   const amt=txn.amount;
 
-  // Named receivers — highest priority
+  // YES Credit Card — bank column
+  if(txn.isYesCC) return 'yescc';
+
+  // Named keywords (check receiver name in parens)
   if(recv.includes('ANKA')) return 'rent';
   if(recv.includes('UMAR')) return 'family';
   if(recv.includes('UBEY')) return 'savings';
   if(recv.includes('MOJO')) return 'furniture';
-  if(recv.includes('SWIGGY')||recv.includes('ZOMATO')) return 'other';
-  if(recv.includes('AMZN')||recv.includes('AMAZON')) return 'other';
+
+  // Recharge: @icici or @airtel in VPA
+  if(vpa.includes('@icici')||vpa.includes('@airtel')||vpa.includes('rxairtel')) return 'recharge';
+  // Also Jio recharge
+  if(recv.includes('JIO')) return 'recharge';
 
   // Sunday 17:30–19:00 → vegetable
   if(dow===0&&mins>=17*60+30&&mins<=19*60) return 'vegetable';
@@ -281,12 +324,11 @@ function autoTag(txn){
   // Weekday 08:50–09:40 or 18:10–19:30 → uber
   if(wd&&((mins>=8*60+50&&mins<=9*60+40)||(mins>=18*60+10&&mins<=19*60+30))) return 'uber';
 
-  // Weekend (not vegetable time) → entertainment
+  // Weekend non-vegetable → entertainment
   if(we) return 'entertainment';
 
-  // Weekday: <500 → other, >=500 → untagged
+  // Weekday < 500 → other, ≥ 500 → untagged
   if(wd&&amt<500) return 'other';
-
   return 'untagged';
 }
 
@@ -299,24 +341,40 @@ function parseHTML(html){
     if(first){first=false;return}
     const cells=Array.from(row.querySelectorAll('td,th')).map(c=>c.innerText.trim());
     if(cells.length<11)return;
-    const[date,time,bank,,sender,receiver,ref,,amount,drCr,status]=cells;
-    if(!date||drCr!=='DR'||status!=='SUCCESS')return;
-    txns.push({date,time,bank,sender,receiver,ref,amount:parseFloat(amount)||0});
+    const[date,time,bank,acct,,receiver,ref,,amount,drCr,status]=cells;
+    if(!date||status!=='SUCCESS')return;
+    // include both DR and CR? No — only DR
+    if(drCr!=='DR')return;
+    const isYesCC=bank.toUpperCase().includes('CREDIT');
+    // Extract VPA from receiver string (full raw)
+    const vpam=receiver.match(/^([^(]+)/);
+    const receiverVpa=vpam?vpam[1].trim():'';
+    txns.push({date,time,bank,receiver,receiverVpa,ref,amount:parseFloat(amount)||0,isYesCC});
   });
   const seen=new Set(),out=[];
   for(const t of txns){if(!seen.has(t.ref)){seen.add(t.ref);out.push(t)}}
   return out;
 }
 
-// ── SMALL COMPONENTS ───────────────────────────────────────────────────────
+// ── SALARY DATE AUTO-DETECT ────────────────────────────────────────────────
+function detectSalaryDate(rawTxns){
+  // Find earliest txn with ANKA, UMAR, UBEY, or MOJO in receiver
+  const keywords=['ANKA','UMAR','UBEY','MOJO'];
+  const hits=rawTxns.filter(t=>keywords.some(k=>t.receiver.toUpperCase().includes(k)));
+  if(!hits.length)return null;
+  hits.sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+  return hits[0].date; // DD/MM/YYYY
+}
+
+// ── COMPONENTS ─────────────────────────────────────────────────────────────
 function Toast({msg}){if(!msg)return null;return h('div',{className:'toast'},msg)}
 function Bar({spend,budget}){
   const p=budget?Math.min(100,spend/budget*100):0;
   return h('div',{className:'bw'},h('div',{className:'bf',style:{width:p+'%',background:heatHex(spend)}}));
 }
 
-// ── UPLOAD ─────────────────────────────────────────────────────────────────
-function UploadPage({onLoad,hasData}){
+// ── UPLOAD PAGE ─────────────────────────────────────────────────────────────
+function UploadPage({onLoad,hasSaved}){
   const[drag,setDrag]=useState(false);
   const ref=useRef();
   function handleFile(file){
@@ -328,9 +386,15 @@ function UploadPage({onLoad,hasData}){
   return h('div',{className:'page'},
     h('div',{className:'ph'},
       h('div',{className:'ph-title'},'💸 Spend Tracker'),
-      h('div',{className:'ph-sub'},'YES Bank UPI')
+      h('div',{className:'ph-sub'},'YES Bank UPI history')
     ),
-    hasData&&h('div',{className:'note n-grn'},'✓ Saved tags remembered — upload merges new transactions'),
+    hasSaved&&h('div',{className:'note n-grn'},'✓ Previous data intact — uploading adds new transactions & keeps your tags'),
+    // Gradient welcome card
+    h('div',{className:'grad-bg',style:{marginBottom:'.75rem'}},
+      h('div',{style:{fontSize:'.5rem',fontWeight:900,letterSpacing:'.16em',textTransform:'uppercase',opacity:.75,marginBottom:'.25rem'}},'Upload your bank HTML'),
+      h('div',{style:{fontSize:'.85rem',fontWeight:700,lineHeight:1.4,marginBottom:'.4rem'}},'Your tags & settings are saved in your browser — no re-tagging needed next time.'),
+      h('div',{style:{fontSize:'.6rem',opacity:.8}},'Salary date auto-detected · YES CC auto-tagged · @icici/@airtel → Recharge')
+    ),
     h('div',{
       className:`upload-zone${drag?' drag':''}`,
       onClick:()=>ref.current.click(),
@@ -340,90 +404,74 @@ function UploadPage({onLoad,hasData}){
     },
       h('input',{ref,type:'file',accept:'.html,.htm',onChange:e=>handleFile(e.target.files[0])}),
       h('div',{style:{fontSize:'2.5rem',marginBottom:'.5rem'}},'📂'),
-      h('div',{style:{fontSize:'.95rem',fontWeight:900,marginBottom:'.2rem'}},'Drop your transaction HTML'),
-      h('div',{style:{fontSize:'.68rem',color:'var(--m2)',marginBottom:'.75rem'}},'From YES Bank UPI history export'),
-      h('span',{style:{display:'inline-block',padding:'.42rem 1.2rem',background:'linear-gradient(135deg,#0F766E,#0D9488)',color:'#fff',borderRadius:'99px',fontSize:'.72rem',fontWeight:800,cursor:'pointer'}},'Choose File')
-    ),
-    h('div',{className:'sh',style:{marginTop:'1.2rem'}},'Auto-tag rules'),
-    h('div',{className:'card'},
-      [
-        ['🏠 ANKA','Rent'],['👨‍👩‍👧 UMAR','Family'],['💰 UBEY','Savings'],['🪑 MOJO','Furniture Rent'],
-        ['🥦 Sunday 5:30–7 PM','Vegetable'],['🚗 Weekday 8:50–9:40 AM / 6:10–7:30 PM','Uber'],
-        ['🎉 Weekend (other)','Entertainment'],['🧾 Weekday < ₹500','Other spends'],['❓ Weekday ≥ ₹500','Untagged'],
-      ].map(([rule,tag],i,arr)=>
-        h('div',{key:i,style:{display:'flex',alignItems:'center',gap:'.5rem',padding:'.3rem 0',borderBottom:i<arr.length-1?'1px solid var(--bd)':'none'}},
-          h('span',{style:{fontSize:'.68rem',color:'var(--m1)',flex:1}},rule),
-          h('span',{className:`tag tag-${tag.split(' ')[0].toLowerCase()}`,style:{flexShrink:0}},tag)
-        )
-      )
+      h('div',{style:{fontSize:'.92rem',fontWeight:900,marginBottom:'.2rem'}},'Drop your transaction HTML'),
+      h('div',{style:{fontSize:'.65rem',color:'var(--m2)',marginBottom:'.75rem'}},'From YES Bank UPI / BHIM export'),
+      h('span',{style:{display:'inline-block',padding:'.42rem 1.2rem',background:'linear-gradient(135deg,#5B21B6,#7C3AED)',color:'#fff',borderRadius:'99px',fontSize:'.72rem',fontWeight:800,cursor:'pointer',boxShadow:'0 3px 14px rgba(124,58,237,.35)'}},'Choose File')
     )
   );
 }
 
-// ── OVERVIEW ───────────────────────────────────────────────────────────────
+// ── OVERVIEW ────────────────────────────────────────────────────────────────
 function OverviewPage({txns,settings,manual}){
   const today=new Date();
   const salary=settings.salary||0;
+  const cashInHand=settings.cashInHand||0;
+  const sbiSpent=settings.sbiSpent||0;
+  const totalIn=salary+cashInHand;
 
-  // All manual outflows
-  const debtPaid  =(manual.debts||[]).reduce((a,d)=>a+d.amount,0);
-  const savingsPaid=(manual.savings||[]).reduce((a,s)=>a+s.amount,0);
-  const lentOut   =(manual.lent||[]).reduce((a,l)=>a+l.amount,0);
-  const cashSpend =manual.cashSpend||0;
-  const manualTotal=debtPaid+savingsPaid+lentOut+cashSpend;
+  const debtPaid=(manual.debts||[]).reduce((a,d)=>a+d.amount,0);
+  const savPaid=(manual.savings||[]).reduce((a,s)=>a+s.amount,0);
+  const lentOut=(manual.lent||[]).reduce((a,l)=>a+l.amount,0);
+  const cashSpend=manual.cashSpend||0;
+  const manTotal=debtPaid+savPaid+lentOut+cashSpend;
 
   const txnTotal=txns.reduce((a,t)=>a+t.amount,0);
-  const grandTotal=txnTotal+manualTotal;
-  const balance=salary-grandTotal;
+  const grandTotal=txnTotal+manTotal+sbiSpent;
+  const balance=totalIn-grandTotal;
 
-  // Time left
   const lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
-  const daysLeft=Math.max(1,lastDay-today.getDate());
-  const weeksLeft=Math.max(1,Math.ceil(daysLeft/7));
-  const safeDay=balance>0?balance/daysLeft:0;
-  const safeWeek=balance>0?balance/weeksLeft:0;
+  const dLeft=Math.max(1,lastDay-today.getDate());
+  const wLeft=Math.max(1,Math.ceil(dLeft/7));
+  const safeDay=balance>0?balance/dLeft:0;
+  const safeWeek=balance>0?balance/wLeft:0;
 
-  // Category totals
   const byTag={};
-  ALL_TAGS.forEach(t=>{byTag[t]={total:0,count:0}});
+  TAGS.forEach(t=>{byTag[t]={total:0,count:0}});
   txns.forEach(t=>{
     if(!byTag[t.tag])byTag[t.tag]={total:0,count:0};
     byTag[t.tag].total+=t.amount;byTag[t.tag].count++;
   });
 
-  const yesCC=byTag['credit']?.total||0;
-  const sbiCC=byTag['sbi']?.total||0;
-  const untaggedAmt=byTag['untagged']?.total||0;
-  const untaggedCnt=byTag['untagged']?.count||0;
+  const yesCC=byTag['yescc']?.total||0;
+  const untagAmt=byTag['untagged']?.total||0;
+  const untagCnt=byTag['untagged']?.count||0;
   const activeDays=new Set(txns.map(t=>t.date)).size||1;
+  const topCats=TAGS.filter(t=>t!=='untagged'&&byTag[t]?.total>0).sort((a,b)=>byTag[b].total-byTag[a].total);
 
-  const topCats=ALL_TAGS.filter(t=>t!=='untagged'&&byTag[t]&&byTag[t].total>0).sort((a,b)=>byTag[b].total-byTag[a].total);
-
-  const heroClass=salary===0?'hero-ok':balance>salary*0.35?'hero-ok':balance>0?'hero-warn':'hero-bad';
+  const hClass=salary===0?'hero-pur':balance>totalIn*0.35?'hero-ok':balance>0?'hero-warn':'hero-bad';
 
   return h('div',{className:'page'},
     h('div',{className:'ph'},
       h('div',{className:'ph-title'},today.toLocaleDateString('en-IN',{month:'long',year:'numeric'})),
-      h('div',{className:'ph-sub'},txns.length+' txns · '+daysLeft+'d left')
+      h('div',{className:'ph-sub'},txns.length+' txns · '+dLeft+'d left')
     ),
 
-    !salary&&h('div',{className:'note n-amb'},'⚙ Set salary in Settings to see balance & projections'),
+    !salary&&h('div',{className:'note n-pur'},'⚙ Add salary in Settings to unlock balance tracking'),
 
-    salary>0&&h('div',{className:`hero ${heroClass}`},
+    salary>0&&h('div',{className:`hero ${hClass}`},
       h('div',{className:'hero-lbl'},'Estimated Balance'),
       h('div',{className:'hero-amt'},fmt(balance)),
-      h('div',{className:'hero-sub'},fmt(salary)+' in − '+fmt(grandTotal)+' out'),
+      h('div',{className:'hero-sub'},fmt(totalIn)+' in − '+fmt(grandTotal)+' out'),
       h('div',{className:'hero-grid'},
         h('div',null,h('div',{className:'hg-lbl'},'Safe/Day'),h('div',{className:'hg-val'},fmt(safeDay))),
         h('div',{style:{textAlign:'center'}},h('div',{className:'hg-lbl'},'Safe/Week'),h('div',{className:'hg-val'},fmt(safeWeek))),
-        h('div',{style:{textAlign:'right'}},h('div',{className:'hg-lbl'},daysLeft+'d · '+weeksLeft+'w'),h('div',{className:'hg-val'},today.toLocaleDateString('en-IN',{day:'numeric',month:'short'})))
+        h('div',{style:{textAlign:'right'}},h('div',{className:'hg-lbl'},dLeft+'d · '+wLeft+'w'),h('div',{className:'hg-val'},today.toLocaleDateString('en-IN',{day:'numeric',month:'short'})))
       )
     ),
 
-    // Key stats row
     h('div',{className:'g3'},
       h('div',{className:'sc'},
-        h('div',{className:'sc-lbl'},'UPI Spent'),
+        h('div',{className:'sc-lbl'},'UPI Total'),
         h('div',{className:`sc-val ${heatCls(txnTotal)}`},fmtK(txnTotal)),
         h('div',{className:'sc-sub'},txns.length+' txns')
       ),
@@ -434,142 +482,137 @@ function OverviewPage({txns,settings,manual}){
       ),
       h('div',{className:'sc'},
         h('div',{className:'sc-lbl'},'Untagged'),
-        h('div',{className:`sc-val ${heatCls(untaggedAmt)}`},fmtK(untaggedAmt)),
-        h('div',{className:'sc-sub'},untaggedCnt+' txns')
+        h('div',{className:`sc-val ${heatCls(untagAmt)}`},fmtK(untagAmt)),
+        h('div',{className:'sc-sub'},untagCnt+' txns')
       )
     ),
 
-    // YES Credit + other flows
-    (yesCC>0||sbiCC>0||manualTotal>0)&&h('div',{className:'g2'},
-      (yesCC>0||sbiCC>0)&&h('div',{className:'sc sc-accent',style:{borderTopColor:'#D97706'}},
+    // Credit & off-bank flows
+    (yesCC>0||sbiSpent>0||manTotal>0)&&h('div',{className:'g2'},
+      (yesCC>0||sbiSpent>0)&&h('div',{className:'sc sc-top',style:{borderTopColor:'#D97706'}},
         h('div',{className:'sc-lbl'},'Credit Spent'),
-        h('div',{className:'sc-val',style:{color:'#D97706'}},fmtK(yesCC+sbiCC)),
-        h('div',{className:'sc-sub'},(yesCC>0?'YES '+fmtK(yesCC):'')+(yesCC>0&&sbiCC>0?' · ':'')+(sbiCC>0?'SBI '+fmtK(sbiCC):''))
+        h('div',{className:'sc-val',style:{color:'#D97706'}},fmtK(yesCC+sbiSpent)),
+        h('div',{className:'sc-sub'},[yesCC>0&&'YES '+fmtK(yesCC),sbiSpent>0&&'SBI '+fmtK(sbiSpent)].filter(Boolean).join(' + '))
       ),
-      manualTotal>0&&h('div',{className:'sc sc-accent',style:{borderTopColor:'var(--pur)'}},
+      manTotal>0&&h('div',{className:'sc sc-top',style:{borderTopColor:'var(--p2)'}},
         h('div',{className:'sc-lbl'},'Off-bank'),
-        h('div',{className:'sc-val',style:{color:'var(--pur)'}},fmtK(manualTotal)),
-        h('div',{className:'sc-sub'},[debtPaid>0&&'Debt '+fmtK(debtPaid),savingsPaid>0&&'Sav '+fmtK(savingsPaid),lentOut>0&&'Lent '+fmtK(lentOut),cashSpend>0&&'Cash '+fmtK(cashSpend)].filter(Boolean).join(' · '))
+        h('div',{className:'sc-val',style:{color:'var(--p2)'}},fmtK(manTotal)),
+        h('div',{className:'sc-sub'},[debtPaid>0&&'Debt',savPaid>0&&'Sav',lentOut>0&&'Lent',cashSpend>0&&'Cash'].filter(Boolean).join(' · '))
       )
     ),
 
     // Budget bar
     salary>0&&h('div',{className:'card mb'},
-      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'.35rem'}},
-        h('span',{style:{fontSize:'.72rem',fontWeight:700}},'Month budget used'),
-        h('span',{style:{fontFamily:'var(--mono)',fontSize:'.65rem',fontWeight:700,color:heatHex(grandTotal)}},pct(grandTotal,salary)+'%')
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'.3rem'}},
+        h('span',{style:{fontSize:'.7rem',fontWeight:700}},'Budget used'),
+        h('span',{style:{fontFamily:'var(--mono)',fontSize:'.63rem',fontWeight:700,color:heatHex(grandTotal)}},pct(grandTotal,totalIn)+'%')
       ),
       h('div',{style:{background:'var(--s1)',borderRadius:'99px',height:'8px',overflow:'hidden'}},
-        h('div',{style:{width:pct(grandTotal,salary)+'%',height:'8px',borderRadius:'99px',background:heatHex(grandTotal),transition:'width .6s'}})
+        h('div',{style:{width:pct(grandTotal,totalIn)+'%',height:'8px',borderRadius:'99px',background:`linear-gradient(90deg,var(--p2),${heatHex(grandTotal)})`,transition:'width .6s'}})
       ),
-      h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:4,fontSize:'.57rem',fontFamily:'var(--mono)',color:'var(--m2)'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:4,fontSize:'.55rem',fontFamily:'var(--mono)',color:'var(--m2)'}},
         h('span',null,fmt(grandTotal)+' spent'),
-        h('span',null,fmt(salary)+' salary')
+        h('span',null,fmt(totalIn)+' total in')
       )
     ),
 
     h('div',{className:'sh'},'By Category'),
     topCats.length===0
-      ?h('div',{className:'note n-teal'},'🏷 Tag transactions to see breakdown')
+      ?h('div',{className:'note n-pur'},'🏷 Tag transactions to see breakdown')
       :h('div',{className:'card'},
         topCats.map(tag=>
           h('div',{key:tag,className:'cat-row'},
-            h('span',{className:'cat-icon'},TAG_META[tag].icon),
+            h('span',{className:'cat-icon'},TM[tag].icon),
             h('div',{style:{flex:1,minWidth:0}},
-              h('div',{className:'cat-name'},TAG_META[tag].label),
+              h('div',{className:'cat-name'},TM[tag].label),
               h(Bar,{spend:byTag[tag].total,budget:txnTotal})
             ),
             h('div',{style:{textAlign:'right'}},
               h('div',{className:`cat-amt ${heatCls(byTag[tag].total)}`},fmt(byTag[tag].total)),
-              h('div',{className:'cat-count'},byTag[tag].count+' txns')
+              h('div',{className:'cat-cnt'},byTag[tag].count+' txns')
             )
           )
         ),
-        untaggedAmt>0&&h('div',{className:'cat-row'},
+        untagAmt>0&&h('div',{className:'cat-row'},
           h('span',{className:'cat-icon'},'❓'),
-          h('div',{style:{flex:1,minWidth:0}},
-            h('div',{className:'cat-name',style:{color:'var(--m2)'}},'Untagged'),
-            h(Bar,{spend:untaggedAmt,budget:txnTotal})
-          ),
+          h('div',{style:{flex:1}},h('div',{className:'cat-name',style:{color:'var(--m2)'}},'Untagged'),h(Bar,{spend:untagAmt,budget:txnTotal})),
           h('div',{style:{textAlign:'right'}},
-            h('div',{className:'cat-amt',style:{color:'var(--m2)'}},fmt(untaggedAmt)),
-            h('div',{className:'cat-count'},untaggedCnt+' txns')
+            h('div',{className:'cat-amt',style:{color:'var(--m2)'}},fmt(untagAmt)),
+            h('div',{className:'cat-cnt'},untagCnt+' txns')
           )
         )
       ),
 
-    // Projection waterfall
+    // Waterfall
     salary>0&&h('div',null,
-      h('div',{className:'sh'},'Where your money went'),
+      h('div',{className:'sh'},'Where it went'),
       h('div',{className:'card'},
         h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'💰 Salary'),h('span',{className:'wf-val',style:{color:'var(--grn)'}},fmt(salary))),
-        h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− UPI transactions'),h('span',{className:'wf-val',style:{color:'var(--red)'}},fmt(txnTotal))),
-        debtPaid>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Debts paid'),h('span',{className:'wf-val',style:{color:'var(--red)'}},fmt(debtPaid))),
-        savingsPaid>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Savings transferred'),h('span',{className:'wf-val',style:{color:'var(--red)'}},fmt(savingsPaid))),
-        lentOut>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Lent out'),h('span',{className:'wf-val',style:{color:'var(--red)'}},fmt(lentOut))),
-        cashSpend>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Cash spends'),h('span',{className:'wf-val',style:{color:'var(--red)'}},fmt(cashSpend))),
-        h('div',{className:'wf-row',style:{paddingTop:'.5rem',borderTop:'2px solid var(--bd)'}},
+        cashInHand>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'💵 Cash in hand'),h('span',{className:'wf-val',style:{color:'var(--grn)'}},fmt(cashInHand))),
+        h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− UPI transactions'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(txnTotal))),
+        sbiSpent>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− SBI credit spent'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(sbiSpent))),
+        debtPaid>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Debts paid'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(debtPaid))),
+        savPaid>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Savings transferred'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(savPaid))),
+        lentOut>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Lent out'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(lentOut))),
+        cashSpend>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Cash spends'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(cashSpend))),
+        h('div',{className:'wf-row',style:{paddingTop:'.48rem',borderTop:'2px solid var(--bd)'}},
           h('span',{className:'wf-lbl',style:{fontWeight:800,color:'var(--tx)'}},'= Balance'),
-          h('span',{style:{fontFamily:'var(--mono)',fontWeight:900,fontSize:'.9rem',color:balance>=0?'var(--grn)':'var(--red)'}},fmt(balance))
+          h('span',{style:{fontFamily:'var(--mono)',fontWeight:900,fontSize:'.88rem',color:balance>=0?'var(--grn)':'var(--rose)'}},fmt(balance))
         ),
-        h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'÷ '+daysLeft+' days left'),h('span',{className:'wf-val',style:{color:safeDay>500?'var(--grn)':'var(--amb)'}},fmt(safeDay)+'/day')),
-        h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'÷ '+weeksLeft+' weeks left'),h('span',{className:'wf-val',style:{color:safeWeek>2000?'var(--grn)':'var(--amb)'}},fmt(safeWeek)+'/week'))
+        h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'÷ '+dLeft+' days left'),h('span',{className:'wf-val',style:{color:safeDay>500?'var(--grn)':'var(--amb)'}},fmt(safeDay)+'/day')),
+        h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'÷ '+wLeft+' weeks left'),h('span',{className:'wf-val',style:{color:safeWeek>2000?'var(--grn)':'var(--amb)'}},fmt(safeWeek)+'/wk'))
       )
     )
   );
 }
 
-// ── TAG PAGE ────────────────────────────────────────────────────────────────
+// ── TAG PAGE ─────────────────────────────────────────────────────────────────
 function TagPage({txns,onTagChange}){
   const[tab,setTab]=useState('untagged');
   const[search,setSearch]=useState('');
-
-  const byTag={};
-  ALL_TAGS.forEach(t=>{byTag[t]=0});
+  const byTag={};TAGS.forEach(t=>{byTag[t]=0});
   txns.forEach(t=>{byTag[t.tag]=(byTag[t.tag]||0)+1});
-  const untaggedCnt=byTag['untagged']||0;
+  const untagCnt=byTag['untagged']||0;
 
   const filtered=useMemo(()=>{
     let list=tab==='all'?txns:txns.filter(t=>t.tag===tab);
-    if(search)list=list.filter(t=>t.receiver.toLowerCase().includes(search.toLowerCase())||t.date.includes(search));
-    return [...list].sort((a,b)=>b.amount-a.amount);
+    if(search){
+      const q=search.toLowerCase();
+      list=list.filter(t=>cleanRecv(t.receiver).toLowerCase().includes(q)||t.date.includes(q)||t.receiver.toLowerCase().includes(q));
+    }
+    return[...list].sort((a,b)=>b.amount-a.amount);
   },[txns,tab,search]);
 
-  const tabs=['untagged','all',...ALL_TAGS.filter(t=>t!=='untagged'&&byTag[t]>0)].slice(0,7);
+  const tabs=['untagged','all',...TAGS.filter(t=>t!=='untagged'&&byTag[t]>0)].slice(0,7);
 
   return h('div',{className:'page'},
-    h('div',{className:'ph'},
-      h('div',{className:'ph-title'},'Tag'),
-      h('div',{className:'ph-sub'},untaggedCnt+' untagged')
-    ),
-    untaggedCnt===0
-      ?h('div',{className:'note n-grn'},'✓ All transactions tagged!')
-      :h('div',{className:'note n-amb'},'⚠ '+untaggedCnt+' transactions need a tag — these are weekday spends ≥ ₹500'),
-
+    h('div',{className:'ph'},h('div',{className:'ph-title'},'Tag'),h('div',{className:'ph-sub'},untagCnt+' untagged (weekday ≥ ₹500)')),
+    untagCnt===0
+      ?h('div',{className:'note n-grn'},'✓ All tagged!')
+      :h('div',{className:'note n-amb'},'⚠ '+untagCnt+' weekday transactions ≥ ₹500 need a tag'),
     h('div',{className:'tab-bar'},
       tabs.map(t=>h('button',{key:t,className:`tab${tab===t?' on':''}`,onClick:()=>setTab(t)},
-        t==='all'?'All':t==='untagged'?`❓ ${untaggedCnt}`:TAG_META[t]?.label||t
+        t==='all'?'All':t==='untagged'?`❓ ${untagCnt}`:(TM[t]?.icon||'')+' '+(TM[t]?.label||t)
       ))
     ),
-
-    h('input',{type:'text',placeholder:'Search receiver or date…',value:search,onChange:e=>setSearch(e.target.value),style:{marginBottom:'.5rem',fontSize:'.72rem'}}),
-
+    h('input',{type:'text',placeholder:'Search…',value:search,onChange:e=>setSearch(e.target.value),style:{marginBottom:'.5rem',fontSize:'.72rem'}}),
     filtered.length===0
-      ?h('div',{className:'empty'},h('div',{className:'empty-icon'},'🎉'),h('div',{className:'empty-title'},tab==='untagged'?'All tagged!':'Nothing here'),h('div',{className:'empty-body'},'No transactions in this filter.'))
+      ?h('div',{className:'empty'},h('div',{className:'empty-icon'},'🎉'),h('div',{className:'empty-title'},'Nothing here'),h('div',{className:'empty-body'},'No transactions in this filter.'))
       :h('div',{className:'txn-list'},
         filtered.map(txn=>
           h('div',{key:txn.ref,className:'txn-row'},
             h('div',{className:'txn-left'},
-              h('div',{className:'txn-date'},txn.date+' · '+txn.time),
-              h('div',{className:'txn-recv'},txn.receiver.replace(/x{3,}/gi,'…')),
+              h('div',{className:'txn-date'},txn.date+' · '+txn.time+(txn.isYesCC?' · YES CC':'')),
+              h('div',{className:'txn-recv'},cleanRecv(txn.receiver)),
               h('div',{style:{marginTop:3}},
                 h('select',{className:'tag-sel',value:txn.tag,onChange:e=>onTagChange(txn.ref,e.target.value)},
-                  ALL_TAGS.map(t=>h('option',{key:t,value:t},TAG_META[t].icon+' '+TAG_META[t].label))
+                  TAGS.map(t=>h('option',{key:t,value:t},TM[t].icon+' '+TM[t].label))
                 )
               )
             ),
             h('div',{className:'txn-right'},
-              h('div',{className:`txn-amt ${heatCls(txn.amount)}`},fmt(txn.amount))
+              h('div',{className:`txn-amt ${heatCls(txn.amount)}`},fmt(txn.amount)),
+              txn.isYesCC&&h('div',{style:{fontSize:'.46rem',color:'#D97706',fontWeight:800,marginTop:2}},'YES CC')
             )
           )
         )
@@ -577,132 +620,122 @@ function TagPage({txns,onTagChange}){
   );
 }
 
-// ── INSIGHTS PAGE ────────────────────────────────────────────────────────────
+// ── INSIGHTS PAGE ─────────────────────────────────────────────────────────────
 function InsightsPage({txns,settings,manual}){
-  if(!txns.length)return h('div',{className:'page'},h('div',{className:'empty',style:{marginTop:'2rem'}},h('div',{className:'empty-icon'},'📊'),h('div',{className:'empty-title'},'No data yet'),h('div',{className:'empty-body'},'Upload a transaction file first.')));
+  if(!txns.length)return h('div',{className:'page'},h('div',{className:'empty',style:{marginTop:'2rem'}},h('div',{className:'empty-icon'},'📊'),h('div',{className:'empty-title'},'No data'),h('div',{className:'empty-body'},'Upload a file first.')));
 
   const today=new Date();
   const salary=settings.salary||0;
+  const cashInHand=settings.cashInHand||0;
+  const sbiSpent=settings.sbiSpent||0;
+  const totalIn=salary+cashInHand;
   const debtPaid=(manual.debts||[]).reduce((a,d)=>a+d.amount,0);
-  const savingsPaid=(manual.savings||[]).reduce((a,s)=>a+s.amount,0);
+  const savPaid=(manual.savings||[]).reduce((a,s)=>a+s.amount,0);
   const lentOut=(manual.lent||[]).reduce((a,l)=>a+l.amount,0);
   const cashSpend=manual.cashSpend||0;
-  const grandTotal=txns.reduce((a,t)=>a+t.amount,0)+debtPaid+savingsPaid+lentOut+cashSpend;
-  const balance=salary-grandTotal;
-  const lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
-  const daysLeft=Math.max(1,lastDay-today.getDate());
-  const weeksLeft=Math.max(1,Math.ceil(daysLeft/7));
-
-  // YES credit
-  const yesCCTxns=txns.filter(t=>t.tag==='credit');
-  const yesCC=yesCCTxns.reduce((a,t)=>a+t.amount,0);
-
-  // Weekend grouping by date and week
-  const weekendTxns=txns.filter(t=>isWeekend(parseDate(t.date)));
-  const weekdayTxns=txns.filter(t=>!isWeekend(parseDate(t.date)));
-
-  // By week of month, weekend days
-  const weekendByWeek={};
-  weekendTxns.forEach(t=>{
-    const d=parseDate(t.date);
-    const wk='W'+getWeekOfMonth(d);
-    const dayKey=t.date;
-    if(!weekendByWeek[wk])weekendByWeek[wk]={total:0,days:{}};
-    weekendByWeek[wk].total+=t.amount;
-    if(!weekendByWeek[wk].days[dayKey])weekendByWeek[wk].days[dayKey]={total:0,date:d,txns:[]};
-    weekendByWeek[wk].days[dayKey].total+=t.amount;
-    weekendByWeek[wk].days[dayKey].txns.push(t);
-  });
-
-  const weekendWeeks=Object.entries(weekendByWeek).sort((a,b)=>a[0].localeCompare(b[0]));
-  const weekdayTotal=weekdayTxns.reduce((a,t)=>a+t.amount,0);
-  const weekendTotal=weekendTxns.reduce((a,t)=>a+t.amount,0);
-
-  // Avg per day/week
-  const activeDays=new Set(txns.map(t=>t.date)).size||1;
   const txnTotal=txns.reduce((a,t)=>a+t.amount,0);
+  const grandTotal=txnTotal+debtPaid+savPaid+lentOut+cashSpend+sbiSpent;
+  const balance=totalIn-grandTotal;
+  const lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+  const dLeft=Math.max(1,lastDay-today.getDate());
+  const wLeft=Math.max(1,Math.ceil(dLeft/7));
+
+  const yesCC=txns.filter(t=>t.tag==='yescc').reduce((a,t)=>a+t.amount,0);
+  const yesTxns=txns.filter(t=>t.tag==='yescc');
+
+  const weTxns=txns.filter(t=>isWeekend(parseDate(t.date)));
+  const wdTxns=txns.filter(t=>!isWeekend(parseDate(t.date)));
+  const weTotal=weTxns.reduce((a,t)=>a+t.amount,0);
+  const wdTotal=wdTxns.reduce((a,t)=>a+t.amount,0);
+
+  const weDays=new Set(weTxns.map(t=>t.date)).size||1;
+  const wdDays=new Set(wdTxns.map(t=>t.date)).size||1;
+  const activeDays=new Set(txns.map(t=>t.date)).size||1;
   const avgDay=txnTotal/activeDays;
 
   const weekSet=new Set();
-  txns.forEach(t=>{const d=parseDate(t.date);weekSet.add(d.getFullYear()+'-'+d.getMonth()+'-W'+getWeekOfMonth(d))});
+  txns.forEach(t=>{const d=parseDate(t.date);weekSet.add(d.getFullYear()+'-'+d.getMonth()+'-W'+weekOfMonth(d))});
   const avgWeek=txnTotal/(weekSet.size||1);
 
-  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // Weekend by week
+  const wkndByWk={};
+  weTxns.forEach(t=>{
+    const d=parseDate(t.date);
+    const wk='W'+weekOfMonth(d);
+    const dk=t.date;
+    if(!wkndByWk[wk])wkndByWk[wk]={total:0,days:{}};
+    wkndByWk[wk].total+=t.amount;
+    if(!wkndByWk[wk].days[dk])wkndByWk[wk].days[dk]={total:0,date:d};
+    wkndByWk[wk].days[dk].total+=t.amount;
+  });
+  const wkndWeeks=Object.entries(wkndByWk).sort((a,b)=>a[0].localeCompare(b[0]));
+  const DNS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   return h('div',{className:'page'},
-    h('div',{className:'ph'},
-      h('div',{className:'ph-title'},'Insights'),
-      h('div',{className:'ph-sub'},'Spending patterns')
-    ),
+    h('div',{className:'ph'},h('div',{className:'ph-title'},'Insights'),h('div',{className:'ph-sub'},'What your spending looks like')),
 
-    // Key metrics
-    salary>0&&h('div',{className:'card mb'},
-      h('div',{className:'ins-row'},
-        h('span',{className:'ins-lbl'},'📅 Left to spend (daily)'),
-        h('span',{className:`ins-val`,style:{color:balance/daysLeft>500?'var(--grn)':'var(--amb)'}},fmt(balance>0?balance/daysLeft:0))
+    // Key projections
+    h('div',{className:'card mb'},
+      salary>0&&h('div',{className:'ins-row'},
+        h('span',{className:'ins-lbl'},'📅 Left to spend / day'),
+        h('span',{className:'ins-val',style:{color:balance/dLeft>500?'var(--grn)':'var(--amb)'}},fmt(balance>0?balance/dLeft:0))
+      ),
+      salary>0&&h('div',{className:'ins-row'},
+        h('span',{className:'ins-lbl'},'📅 Left to spend / week'),
+        h('span',{className:'ins-val',style:{color:balance/wLeft>2000?'var(--grn)':'var(--amb)'}},fmt(balance>0?balance/wLeft:0))
       ),
       h('div',{className:'ins-row'},
-        h('span',{className:'ins-lbl'},'📅 Left to spend (weekly)'),
-        h('span',{className:`ins-val`,style:{color:balance/weeksLeft>2000?'var(--grn)':'var(--amb)'}},fmt(balance>0?balance/weeksLeft:0))
-      ),
-      h('div',{className:'ins-row'},
-        h('span',{className:'ins-lbl'},'📊 Avg per day (actual)'),
+        h('span',{className:'ins-lbl'},'📊 Avg / day (actual)'),
         h('span',{className:`ins-val ${heatCls(avgDay)}`},fmt(avgDay))
       ),
       h('div',{className:'ins-row'},
-        h('span',{className:'ins-lbl'},'📊 Avg per week (actual)'),
+        h('span',{className:'ins-lbl'},'📊 Avg / week (actual)'),
         h('span',{className:`ins-val ${heatCls(avgWeek)}`},fmt(avgWeek))
       )
     ),
 
-    // YES Credit
+    // YES CC
     h('div',{className:'sh'},'YES Credit Card'),
     yesCC===0
-      ?h('div',{className:'note n-teal'},'No transactions tagged as YES Credit yet')
+      ?h('div',{className:'note n-pur'},'No YES CC transactions found')
       :h('div',{className:'card'},
-        h('div',{className:'ins-row'},
-          h('span',{className:'ins-lbl'},'Total YES CC Spent'),
-          h('span',{className:`ins-val ${heatCls(yesCC)}`,style:{fontSize:'.9rem',fontWeight:900}},fmt(yesCC))
-        ),
-        h('div',{className:'ins-row'},
-          h('span',{className:'ins-lbl'},'Transactions'),
-          h('span',{className:'ins-val'},yesCCTxns.length+' txns')
-        ),
-        h('div',{className:'ins-row'},
-          h('span',{className:'ins-lbl'},'Avg per transaction'),
-          h('span',{className:`ins-val ${heatCls(yesCC/yesCCTxns.length)}`},fmt(yesCC/(yesCCTxns.length||1)))
-        )
+        h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Total YES CC'),h('span',{className:'ins-val',style:{color:'#D97706',fontSize:'.88rem',fontWeight:900}},fmt(yesCC))),
+        h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Transactions'),h('span',{className:'ins-val'},yesTxns.length+' txns')),
+        h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Avg per txn'),h('span',{className:`ins-val ${heatCls(yesCC/yesTxns.length)}`},fmt(yesCC/(yesTxns.length||1))))
       ),
 
-    // Weekend spend by week
-    h('div',{className:'sh'},'Weekend Spend'),
-    h('div',{className:'g2',style:{marginBottom:'.5rem'}},
-      h('div',{className:'sc sc-accent',style:{borderTopColor:'var(--pnk)'}},
-        h('div',{className:'sc-lbl'},'☀ Weekend Total'),
-        h('div',{className:`sc-val ${heatCls(weekendTotal)}`},fmtK(weekendTotal))
+    // Weekend vs Weekday
+    h('div',{className:'sh'},'Weekend vs Weekday'),
+    h('div',{className:'g2'},
+      h('div',{className:'sc sc-top',style:{borderTopColor:'var(--pnk)'}},
+        h('div',{className:'sc-lbl'},'☀ Weekend'),
+        h('div',{className:`sc-val ${heatCls(weTotal)}`},fmtK(weTotal)),
+        h('div',{className:'sc-sub'},fmt(weTotal/weDays)+'/day')
       ),
-      h('div',{className:'sc sc-accent',style:{borderTopColor:'var(--acc)'}},
-        h('div',{className:'sc-lbl'},'💼 Weekday Total'),
-        h('div',{className:`sc-val ${heatCls(weekdayTotal)}`},fmtK(weekdayTotal))
+      h('div',{className:'sc sc-top',style:{borderTopColor:'var(--p2)'}},
+        h('div',{className:'sc-lbl'},'💼 Weekday'),
+        h('div',{className:`sc-val ${heatCls(wdTotal)}`},fmtK(wdTotal)),
+        h('div',{className:'sc-sub'},fmt(wdTotal/wdDays)+'/day')
       )
     ),
 
-    weekendWeeks.length===0
-      ?h('div',{className:'note n-teal'},'No weekend transactions found')
+    // Weekend by week detail
+    wkndWeeks.length===0
+      ?h('div',{className:'note n-pur'},'No weekend transactions')
       :h('div',null,
-        weekendWeeks.map(([wk,data])=>
-          h('div',{key:wk,className:'weekend-card'},
-            h('div',{className:'weekend-head'},
+        h('div',{className:'sh'},'Weekend Breakdown'),
+        wkndWeeks.map(([wk,data])=>
+          h('div',{key:wk,className:'wknd-card'},
+            h('div',{className:'wknd-head'},
               h('span',{style:{fontWeight:900,fontSize:'.8rem',color:'var(--pnk)'}},'🎉 '+wk+' Weekend'),
               h('span',{style:{fontFamily:'var(--mono)',fontWeight:700,fontSize:'.88rem',color:heatHex(data.total)}},fmt(data.total))
             ),
-            Object.entries(data.days).sort((a,b)=>a[0].localeCompare(b[0])).map(([dateStr,dayData])=>
-              h('div',{key:dateStr,className:'weekend-day-row'},
+            Object.entries(data.days).sort((a,b)=>a[0].localeCompare(b[0])).map(([ds,dd])=>
+              h('div',{key:ds,className:'wknd-day'},
                 h('div',null,
-                  h('div',{style:{fontSize:'.72rem',fontWeight:700}},dayNames[dayData.date.getDay()]+' '+dateStr),
-                  h('div',{style:{fontSize:'.58rem',color:'var(--m2)',fontFamily:'var(--mono)',marginTop:1}},dayData.txns.length+' transactions')
+                  h('div',{style:{fontSize:'.7rem',fontWeight:700}},DNS[dd.date.getDay()]+' '+ds),
                 ),
-                h('span',{style:{fontFamily:'var(--mono)',fontWeight:700,color:heatHex(dayData.total)}},fmt(dayData.total))
+                h('span',{style:{fontFamily:'var(--mono)',fontWeight:700,color:heatHex(dd.total)}},fmt(dd.total))
               )
             )
           )
@@ -711,180 +744,200 @@ function InsightsPage({txns,settings,manual}){
   );
 }
 
-// ── MONEY PAGE ───────────────────────────────────────────────────────────────
-function MoneyPage({manual,onManualChange,toast}){
+// ── MONEY PAGE ─────────────────────────────────────────────────────────────
+function MoneyPage({manual,onManualChange}){
   const[tab,setTab]=useState('debts');
-
-  function addItem(key){
-    const list=manual[key]||[];
-    onManualChange({...manual,[key]:[...list,{label:'',amount:0,id:Date.now()}]});
-  }
-  function updateItem(key,id,field,val){
-    onManualChange({...manual,[key]:(manual[key]||[]).map(i=>i.id===id?{...i,[field]:val}:i)});
-  }
-  function removeItem(key,id){
-    onManualChange({...manual,[key]:(manual[key]||[]).filter(i=>i.id!==id)});
-  }
-
-  const sections={
-    debts:  {icon:'💳',color:'var(--red)',  label:'Debt Repayments', hint:'Credit card bills, loans, EMIs'},
-    savings:{icon:'💰',color:'var(--grn)',  label:'Savings',         hint:'SIP, FD, emergency fund, transfers'},
-    lent:   {icon:'🤝',color:'var(--pur)',  label:'Lent Out',        hint:'Money given to someone to return'},
+  function addItem(key){onManualChange({...manual,[key]:[...(manual[key]||[]),{label:'',amount:0,id:Date.now()}]})}
+  function updItem(key,id,f,v){onManualChange({...manual,[key]:(manual[key]||[]).map(i=>i.id===id?{...i,[f]:v}:i)})}
+  function delItem(key,id){onManualChange({...manual,[key]:(manual[key]||[]).filter(i=>i.id!==id)})}
+  const SEC={
+    debts: {icon:'💳',color:'var(--rose)',hint:'Credit bills, loans, EMIs'},
+    savings:{icon:'💰',color:'var(--grn)',hint:'SIP, FD, emergency fund'},
+    lent:  {icon:'🤝',color:'var(--p2)',hint:'Money you gave out to return'},
   };
-
-  const sec=sections[tab];
+  const sec=SEC[tab];
   const list=manual[tab]||[];
   const total=list.reduce((a,i)=>a+i.amount,0);
   const cashSpend=manual.cashSpend||0;
-
   return h('div',{className:'page'},
     h('div',{className:'ph'},h('div',{className:'ph-title'},'Money Flows'),h('div',{className:'ph-sub'},'All deducted from balance')),
-
     h('div',{className:'tab-bar'},
       ['debts','savings','lent','cash'].map(t=>
         h('button',{key:t,className:`tab${tab===t?' on':''}`,onClick:()=>setTab(t)},
-          (sections[t]?.icon||'💵')+' '+(t==='cash'?'Cash':t.charAt(0).toUpperCase()+t.slice(1))
+          (SEC[t]?.icon||'💵')+' '+(t==='cash'?'Cash':t.charAt(0).toUpperCase()+t.slice(1))
         )
       )
     ),
-
-    tab!=='cash'?h('div',null,
-      h('div',{className:'note',style:{background:`${sec.color}12`,borderColor:sec.color,color:sec.color}},sec.icon+' '+sec.hint),
-      list.length===0
-        ?h('div',{className:'empty',style:{marginBottom:'.5rem'}},h('div',{className:'empty-icon'},sec.icon),h('div',{className:'empty-title'},'None added'),h('div',{className:'empty-body'},'Add items to track.'))
-        :h('div',{className:'card mb'},
-          list.map(item=>
-            h('div',{key:item.id,className:'money-item'},
-              h('div',{className:'f1',style:{display:'flex',flexDirection:'column',gap:4}},
-                h('input',{type:'text',value:item.label,placeholder:sec.label+'…',onChange:e=>updateItem(tab,item.id,'label',e.target.value),style:{padding:'.3rem .6rem',fontSize:'.72rem'}}),
-                h('input',{type:'number',value:item.amount||'',inputMode:'numeric',placeholder:'Amount',onChange:e=>updateItem(tab,item.id,'amount',parseFloat(e.target.value)||0),style:{padding:'.3rem .6rem',fontSize:'.72rem'}})
-              ),
-              h('button',{className:'del-btn',onClick:()=>removeItem(tab,item.id)},'✕')
+    tab!=='cash'
+      ?h('div',null,
+        h('div',{className:'note',style:{background:`${sec.color}12`,borderColor:sec.color,color:sec.color}},sec.icon+' '+sec.hint),
+        list.length===0
+          ?h('div',{className:'empty',style:{marginBottom:'.5rem'}},h('div',{className:'empty-icon'},sec.icon),h('div',{className:'empty-title'},'None added'))
+          :h('div',{className:'card mb'},
+            list.map(item=>
+              h('div',{key:item.id,className:'money-item'},
+                h('div',{className:'f1',style:{display:'flex',flexDirection:'column',gap:4}},
+                  h('input',{type:'text',value:item.label,placeholder:'Label…',onChange:e=>updItem(tab,item.id,'label',e.target.value),style:{padding:'.3rem .6rem',fontSize:'.72rem'}}),
+                  h('input',{type:'number',value:item.amount||'',inputMode:'numeric',placeholder:'Amount',onChange:e=>updItem(tab,item.id,'amount',parseFloat(e.target.value)||0),style:{padding:'.3rem .6rem',fontSize:'.72rem'}})
+                ),
+                h('button',{className:'del-btn',onClick:()=>delItem(tab,item.id)},'✕')
+              )
+            ),
+            h('div',{style:{display:'flex',justifyContent:'space-between',paddingTop:'.45rem',borderTop:'1px solid var(--bd)',marginTop:'.2rem'}},
+              h('span',{style:{fontSize:'.62rem',fontWeight:700,color:'var(--m1)'}},'Total'),
+              h('span',{style:{fontFamily:'var(--mono)',fontWeight:900,fontSize:'.88rem',color:sec.color}},fmt(total))
             )
           ),
-          h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:'.5rem',borderTop:'1px solid var(--bd)',marginTop:'.2rem'}},
-            h('span',{style:{fontSize:'.65rem',fontWeight:700,color:'var(--m1)'}},'Total'),
-            h('span',{style:{fontFamily:'var(--mono)',fontWeight:900,fontSize:'.9rem',color:sec.color}},fmt(total))
-          )
-        ),
-      h('button',{className:'btn btn-sec btn-sm',style:{marginBottom:'.5rem'},onClick:()=>addItem(tab)},'+ Add')
-    ):h('div',null,
-      h('div',{className:'note n-amb'},'💵 Cash purchases not in your bank history'),
-      h('div',{className:'card'},
-        h('label',null,'Total cash spent'),
-        h('input',{type:'number',inputMode:'numeric',value:cashSpend||'',placeholder:'0',onChange:e=>onManualChange({...manual,cashSpend:parseFloat(e.target.value)||0})}),
-        cashSpend>0&&h('div',{style:{marginTop:'.4rem',fontSize:'.65rem',fontFamily:'var(--mono)',color:'var(--amb)',fontWeight:700}},'−'+fmt(cashSpend)+' deducted from balance')
+        h('button',{className:'btn btn-sec btn-sm',style:{marginBottom:'.5rem'},onClick:()=>addItem(tab)},'+ Add')
       )
-    )
+      :h('div',null,
+        h('div',{className:'note n-amb'},'💵 Cash purchases not in bank history'),
+        h('div',{className:'card'},
+          h('label',null,'Total cash spent'),
+          h('input',{type:'number',inputMode:'numeric',value:cashSpend||'',placeholder:'0',onChange:e=>onManualChange({...manual,cashSpend:parseFloat(e.target.value)||0})}),
+          cashSpend>0&&h('div',{style:{marginTop:'.4rem',fontSize:'.62rem',fontFamily:'var(--mono)',color:'var(--amb)',fontWeight:700}},'−'+fmt(cashSpend)+' from balance')
+        )
+      )
   );
 }
 
-// ── SETTINGS PAGE ────────────────────────────────────────────────────────────
-function SettingsPage({settings,onSettingsChange,txnCount,toast}){
+// ── SETTINGS PAGE ─────────────────────────────────────────────────────────
+function SettingsPage({settings,onSave,txnCount,autoDate,toast}){
   const[loc,setLoc]=useState({...settings});
-  function save(){onSettingsChange(loc);toast('Settings saved ✓')}
+  function save(){onSave(loc);toast('Saved ✓')}
 
   return h('div',{className:'page'},
-    h('div',{className:'ph'},h('div',{className:'ph-title'},'Settings'),h('div',{className:'ph-sub'},txnCount+' transactions loaded')),
+    h('div',{className:'ph'},h('div',{className:'ph-title'},'Settings'),h('div',{className:'ph-sub'},txnCount+' transactions')),
 
-    h('div',{className:'sh'},'Salary'),
+    h('div',{className:'sh'},'Income'),
     h('div',{className:'card'},
       h('div',{className:'mb'},
         h('label',null,'Monthly salary'),
         h('input',{type:'number',inputMode:'numeric',value:loc.salary||'',placeholder:'e.g. 102844',onChange:e=>setLoc({...loc,salary:parseFloat(e.target.value)||0})})
       ),
+      h('div',{className:'mb'},
+        h('label',null,'Cash in hand (added to salary)'),
+        h('input',{type:'number',inputMode:'numeric',value:loc.cashInHand||'',placeholder:'0',onChange:e=>setLoc({...loc,cashInHand:parseFloat(e.target.value)||0})}),
+        h('div',{style:{fontSize:'.58rem',color:'var(--m2)',marginTop:3}},'This is added to your total income')
+      ),
       h('div',null,
-        h('label',null,'Salary credited on'),
+        h('label',null,'SBI credit card spent (enter manually)'),
+        h('input',{type:'number',inputMode:'numeric',value:loc.sbiSpent||'',placeholder:'0',onChange:e=>setLoc({...loc,sbiSpent:parseFloat(e.target.value)||0})}),
+        h('div',{style:{fontSize:'.58rem',color:'var(--m2)',marginTop:3}},'Deducted from your balance')
+      )
+    ),
+
+    h('div',{className:'sh'},'Salary Start Date'),
+    h('div',{className:'card'},
+      autoDate&&h('div',{className:'note n-grn',style:{marginBottom:'.5rem'}},'✓ Auto-detected: '+autoDate+' (date of first ANKA/UMAR/UBEY/MOJO payment)'),
+      h('div',null,
+        h('label',null,'Override start date (optional)'),
         h('input',{type:'date',value:loc.salaryDate||'',onChange:e=>setLoc({...loc,salaryDate:e.target.value})}),
-        h('div',{style:{fontSize:'.58rem',color:'var(--m2)',marginTop:4}},'Only transactions from this date onwards are counted')
+        h('div',{style:{fontSize:'.58rem',color:'var(--m2)',marginTop:3}},'Leave blank to use auto-detected date. Only transactions from this date are counted.')
       )
     ),
 
     h('button',{className:'btn btn-pri',style:{marginTop:'.3rem',marginBottom:'.5rem'},onClick:save},'✓ Save Settings'),
 
-    h('div',{className:'sh'},'Tag Logic'),
+    h('div',{className:'sh'},'Auto-tag Rules'),
     h('div',{className:'card'},
       [
+        ['YES BANK CREDIT CARD','→ YES CC (auto from bank column)','yescc'],
         ['ANKA receiver','→ Rent','rent'],
         ['UMAR receiver','→ Family','family'],
         ['UBEY receiver','→ Savings','savings'],
         ['MOJO receiver','→ Furniture Rent','furniture'],
+        ['@icici / @airtel / Jio','→ Recharge','recharge'],
         ['Sunday 5:30–7 PM','→ Vegetable','vegetable'],
         ['Weekday 8:50–9:40 AM / 6:10–7:30 PM','→ Uber','uber'],
-        ['Weekend (other times)','→ Entertainment','entertainment'],
-        ['Weekday < ₹500','→ Other spends','other'],
-        ['Weekday ≥ ₹500','→ Untagged (you decide)','untagged'],
+        ['Weekend (other)','→ Entertainment','entertainment'],
+        ['Weekday < ₹500','→ Other','other'],
+        ['Weekday ≥ ₹500','→ Untagged (manual)','untagged'],
       ].map(([rule,tag,cls],i,arr)=>
-        h('div',{key:i,style:{display:'flex',alignItems:'center',gap:'.5rem',padding:'.28rem 0',borderBottom:i<arr.length-1?'1px solid var(--bd)':'none'}},
-          h('span',{style:{fontSize:'.67rem',color:'var(--m1)',flex:1}},rule),
+        h('div',{key:i,style:{display:'flex',alignItems:'center',gap:'.5rem',padding:'.26rem 0',borderBottom:i<arr.length-1?'1px solid var(--bd)':'none'}},
+          h('span',{style:{fontSize:'.65rem',color:'var(--m1)',flex:1}},rule),
           h('span',{className:`tag tag-${cls}`,style:{flexShrink:0}},tag)
         )
       )
     ),
 
-    h('div',{className:'sh'},'Data'),
-    h('div',{className:'card'},
-      h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Transactions loaded'),h('span',{className:'ins-val'},txnCount)),
-      h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Tags auto-saved'),h('span',{className:'ins-val',style:{color:'var(--grn)'}},'✓ In browser'))
-    ),
-
-    h('div',{className:'sh',style:{color:'var(--red)'}},'Danger'),
+    h('div',{className:'sh',style:{color:'var(--rose)'}},'Danger'),
     h('button',{className:'btn btn-red',onClick:()=>{
-      if(confirm('Clear all saved tags and settings?')){
-        localStorage.removeItem(LS_SETTINGS);
-        localStorage.removeItem(LS_TAG_MAP);
-        localStorage.removeItem(LS_MANUAL);
+      if(confirm('Clear all saved data?')){
+        Object.values(LS).forEach(k=>localStorage.removeItem(k));
         window.location.reload();
       }
     }},'🗑 Clear all saved data')
   );
 }
 
-// ── APP ──────────────────────────────────────────────────────────────────────
+// ── APP ────────────────────────────────────────────────────────────────────
 function App(){
-  const[settings,setSettings]=useState(()=>loadLS(LS_SETTINGS,{salary:0,salaryDate:''}));
-  const[tagMap,setTagMap]=useState(()=>loadLS(LS_TAG_MAP,{}));
-  const[manual,setManual]=useState(()=>loadLS(LS_MANUAL,{debts:[],savings:[],lent:[],cashSpend:0}));
-  const[rawTxns,setRawTxns]=useState([]);
-  const[page,setPage]=useState('upload');
+  // Load everything from localStorage on mount
+  const[settings,setSettings]=useState(()=>ls_get(LS.SET,{salary:0,cashInHand:0,sbiSpent:0,salaryDate:''}));
+  const[tagMap,setTagMap]=useState(()=>ls_get(LS.TAGS,{}));
+  const[manual,setManual]=useState(()=>ls_get(LS.MAN,{debts:[],savings:[],lent:[],cashSpend:0}));
+  const[rawTxns,setRawTxns]=useState(()=>ls_get(LS.RAW,[]));  // ← persisted!
+  const[page,setPage]=useState(()=>ls_get(LS.RAW,[]).length>0?'overview':'upload');
   const[toastMsg,setToastMsg]=useState('');
   const toastRef=useRef();
 
-  function showToast(msg){
+  function toast(msg){
     setToastMsg(msg);
     if(toastRef.current)clearTimeout(toastRef.current);
     toastRef.current=setTimeout(()=>setToastMsg(''),2400);
   }
 
-  useEffect(()=>{saveLS(LS_SETTINGS,settings)},[settings]);
-  useEffect(()=>{saveLS(LS_TAG_MAP,tagMap)},[tagMap]);
-  useEffect(()=>{saveLS(LS_MANUAL,manual)},[manual]);
+  // Persist all state changes
+  useEffect(()=>{ls_set(LS.SET,settings)},[settings]);
+  useEffect(()=>{ls_set(LS.TAGS,tagMap)},[tagMap]);
+  useEffect(()=>{ls_set(LS.MAN,manual)},[manual]);
+  useEffect(()=>{ls_set(LS.RAW,rawTxns)},[rawTxns]);
 
+  // Auto-detect salary date from saved raw txns
+  const autoDate=useMemo(()=>{
+    const d=detectSalaryDate(rawTxns);
+    return d||null;
+  },[rawTxns]);
+
+  // Effective cutoff: override > auto > none
+  const cutoffDate=useMemo(()=>{
+    if(settings.salaryDate)return new Date(settings.salaryDate);
+    if(autoDate){const[d,m,y]=autoDate.split('/');return new Date(+y,+m-1,+d);}
+    return null;
+  },[settings.salaryDate,autoDate]);
+
+  // Build display txns with tags applied + cutoff filter
   const txns=useMemo(()=>
-    rawTxns.map(t=>({...t,tag:tagMap[t.ref]||t.autoTag}))
-  ,[rawTxns,tagMap]);
+    rawTxns
+      .filter(t=>!cutoffDate||parseDate(t.date)>=cutoffDate)
+      .map(t=>({...t,tag:tagMap[t.ref]||(t.autoTag||'untagged')}))
+  ,[rawTxns,tagMap,cutoffDate]);
 
   function handleLoad(html){
     const parsed=parseHTML(html);
-    const cutoff=settings.salaryDate?new Date(settings.salaryDate):null;
-    const filtered=parsed
-      .filter(t=>!cutoff||parseDate(t.date)>=cutoff)
-      .map(t=>({...t,autoTag:autoTag(t)}));
-    setRawTxns(filtered);
+    // Merge with existing: keep existing refs, add new ones
+    const existingRefs=new Set(rawTxns.map(t=>t.ref));
+    const newTxns=parsed.filter(t=>!existingRefs.has(t.ref)).map(t=>({...t,autoTag:autoTag(t)}));
+    // Re-tag all existing too (in case autoTag logic changed)
+    const existingRetagged=rawTxns.map(t=>({...t,autoTag:autoTag(t)}));
+    const merged=[...existingRetagged,...newTxns];
+    setRawTxns(merged);
     setPage('overview');
-    const newCount=filtered.filter(t=>!tagMap[t.ref]).length;
-    showToast(`${filtered.length} transactions · ${newCount} new`);
+    toast(`${merged.length} total · ${newTxns.length} new · tags preserved ✓`);
   }
 
   function handleTagChange(ref,tag){setTagMap(prev=>({...prev,[ref]:tag}))}
+  function handleSettingsSave(s){setSettings(s)}
+  function handleManualChange(m){setManual(m)}
 
-  const hasData=txns.length>0;
-  const untaggedCnt=txns.filter(t=>t.tag==='untagged').length;
+  const hasData=rawTxns.length>0;
+  const untagCnt=txns.filter(t=>t.tag==='untagged').length;
 
   const navItems=[
     {id:'upload',  label:'Upload'},
     {id:'overview',label:'Overview'},
-    {id:'tag',     label:untaggedCnt>0?`Tag ${untaggedCnt}`:'Tag'},
+    {id:'tag',     label:untagCnt>0?`Tag ${untagCnt}`:'Tag'},
     {id:'insights',label:'Insights'},
     {id:'money',   label:'Money'},
     {id:'settings',label:'Settings'},
@@ -902,18 +955,18 @@ function App(){
   const needsData=['overview','tag','insights'].includes(page)&&!hasData;
 
   return h('div',null,
-    page==='upload'   &&h(UploadPage,  {onLoad:handleLoad,hasData}),
+    page==='upload'   &&h(UploadPage,   {onLoad:handleLoad,hasSaved:hasData}),
     page==='overview' &&(needsData?null:h(OverviewPage, {txns,settings,manual})),
     page==='tag'      &&(needsData?null:h(TagPage,      {txns,onTagChange:handleTagChange})),
     page==='insights' &&(needsData?null:h(InsightsPage, {txns,settings,manual})),
-    page==='money'    &&h(MoneyPage,   {manual,onManualChange:setManual,toast:showToast}),
-    page==='settings' &&h(SettingsPage,{settings,onSettingsChange:setSettings,txnCount:txns.length,toast:showToast}),
+    page==='money'    &&h(MoneyPage,   {manual,onManualChange:handleManualChange}),
+    page==='settings' &&h(SettingsPage,{settings,onSave:handleSettingsSave,txnCount:txns.length,autoDate,toast}),
 
-    needsData&&h('div',{style:{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(245,243,239,.92)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:50,backdropFilter:'blur(4px)'}},
-      h('div',{className:'card',style:{maxWidth:'260px',textAlign:'center',padding:'1.5rem'}},
+    needsData&&h('div',{style:{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(243,240,255,.92)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:50,backdropFilter:'blur(4px)'}},
+      h('div',{className:'card',style:{maxWidth:'260px',textAlign:'center',padding:'1.5rem',border:'1.5px solid var(--p4)'}},
         h('div',{style:{fontSize:'2rem',marginBottom:'.5rem'}},'📂'),
         h('div',{style:{fontWeight:900,marginBottom:'.35rem'}},'No transactions'),
-        h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'.75rem'}},'Upload your YES Bank transaction HTML first.'),
+        h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'.75rem'}},'Upload your YES Bank transaction HTML.'),
         h('button',{className:'btn btn-pri',onClick:()=>setPage('upload')},'Go to Upload')
       )
     ),
@@ -922,8 +975,8 @@ function App(){
       navItems.map(n=>
         h('button',{key:n.id,className:`nb${page===n.id?' on':''}`,onClick:()=>setPage(n.id)},
           navIcon(n.id),
-          h('span',{style:{fontSize:'.43rem',fontWeight:800,letterSpacing:'.06em',textTransform:'uppercase'}},n.label),
-          h('span',{className:'nb-bar'})
+          h('span',{style:{fontSize:'.41rem',fontWeight:800,letterSpacing:'.06em',textTransform:'uppercase'}},n.label),
+          h('span',{className:'nb-pip'})
         )
       )
     ),
