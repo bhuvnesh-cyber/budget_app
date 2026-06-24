@@ -4,189 +4,249 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>Spend Analyzer</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg: #0D1117;
-  --s1: #161B22;
-  --s2: #1C2230;
-  --s3: #212736;
-  --bd: #2D3548;
-  --bd2: #3D4A61;
-  --tx: #E6EDF3;
-  --m1: #8B949E;
-  --m2: #555F6D;
-  --acc: #3FB950;
-  --acc2: #238636;
-  --red: #F85149;
-  --amb: #D29922;
-  --blu: #58A6FF;
-  --pur: #BC8CFF;
-  --pnk: #FF7B72;
+  --bg: #F7F8FA;
+  --s0: #FFFFFF;
+  --s1: #F0F2F7;
+  --s2: #E4E8F0;
+  --bd: #DDE2EC;
+  --bd2: #C8D0E0;
+  --tx: #111827;
+  --m1: #4B5563;
+  --m2: #9CA3AF;
+  --acc: #2563EB;
+  --acc-lt: #EFF6FF;
+  --acc-bd: #BFDBFE;
+  --grn: #059669;
+  --grn-lt: #ECFDF5;
+  --grn-bd: #A7F3D0;
+  --red: #DC2626;
+  --red-lt: #FEF2F2;
+  --red-bd: #FECACA;
+  --amb: #D97706;
+  --amb-lt: #FFFBEB;
+  --amb-bd: #FDE68A;
+  --pur: #7C3AED;
+  --pur-lt: #F5F3FF;
+  --pur-bd: #DDD6FE;
+  --pnk: #DB2777;
+  --pnk-lt: #FDF2F8;
+  --pnk-bd: #FBCFE8;
   --mono: 'JetBrains Mono', monospace;
   --sans: 'Inter', sans-serif;
-  --r: 12px;
-  --rs: 8px;
-  --nav-h: 60px;
+  --r: 14px;
+  --rs: 9px;
+  --nav-h: 62px;
   --safe-b: env(safe-area-inset-bottom, 0px);
+  --sh: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --sh2: 0 4px 16px rgba(37,99,235,.10), 0 1px 4px rgba(0,0,0,.06);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; background: var(--bg); color: var(--tx); font-family: var(--sans); overflow-x: hidden; font-size: 14px; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--tx); font-family: var(--sans); overflow-x: hidden; font-size: 14px; line-height: 1.5; }
 #root { display: flex; flex-direction: column; min-height: 100%; }
 
 /* NAV */
-.nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-h) + var(--safe-b)); background: rgba(22,27,34,.97); backdrop-filter: blur(20px); border-top: 1px solid var(--bd); display: flex; align-items: stretch; z-index: 100; padding-bottom: var(--safe-b); }
-.nb { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: none; border: none; cursor: pointer; color: var(--m2); font-family: var(--sans); font-size: .5rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; transition: color .15s; padding: 0 2px; }
+.nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-h) + var(--safe-b)); background: rgba(255,255,255,.96); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--bd); display: flex; align-items: stretch; z-index: 100; padding-bottom: var(--safe-b); box-shadow: 0 -2px 12px rgba(0,0,0,.06); }
+.nb { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: none; border: none; cursor: pointer; color: var(--m2); font-family: var(--sans); font-size: .46rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; transition: color .15s; padding: 0; }
 .nb.on { color: var(--acc); }
-.nb svg { width: 20px; height: 20px; stroke-width: 1.8; fill: none; stroke: currentColor; }
-.nb-dot { width: 16px; height: 2px; border-radius: 99px; background: var(--acc); margin-top: 1px; display: none; }
+.nb svg { width: 21px; height: 21px; stroke-width: 1.75; fill: none; stroke: currentColor; transition: stroke .15s; }
+.nb-dot { width: 16px; height: 2.5px; border-radius: 99px; background: var(--acc); display: none; }
 .nb.on .nb-dot { display: block; }
 
-.page { flex: 1; padding: .75rem 1rem calc(var(--nav-h) + var(--safe-b) + 1rem); max-width: 520px; margin: 0 auto; width: 100%; }
+.page { flex: 1; padding: .5rem 1rem calc(var(--nav-h) + var(--safe-b) + 1rem); max-width: 520px; margin: 0 auto; width: 100%; }
 
 /* CARDS */
-.card { background: var(--s1); border: 1px solid var(--bd); border-radius: var(--r); padding: .85rem 1rem; margin-bottom: .5rem; }
-.card-title { font-size: .55rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--m1); margin-bottom: .6rem; display: flex; align-items: center; gap: .5rem; }
-.card-title::after { content: ''; flex: 1; height: 1px; background: var(--bd); }
+.card { background: var(--s0); border: 1px solid var(--bd); border-radius: var(--r); padding: .85rem 1rem; margin-bottom: .5rem; box-shadow: var(--sh); }
 
-/* UPLOAD */
-.upload-zone { border: 2px dashed var(--bd2); border-radius: var(--r); padding: 2rem 1rem; text-align: center; cursor: pointer; transition: all .2s; background: var(--s2); }
-.upload-zone:hover, .upload-zone.drag { border-color: var(--acc); background: rgba(63,185,80,.06); }
-.upload-zone input { display: none; }
-.upload-icon { font-size: 2.2rem; margin-bottom: .5rem; }
-.upload-title { font-size: .9rem; font-weight: 700; color: var(--tx); margin-bottom: .3rem; }
-.upload-sub { font-size: .7rem; color: var(--m1); }
-.upload-btn { display: inline-block; margin-top: .75rem; padding: .45rem 1.1rem; background: linear-gradient(135deg, #238636, #3FB950); color: #fff; border-radius: 99px; font-size: .72rem; font-weight: 700; cursor: pointer; }
+/* PAGE HEADER */
+.ph { padding: .65rem 0 .6rem; display: flex; align-items: baseline; justify-content: space-between; }
+.ph-title { font-size: 1.15rem; font-weight: 800; color: var(--tx); letter-spacing: -.02em; }
+.ph-sub { font-size: .6rem; color: var(--m2); font-family: var(--mono); }
 
-/* STATS GRID */
-.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; margin-bottom: .45rem; }
-.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .45rem; margin-bottom: .45rem; }
-.stat-card { background: var(--s1); border: 1px solid var(--bd); border-radius: var(--r); padding: .7rem .85rem; }
-.stat-lbl { font-size: .5rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--m1); margin-bottom: .3rem; }
-.stat-val { font-family: var(--mono); font-size: 1.2rem; font-weight: 700; line-height: 1; }
-.stat-sub { font-size: .6rem; color: var(--m2); margin-top: .25rem; font-family: var(--mono); }
-
-/* HEAT COLOR based on amount */
-.heat-0  { color: #3FB950; } /* <200 */
-.heat-1  { color: #56C45A; }
-.heat-2  { color: #8DC63F; }
-.heat-3  { color: #B5C828; }
-.heat-4  { color: #D4C520; }
-.heat-5  { color: #D29922; } /* ~1000 */
-.heat-6  { color: #D07B22; }
-.heat-7  { color: #CC5F22; }
-.heat-8  { color: #D04B30; }
-.heat-9  { color: #F85149; } /* >3000 */
-
-/* TRANSACTION ROWS */
-.txn-list { background: var(--s1); border: 1px solid var(--bd); border-radius: var(--r); overflow: hidden; margin-bottom: .5rem; }
-.txn-row { display: flex; align-items: center; gap: .5rem; padding: .6rem .85rem; border-bottom: 1px solid var(--bd); transition: background .1s; }
-.txn-row:last-child { border-bottom: none; }
-.txn-row:hover { background: var(--s2); }
-.txn-left { flex: 1; min-width: 0; }
-.txn-date { font-size: .55rem; color: var(--m2); font-family: var(--mono); margin-bottom: 2px; }
-.txn-receiver { font-size: .75rem; font-weight: 600; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.txn-note { font-size: .6rem; color: var(--m1); margin-top: 1px; }
-.txn-right { text-align: right; flex-shrink: 0; }
-.txn-amt { font-family: var(--mono); font-weight: 700; font-size: .85rem; }
-.txn-tag { margin-top: 3px; }
-
-/* TAG PILL */
-.tag-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 99px; font-size: .52rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; border: 1px solid; }
-.tag-rent     { background: rgba(88,166,255,.12); border-color: rgba(88,166,255,.3); color: #58A6FF; }
-.tag-family   { background: rgba(188,140,255,.12); border-color: rgba(188,140,255,.3); color: #BC8CFF; }
-.tag-savings  { background: rgba(63,185,80,.12); border-color: rgba(63,185,80,.3); color: #3FB950; }
-.tag-vegetable{ background: rgba(86,196,90,.15); border-color: rgba(86,196,90,.3); color: #56C45A; }
-.tag-uber     { background: rgba(248,81,73,.12); border-color: rgba(248,81,73,.3); color: #F85149; }
-.tag-credit   { background: rgba(210,153,34,.12); border-color: rgba(210,153,34,.3); color: #D29922; }
-.tag-sbi      { background: rgba(88,166,255,.1); border-color: rgba(88,166,255,.25); color: #79b8ff; }
-.tag-cash     { background: rgba(63,185,80,.08); border-color: rgba(63,185,80,.2); color: #7ee787; }
-.tag-untagged { background: rgba(139,148,158,.1); border-color: rgba(139,148,158,.25); color: #8B949E; }
-
-/* TAG SELECTOR */
-.tag-select { background: var(--s3); border: 1px solid var(--bd2); border-radius: var(--rs); color: var(--tx); font-size: .65rem; font-family: var(--sans); padding: 3px 6px; outline: none; cursor: pointer; }
-.tag-select option { background: var(--s2); }
-
-/* BARS */
-.bar-wrap { background: var(--s3); border-radius: 99px; height: 3px; margin-top: 5px; overflow: hidden; }
-.bar-fill { height: 3px; border-radius: 99px; transition: width .5s cubic-bezier(.4,0,.2,1); }
-
-/* CATEGORY TOTALS */
-.cat-row { display: flex; align-items: center; gap: .5rem; padding: .55rem 0; border-bottom: 1px solid var(--bd); }
-.cat-row:last-child { border-bottom: none; }
-.cat-icon { font-size: 1rem; width: 28px; text-align: center; flex-shrink: 0; }
-.cat-name { flex: 1; font-size: .78rem; font-weight: 600; }
-.cat-count { font-size: .58rem; color: var(--m2); font-family: var(--mono); }
-.cat-amt { font-family: var(--mono); font-weight: 700; font-size: .88rem; }
-
-/* INSIGHTS */
-.ins-row { display: flex; justify-content: space-between; align-items: center; padding: .5rem 0; border-bottom: 1px solid var(--bd); }
-.ins-row:last-child { border-bottom: none; }
-.ins-lbl { font-size: .72rem; color: var(--m1); font-weight: 500; }
-.ins-val { font-family: var(--mono); font-weight: 700; font-size: .8rem; }
-
-/* NOTE */
-.note { display: flex; align-items: center; gap: 8px; padding: .45rem .8rem; border-radius: var(--rs); font-size: .68rem; font-weight: 600; margin-bottom: .5rem; border-left: 3px solid; }
-.note-green { background: rgba(63,185,80,.08); border-color: #3FB950; color: #3FB950; }
-.note-blue  { background: rgba(88,166,255,.08); border-color: #58A6FF; color: #58A6FF; }
-.note-amb   { background: rgba(210,153,34,.08); border-color: #D29922; color: #D29922; }
-
-/* INPUT */
-input[type=number] { background: var(--s2); border: 1.5px solid var(--bd); color: var(--tx); border-radius: var(--rs); font-family: var(--mono); font-size: .85rem; font-weight: 500; padding: .5rem .75rem; outline: none; width: 100%; -moz-appearance: textfield; transition: border-color .15s; }
-input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
-input:focus { border-color: var(--acc); }
-
-/* BTN */
-.btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: .65rem 1rem; border-radius: var(--rs); border: none; cursor: pointer; font-family: var(--sans); font-weight: 700; font-size: .8rem; transition: all .12s; width: 100%; margin-bottom: .5rem; }
-.btn-pri { background: linear-gradient(135deg, #238636, #3FB950); color: #fff; }
-.btn-sec { background: var(--s2); border: 1px solid var(--bd); color: var(--m1); }
-
-/* WEEK BADGE */
-.week-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 99px; font-size: .52rem; font-weight: 700; background: rgba(88,166,255,.12); border: 1px solid rgba(88,166,255,.25); color: #58A6FF; }
-
-/* HEADER */
-.page-header { padding: .75rem 0 .6rem; display: flex; align-items: baseline; justify-content: space-between; }
-.page-title { font-size: 1.05rem; font-weight: 800; }
-.page-sub { font-size: .58rem; color: var(--m2); font-family: var(--mono); }
-
-/* SECTION HEAD */
-.sh { font-size: .52rem; letter-spacing: .14em; text-transform: uppercase; color: var(--acc); font-weight: 800; margin: 1.2rem 0 .55rem; display: flex; align-items: center; gap: .5rem; }
+/* SECTION HEADER */
+.sh { font-size: .5rem; letter-spacing: .16em; text-transform: uppercase; color: var(--acc); font-weight: 800; margin: 1.1rem 0 .5rem; display: flex; align-items: center; gap: .5rem; }
 .sh::after { content: ''; flex: 1; height: 1px; background: var(--bd); }
 
+/* GRIDS */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; margin-bottom: .45rem; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .45rem; margin-bottom: .45rem; }
+
+/* STAT CARD */
+.sc { background: var(--s0); border: 1px solid var(--bd); border-radius: var(--r); padding: .7rem .85rem; box-shadow: var(--sh); }
+.sc-lbl { font-size: .49rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--m2); margin-bottom: .28rem; }
+.sc-val { font-family: var(--mono); font-size: 1.15rem; font-weight: 700; line-height: 1; }
+.sc-sub { font-size: .58rem; color: var(--m2); margin-top: .22rem; font-family: var(--mono); }
+
+/* HEAT COLORS — green→amber→red by amount */
+.h0 { color: #059669; }
+.h1 { color: #10B981; }
+.h2 { color: #65A30D; }
+.h3 { color: #84CC16; }
+.h4 { color: #CA8A04; }
+.h5 { color: #D97706; }
+.h6 { color: #EA580C; }
+.h7 { color: #DC2626; }
+.h8 { color: #B91C1C; }
+.h9 { color: #991B1B; }
+
+/* HERO */
+.hero { border-radius: var(--r); padding: 1rem 1.1rem; margin-bottom: .5rem; border: 1px solid; position: relative; overflow: hidden; }
+.hero-lbl { font-size: .5rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; margin-bottom: .2rem; }
+.hero-amt { font-family: var(--mono); font-size: 2rem; font-weight: 800; line-height: 1; letter-spacing: -.03em; margin-bottom: .3rem; }
+.hero-sub { font-size: .62rem; font-family: var(--mono); opacity: .75; }
+.hero-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: .6rem; padding-top: .55rem; }
+.hero-mini-lbl { font-size: .58rem; color: inherit; opacity: .7; }
+.hero-mini-val { font-family: var(--mono); font-weight: 700; font-size: .78rem; }
+.hero-ok { background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border-color: var(--grn-bd); color: var(--grn); }
+.hero-warn { background: linear-gradient(135deg, #FFFBEB, #FEF3C7); border-color: var(--amb-bd); color: var(--amb); }
+.hero-bad { background: linear-gradient(135deg, #FEF2F2, #FEE2E2); border-color: var(--red-bd); color: var(--red); }
+
+/* NOTES */
+.note { display: flex; align-items: center; gap: 7px; padding: .42rem .75rem; border-radius: var(--rs); font-size: .68rem; font-weight: 600; margin-bottom: .45rem; border-left: 3px solid; }
+.note-grn { background: var(--grn-lt); border-color: var(--grn); color: var(--grn); }
+.note-blu { background: var(--acc-lt); border-color: var(--acc); color: var(--acc); }
+.note-amb { background: var(--amb-lt); border-color: var(--amb); color: var(--amb); }
+.note-red { background: var(--red-lt); border-color: var(--red); color: var(--red); }
+.note-pur { background: var(--pur-lt); border-color: var(--pur); color: var(--pur); }
+
+/* PILL */
+.pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 9px; border-radius: 99px; font-size: .52rem; font-weight: 700; letter-spacing: .05em; border: 1px solid; white-space: nowrap; }
+.pill-grn { background: var(--grn-lt); border-color: var(--grn-bd); color: var(--grn); }
+.pill-blu { background: var(--acc-lt); border-color: var(--acc-bd); color: var(--acc); }
+.pill-amb { background: var(--amb-lt); border-color: var(--amb-bd); color: var(--amb); }
+.pill-red { background: var(--red-lt); border-color: var(--red-bd); color: var(--red); }
+.pill-pur { background: var(--pur-lt); border-color: var(--pur-bd); color: var(--pur); }
+.pill-pnk { background: var(--pnk-lt); border-color: var(--pnk-bd); color: var(--pnk); }
+.pill-gray { background: var(--s1); border-color: var(--bd2); color: var(--m1); }
+
+/* TAG PILLS */
+.tag-rent      { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-family    { background: var(--pur-lt); border: 1px solid var(--pur-bd); color: var(--pur); border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-savings   { background: var(--grn-lt); border: 1px solid var(--grn-bd); color: var(--grn); border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-vegetable { background: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-uber      { background: var(--red-lt); border: 1px solid var(--red-bd); color: var(--red); border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-credit    { background: var(--amb-lt); border: 1px solid var(--amb-bd); color: var(--amb); border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-sbi       { background: #EFF6FF; border: 1px solid #93C5FD; color: #2563EB; border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-cash      { background: var(--grn-lt); border: 1px solid #6EE7B7; color: #047857; border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-food      { background: #FFF7ED; border: 1px solid #FED7AA; color: #C2410C; border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-shopping  { background: var(--pnk-lt); border: 1px solid var(--pnk-bd); color: var(--pnk); border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-bills     { background: var(--s1); border: 1px solid var(--bd2); color: var(--m1); border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+.tag-untagged  { background: var(--s1); border: 1px solid var(--bd2); color: var(--m2); border-radius: 99px; padding: 2px 8px; font-size: .5rem; font-weight: 700; display: inline-flex; align-items: center; }
+
+/* INPUT / SELECT */
+input[type=number], input[type=text], input[type=date], select, textarea {
+  width: 100%; background: var(--s1); border: 1.5px solid var(--bd); color: var(--tx);
+  border-radius: var(--rs); font-family: var(--sans); font-size: .82rem; font-weight: 500;
+  padding: .52rem .8rem; outline: none; transition: border-color .15s, box-shadow .15s;
+  -moz-appearance: textfield;
+}
+input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--acc); box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: var(--s0); }
+input::placeholder, textarea::placeholder { color: var(--m2); }
+label { font-size: .58rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--m1); display: block; margin-bottom: 4px; }
+
+/* BUTTONS */
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: .6rem 1rem; border-radius: var(--rs); border: none; cursor: pointer; font-family: var(--sans); font-weight: 700; font-size: .8rem; transition: all .12s; width: 100%; }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn-pri { background: linear-gradient(135deg, #1D4ED8, #2563EB); color: #fff; box-shadow: 0 3px 10px rgba(37,99,235,.3); }
+.btn-grn { background: linear-gradient(135deg, #047857, #059669); color: #fff; box-shadow: 0 3px 10px rgba(5,150,105,.25); }
+.btn-sec { background: var(--s0); border: 1.5px solid var(--bd); color: var(--m1); }
+.btn-red { background: var(--red-lt); border: 1px solid var(--red-bd); color: var(--red); }
+.btn-sm { padding: .35rem .7rem; font-size: .68rem; width: auto; }
+.btn-del { background: none; border: none; color: var(--m2); cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: .8rem; transition: color .1s; }
+.btn-del:hover { color: var(--red); }
+
+/* BAR */
+.bar-wrap { background: var(--s1); border-radius: 99px; height: 4px; margin-top: 5px; overflow: hidden; }
+.bar-fill { height: 4px; border-radius: 99px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+
+/* TOGGLE */
+.tgl { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+.tgl input { opacity: 0; width: 0; height: 0; position: absolute; }
+.tsl { position: absolute; inset: 0; background: var(--bd2); border-radius: 99px; cursor: pointer; transition: .2s; }
+.tsl::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.tgl input:checked + .tsl { background: var(--grn); }
+.tgl input:checked + .tsl::before { transform: translateX(16px); }
+
+/* TRANSACTIONS */
+.txn-list { background: var(--s0); border: 1px solid var(--bd); border-radius: var(--r); overflow: hidden; margin-bottom: .5rem; box-shadow: var(--sh); }
+.txn-row { display: flex; align-items: flex-start; gap: .5rem; padding: .6rem .85rem; border-bottom: 1px solid var(--bd); transition: background .1s; }
+.txn-row:last-child { border-bottom: none; }
+.txn-row:hover { background: var(--s1); }
+.txn-left { flex: 1; min-width: 0; }
+.txn-date { font-size: .53rem; color: var(--m2); font-family: var(--mono); margin-bottom: 2px; }
+.txn-recv { font-size: .73rem; font-weight: 600; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+.txn-right { text-align: right; flex-shrink: 0; }
+.txn-amt { font-family: var(--mono); font-weight: 700; font-size: .82rem; }
+
+/* TAG SELECT */
+.tag-sel { background: var(--s1); border: 1.5px solid var(--bd); color: var(--tx); border-radius: 99px; font-family: var(--sans); font-size: .55rem; font-weight: 700; padding: 2px 8px; outline: none; cursor: pointer; width: auto; }
+.tag-sel:focus { border-color: var(--acc); }
+
+/* UPLOAD */
+.upload-zone { border: 2px dashed var(--bd2); border-radius: var(--r); padding: 2rem 1rem; text-align: center; cursor: pointer; transition: all .2s; background: var(--s0); }
+.upload-zone.drag, .upload-zone:hover { border-color: var(--acc); background: var(--acc-lt); }
+.upload-zone input { display: none; }
+
+/* WF (waterfall) */
+.wf-row { display: flex; justify-content: space-between; align-items: center; padding: .42rem 0; border-bottom: 1px solid var(--bd); }
+.wf-row:last-child { border-bottom: none; }
+.wf-lbl { font-size: .7rem; color: var(--m1); }
+.wf-val { font-family: var(--mono); font-weight: 600; font-size: .73rem; }
+
+/* CATEGORY ROW */
+.cat-row { display: flex; align-items: center; gap: .5rem; padding: .5rem 0; border-bottom: 1px solid var(--bd); }
+.cat-row:last-child { border-bottom: none; }
+.cat-icon { font-size: .95rem; width: 26px; text-align: center; flex-shrink: 0; }
+.cat-name { font-size: .75rem; font-weight: 600; }
+.cat-count { font-size: .55rem; color: var(--m2); font-family: var(--mono); }
+.cat-amt { font-family: var(--mono); font-weight: 700; font-size: .82rem; }
+
 /* EMPTY */
-.empty { display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem; text-align: center; gap: .5rem; background: var(--s1); border: 1px dashed var(--bd2); border-radius: var(--r); }
+.empty { display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem; text-align: center; gap: .45rem; background: var(--s0); border: 1.5px dashed var(--bd2); border-radius: var(--r); }
 .empty-icon { font-size: 2rem; }
 .empty-title { font-size: .85rem; font-weight: 700; color: var(--m1); }
 .empty-body { font-size: .68rem; color: var(--m2); max-width: 200px; line-height: 1.5; }
 
-/* HERO BALANCE */
-.hero-bal { border-radius: var(--r); padding: 1rem; margin-bottom: .5rem; background: linear-gradient(135deg, rgba(63,185,80,.12), rgba(35,134,54,.08)); border: 1px solid rgba(63,185,80,.25); }
-.hero-lbl { font-size: .52rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #3FB950; margin-bottom: .25rem; }
-.hero-amt { font-family: var(--mono); font-size: 2rem; font-weight: 700; color: #3FB950; line-height: 1; }
-.hero-sub { font-size: .62rem; color: rgba(63,185,80,.7); margin-top: .3rem; font-family: var(--mono); }
-
 /* TAB BAR */
-.tab-bar { display: flex; background: var(--s2); border-radius: 10px; padding: 3px; margin-bottom: .75rem; gap: 2px; border: 1px solid var(--bd); }
-.tab { flex: 1; padding: .35rem .4rem; border: none; border-radius: 7px; cursor: pointer; font-family: var(--sans); font-size: .55rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--m2); background: transparent; transition: all .15s; }
-.tab.on { color: var(--acc); background: var(--s3); }
+.tab-bar { display: flex; background: var(--s1); border-radius: 10px; padding: 3px; margin-bottom: .75rem; gap: 2px; border: 1px solid var(--bd); }
+.tab { flex: 1; padding: .33rem .3rem; border: none; border-radius: 7px; cursor: pointer; font-family: var(--sans); font-size: .52rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--m2); background: transparent; transition: all .15s; white-space: nowrap; }
+.tab.on { color: var(--acc); background: var(--s0); box-shadow: var(--sh); }
 
-.toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 10px); left: 50%; transform: translateX(-50%); background: linear-gradient(135deg,#238636,#3FB950); color: #fff; padding: .45rem 1.2rem; border-radius: 99px; font-size: .7rem; font-weight: 700; z-index: 200; animation: fu .18s ease; white-space: nowrap; }
+/* INS ROW */
+.ins-row { display: flex; justify-content: space-between; align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--bd); }
+.ins-row:last-child { border-bottom: none; }
+.ins-lbl { font-size: .7rem; color: var(--m1); }
+.ins-val { font-family: var(--mono); font-weight: 700; font-size: .75rem; }
+
+/* TOAST */
+.toast { position: fixed; bottom: calc(var(--nav-h) + var(--safe-b) + 10px); left: 50%; transform: translateX(-50%); background: var(--tx); color: #fff; padding: .42rem 1.2rem; border-radius: 99px; font-size: .68rem; font-weight: 700; z-index: 200; animation: fu .18s ease; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
 @keyframes fu { from { opacity:0; transform:translateX(-50%) translateY(8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
 
-.chip { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 99px; font-size: .5rem; font-weight: 700; font-family: var(--mono); }
-.chip-w { background: rgba(88,166,255,.15); color: #58A6FF; }
-.chip-we { background: rgba(210,153,34,.15); color: #D29922; }
+/* BUDGET PROGRESS */
+.budget-bar { background: var(--s0); border: 1px solid var(--bd); border-radius: var(--r); padding: .75rem .9rem; margin-bottom: .45rem; box-shadow: var(--sh); }
+.budget-bar-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .35rem; }
+.budget-bar-title { font-size: .75rem; font-weight: 700; }
+.budget-bar-pct { font-family: var(--mono); font-size: .65rem; font-weight: 700; }
 
-/* BALANCE PREDICTION WATERFALL */
-.wf-row { display: flex; justify-content: space-between; align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--bd); }
-.wf-row:last-child { border-bottom: none; }
-.wf-lbl { font-size: .7rem; color: var(--m1); }
-.wf-val { font-family: var(--mono); font-size: .75rem; font-weight: 600; }
+/* MONEY LIST (debts/savings/lent) */
+.money-item { display: flex; align-items: center; gap: .5rem; padding: .5rem 0; border-bottom: 1px solid var(--bd); }
+.money-item:last-child { border-bottom: none; }
+.money-label { flex: 1; font-size: .75rem; font-weight: 600; }
+.money-amt { font-family: var(--mono); font-weight: 700; font-size: .8rem; }
 
-.big-num { font-family: var(--mono); font-weight: 700; }
+hr { border: none; border-top: 1px solid var(--bd); margin: .65rem 0; }
+.row { display: flex; align-items: center; gap: .5rem; }
+.f1 { flex: 1; }
+.mb { margin-bottom: .5rem; }
+.gap4 { display: flex; flex-direction: column; gap: .4rem; }
 
 @media (max-width: 380px) {
   .g3 { grid-template-columns: 1fr 1fr; }
+  .ph-title { font-size: 1rem; }
 }
 </style>
 </head>
@@ -198,408 +258,445 @@ input:focus { border-color: var(--acc); }
 <script>
 const { createElement: h, useState, useEffect, useCallback, useRef, useMemo } = React;
 
-// ── CONSTANTS ────────────────────────────────────────────────────
-const ALL_TAGS = ['rent','family','savings','vegetable','uber','credit','sbi','cash','untagged'];
-const TAG_LABELS = { rent:'🏠 Rent', family:'👨‍👩‍👧 Family', savings:'💰 Savings', vegetable:'🥦 Vegetable', uber:'🚗 Uber', credit:'💳 Credit', sbi:'💳 SBI', cash:'💵 Cash', untagged:'❓ Untagged' };
-const TAG_COLORS = { rent:'#58A6FF', family:'#BC8CFF', savings:'#3FB950', vegetable:'#56C45A', uber:'#F85149', credit:'#D29922', sbi:'#79b8ff', cash:'#7ee787', untagged:'#8B949E' };
-
-const SALARY = 102844;
-
-// ── HELPERS ──────────────────────────────────────────────────────
-function fmt(n) { return '₹' + Math.abs(Math.round(n)).toLocaleString('en-IN'); }
-function fmtK(n) { return n >= 1000 ? '₹' + (n/1000).toFixed(1) + 'k' : '₹' + Math.round(n); }
-
+// ── CONSTANTS ───────────────────────────────────────────────────────────────
+const ALL_TAGS = ['rent','family','savings','vegetable','uber','credit','sbi','cash','food','shopping','bills','untagged'];
+const TAG_META = {
+  rent:      { icon:'🏠', label:'Rent' },
+  family:    { icon:'👨‍👩‍👧', label:'Family' },
+  savings:   { icon:'💰', label:'Savings' },
+  vegetable: { icon:'🥦', label:'Vegetable' },
+  uber:      { icon:'🚗', label:'Uber' },
+  credit:    { icon:'💳', label:'Credit' },
+  sbi:       { icon:'💳', label:'SBI CC' },
+  cash:      { icon:'💵', label:'Cash' },
+  food:      { icon:'🍽️', label:'Food' },
+  shopping:  { icon:'🛍️', label:'Shopping' },
+  bills:     { icon:'📋', label:'Bills' },
+  untagged:  { icon:'❓', label:'Untagged' },
+};
+const HEAT_THRESHOLDS = [100,250,500,800,1200,2000,3000,5000,10000];
 function heatClass(amt) {
-  if (amt < 100) return 'heat-0';
-  if (amt < 200) return 'heat-1';
-  if (amt < 400) return 'heat-2';
-  if (amt < 600) return 'heat-3';
-  if (amt < 800) return 'heat-4';
-  if (amt < 1200) return 'heat-5';
-  if (amt < 2000) return 'heat-6';
-  if (amt < 3000) return 'heat-7';
-  if (amt < 5000) return 'heat-8';
-  return 'heat-9';
+  const i = HEAT_THRESHOLDS.findIndex(t => amt < t);
+  return 'h' + (i === -1 ? 9 : i);
+}
+function heatHex(amt) {
+  const colors = ['#059669','#10B981','#65A30D','#84CC16','#CA8A04','#D97706','#EA580C','#DC2626','#B91C1C','#991B1B'];
+  const i = HEAT_THRESHOLDS.findIndex(t => amt < t);
+  return colors[i === -1 ? 9 : i];
 }
 
-function heatColor(amt) {
-  const classes = ['#3FB950','#56C45A','#8DC63F','#B5C828','#D4C520','#D29922','#D07B22','#CC5F22','#D04B30','#F85149'];
-  if (amt < 100) return classes[0];
-  if (amt < 200) return classes[1];
-  if (amt < 400) return classes[2];
-  if (amt < 600) return classes[3];
-  if (amt < 800) return classes[4];
-  if (amt < 1200) return classes[5];
-  if (amt < 2000) return classes[6];
-  if (amt < 3000) return classes[7];
-  if (amt < 5000) return classes[8];
-  return classes[9];
+const LS_SETTINGS = 'sa_settings_v2';
+const LS_TAG_MAP  = 'sa_tagmap_v2';
+const LS_MANUAL   = 'sa_manual_v2';
+
+function loadLS(key, def) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; }
+}
+function saveLS(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
 }
 
-function parseDate(str) {
-  // DD/MM/YYYY
-  const [d, m, y] = str.split('/');
-  return new Date(+y, +m - 1, +d);
+// ── HELPERS ─────────────────────────────────────────────────────────────────
+function fmt(n)   { return '₹' + Math.abs(Math.round(n)).toLocaleString('en-IN'); }
+function fmtK(n)  { return n >= 1000 ? '₹' + (n/1000).toFixed(1) + 'k' : '₹' + Math.round(n); }
+function pct(a,b) { return b ? Math.min(100, Math.round(a/b*100)) : 0; }
+
+function parseDate(str) { // DD/MM/YYYY
+  const [d,m,y] = str.split('/'); return new Date(+y, +m-1, +d);
+}
+function toDateStr(date) {
+  return date.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+}
+function isWeekend(date) { const d = date.getDay(); return d===0||d===6; }
+function getWeekOfMonth(date) {
+  const first = new Date(date.getFullYear(), date.getMonth(), 1);
+  return Math.ceil((date.getDate() + first.getDay()) / 7);
 }
 
-function getWeekNumber(date) {
-  const d = new Date(date);
-  const firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
-  return Math.ceil((d.getDate() + firstDay.getDay()) / 7);
-}
-
-function isWeekend(date) {
-  const day = date.getDay(); // 0=Sun, 6=Sat
-  return day === 0 || day === 6;
-}
-
-// Auto-tagger
 function autoTag(txn) {
-  const recv = (txn.receiver || '').toUpperCase();
-  const date = parseDate(txn.date);
-  const [hStr, mStr] = txn.time.split(':');
-  const hour = parseInt(hStr);
-  const min = parseInt(mStr);
-  const totalMin = hour * 60 + min;
-  const day = date.getDay(); // 0=Sun
-
-  // ANKA → rent
+  const recv = (txn.receiver||'').toUpperCase();
+  const [hh,mm] = txn.time.split(':').map(Number);
+  const mins = hh*60 + mm;
+  const dow = parseDate(txn.date).getDay();
   if (recv.includes('ANKA')) return 'rent';
-  // UMAR → family
   if (recv.includes('UMAR')) return 'family';
-  // UBEY → savings
   if (recv.includes('UBEY')) return 'savings';
-  // Sunday 5:30–7pm → vegetable
-  if (day === 0 && totalMin >= 17*60+30 && totalMin <= 19*60) return 'vegetable';
-  // Weekdays 8:50–9:40am or 6:10–7:30pm → uber
-  const isWeekday = day >= 1 && day <= 5;
-  if (isWeekday && ((totalMin >= 8*60+50 && totalMin <= 9*60+40) || (totalMin >= 18*60+10 && totalMin <= 19*60+30))) return 'uber';
-
+  if (recv.includes('MOJO')) return 'food';
+  if (recv.includes('SWIGGY')||recv.includes('ZOMATO')) return 'food';
+  if (recv.includes('AMZN')||recv.includes('AMAZON')) return 'shopping';
+  if (recv.includes('CTET')) return 'bills';
+  // Sunday 17:30–19:00 → vegetable
+  if (dow===0 && mins>=17*60+30 && mins<=19*60) return 'vegetable';
+  // Weekday 08:50–09:40 or 18:10–19:30 → uber
+  if (dow>=1 && dow<=5 && ((mins>=8*60+50 && mins<=9*60+40)||(mins>=18*60+10 && mins<=19*60+30))) return 'uber';
   return 'untagged';
 }
 
-// ── PARSER ───────────────────────────────────────────────────────
 function parseHTML(html) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   const rows = doc.querySelectorAll('table tr');
   const txns = [];
-  let first = true;
+  let isFirst = true;
   rows.forEach(row => {
-    if (first) { first = false; return; }
-    const cells = row.querySelectorAll('td,th');
+    if (isFirst) { isFirst = false; return; }
+    const cells = Array.from(row.querySelectorAll('td,th')).map(c => c.innerText.trim());
     if (cells.length < 11) return;
-    const cols = Array.from(cells).map(c => c.innerText.trim());
-    const [date, time, bank, acct, sender, receiver, ref, payCollect, amount, drCr, status] = cols;
-    if (!date || drCr !== 'DR' || status !== 'SUCCESS') return;
-    txns.push({ date, time, bank, acct, sender, receiver, ref, payCollect, amount: parseFloat(amount)||0, drCr, status });
+    const [date,time,bank,,sender,receiver,ref,,amount,drCr,status] = cells;
+    if (!date || drCr!=='DR' || status!=='SUCCESS') return;
+    txns.push({ date, time, bank, sender, receiver, ref, amount: parseFloat(amount)||0 });
   });
-
-  // Dedup by ref
-  const seen = new Set();
-  const deduped = [];
-  for (const t of txns) {
-    if (!seen.has(t.ref)) { seen.add(t.ref); deduped.push(t); }
-  }
-
-  // Add id, auto-tag
-  return deduped.map((t, i) => ({ ...t, id: i, tag: autoTag(t) }));
+  const seen = new Set(), deduped = [];
+  for (const t of txns) { if (!seen.has(t.ref)) { seen.add(t.ref); deduped.push(t); } }
+  return deduped;
 }
 
-// ── COMPONENTS ───────────────────────────────────────────────────
+// ── COMPONENTS ──────────────────────────────────────────────────────────────
 function Toast({ msg }) {
   if (!msg) return null;
   return h('div', { className: 'toast' }, msg);
 }
-
-function TagPill({ tag, onClick }) {
-  return h('span', { className: `tag-pill tag-${tag}`, onClick }, TAG_LABELS[tag] || tag);
+function Bar({ spend, budget }) {
+  const p = budget ? Math.min(100, spend/budget*100) : 0;
+  return h('div', { className: 'bar-wrap' },
+    h('div', { className: 'bar-fill', style: { width: p+'%', background: heatHex(spend) } })
+  );
+}
+function Tog({ v, onChange }) {
+  return h('label', { className: 'tgl' },
+    h('input', { type: 'checkbox', checked: !!v, onChange: e => onChange(e.target.checked) }),
+    h('span', { className: 'tsl' })
+  );
 }
 
-function TagSelect({ value, onChange }) {
-  return h('select', {
-    className: 'tag-select',
-    value,
-    onChange: e => onChange(e.target.value)
-  }, ALL_TAGS.map(t => h('option', { key: t, value: t }, TAG_LABELS[t])));
-}
-
-// ── UPLOAD PAGE ───────────────────────────────────────────────────
-function UploadPage({ onLoad }) {
+// ── UPLOAD PAGE ─────────────────────────────────────────────────────────────
+function UploadPage({ onLoad, hasData }) {
   const [drag, setDrag] = useState(false);
   const inputRef = useRef();
-
   function handleFile(file) {
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = e => {
-      const txns = parseHTML(e.target.result);
-      onLoad(txns);
-    };
+    reader.onload = e => onLoad(e.target.result);
     reader.readAsText(file);
   }
-
   return h('div', { className: 'page' },
-    h('div', { className: 'page-header' },
-      h('div', { className: 'page-title' }, 'Spend Analyzer'),
-      h('div', { className: 'page-sub' }, 'Upload your transaction history')
+    h('div', { className: 'ph' },
+      h('div', { className: 'ph-title' }, '💸 Spend Analyzer'),
+      h('div', { className: 'ph-sub' }, 'YES Bank UPI history')
     ),
+    hasData && h('div', { className: 'note note-grn', style:{marginBottom:'.6rem'} }, '✓ Previous data loaded — uploading merges new transactions'),
     h('div', {
-      className: `upload-zone${drag ? ' drag' : ''}`,
+      className: `upload-zone${drag?' drag':''}`,
       onClick: () => inputRef.current.click(),
       onDragOver: e => { e.preventDefault(); setDrag(true); },
       onDragLeave: () => setDrag(false),
       onDrop: e => { e.preventDefault(); setDrag(false); handleFile(e.dataTransfer.files[0]); }
     },
       h('input', { ref: inputRef, type: 'file', accept: '.html,.htm', onChange: e => handleFile(e.target.files[0]) }),
-      h('div', { className: 'upload-icon' }, '📂'),
-      h('div', { className: 'upload-title' }, 'Drop your transaction HTML'),
-      h('div', { className: 'upload-sub' }, 'Same format as TransactionHistory from YES Bank UPI'),
-      h('span', { className: 'upload-btn' }, 'Choose File')
+      h('div', { style:{fontSize:'2.5rem',marginBottom:'.5rem'} }, '📂'),
+      h('div', { style:{fontSize:'.95rem',fontWeight:800,marginBottom:'.25rem'} }, 'Drop your transaction HTML'),
+      h('div', { style:{fontSize:'.68rem',color:'var(--m2)',marginBottom:'.75rem'} }, 'From YES Bank UPI history export'),
+      h('span', { style:{display:'inline-block',padding:'.42rem 1.1rem',background:'linear-gradient(135deg,#1D4ED8,#2563EB)',color:'#fff',borderRadius:'99px',fontSize:'.72rem',fontWeight:700,cursor:'pointer'} }, 'Choose File')
     ),
-    h('div', { className: 'sh', style: { marginTop: '1.5rem' } }, 'What happens'),
+    h('div', { className: 'sh', style:{marginTop:'1.2rem'} }, 'Auto-tagging rules'),
     h('div', { className: 'card' },
-      ['Duplicates are removed automatically', 'ANKA → Rent, UMAR → Family, UBEY → Savings', 'Sunday 5:30–7pm → Vegetable', 'Weekday morning/evening → Uber', 'You manually tag anything left as Untagged'].map((t, i) =>
-        h('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.35rem 0', borderBottom: i < 4 ? '1px solid var(--bd)' : 'none' } },
-          h('span', { style: { color: '#3FB950', fontSize: '.75rem' } }, '✓'),
-          h('span', { style: { fontSize: '.72rem', color: 'var(--m1)' } }, t)
+      [
+        ['🏠','ANKA receiver','→ Rent'],
+        ['👨‍👩‍👧','UMAR receiver','→ Family'],
+        ['💰','UBEY receiver','→ Savings'],
+        ['🥦','Sunday 5:30–7 PM','→ Vegetable'],
+        ['🚗','Weekday 8:50–9:40 AM / 6:10–7:30 PM','→ Uber'],
+        ['🍽️','Swiggy / Zomato / Mojo','→ Food'],
+        ['🛍️','Amazon / AMZN','→ Shopping'],
+        ['❓','Everything else','→ Untagged'],
+      ].map(([icon,rule,tag],i,arr) =>
+        h('div', { key:i, style:{display:'flex',alignItems:'center',gap:'.5rem',padding:'.32rem 0',borderBottom:i<arr.length-1?'1px solid var(--bd)':'none'} },
+          h('span',{style:{fontSize:'.85rem',width:'22px',textAlign:'center'}},icon),
+          h('span',{style:{fontSize:'.68rem',color:'var(--m1)',flex:1}},rule),
+          h('span',{style:{fontSize:'.62rem',fontWeight:700,color:'var(--acc)',fontFamily:'var(--mono)'}},tag)
         )
       )
     )
   );
 }
 
-// ── OVERVIEW PAGE ─────────────────────────────────────────────────
-function OverviewPage({ txns, cashSpend, salary }) {
-  const total = txns.reduce((a, t) => a + t.amount, 0);
+// ── OVERVIEW PAGE ────────────────────────────────────────────────────────────
+function OverviewPage({ txns, settings, manual }) {
+  const today = new Date();
+  const salaryDate = settings.salaryDate ? new Date(settings.salaryDate) : null;
+  const salary = settings.salary || 0;
+
+  // Budgeted outflows
+  const debtPaid   = (manual.debts||[]).reduce((a,d)=>a+d.amount,0);
+  const savingsPaid = (manual.savings||[]).reduce((a,s)=>a+s.amount,0);
+  const lentPaid   = (manual.lent||[]).reduce((a,l)=>a+l.amount,0);
+  const cashSpend  = manual.cashSpend || 0;
+  const manualTotal = debtPaid + savingsPaid + lentPaid + cashSpend;
+
+  const txnTotal = txns.reduce((a,t)=>a+t.amount,0);
+  const grandTotal = txnTotal + manualTotal;
+  const balance = salary - grandTotal;
+
+  // Days/weeks remaining
+  const lastDay = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
+  const daysLeft = Math.max(1, lastDay - today.getDate());
+  const weeksLeft = Math.max(1, Math.ceil(daysLeft/7));
+  const safeDailyBudget = balance > 0 ? balance / daysLeft : 0;
+  const safeWeeklyBudget = balance > 0 ? balance / weeksLeft : 0;
+
+  // Category sums
   const byTag = {};
-  ALL_TAGS.forEach(tag => { byTag[tag] = { total: 0, count: 0 }; });
+  ALL_TAGS.forEach(t => { byTag[t] = { total:0, count:0 }; });
   txns.forEach(t => {
+    if (!byTag[t.tag]) byTag[t.tag] = { total:0, count:0 };
     byTag[t.tag].total += t.amount;
     byTag[t.tag].count++;
   });
 
-  const creditSpent = (byTag['credit']?.total || 0) + (byTag['sbi']?.total || 0);
-  const cashTotal = (byTag['cash']?.total || 0) + cashSpend;
-  const untagged = byTag['untagged']?.total || 0;
+  const topCats = ALL_TAGS.filter(t=>t!=='untagged'&&byTag[t]&&byTag[t].total>0).sort((a,b)=>byTag[b].total-byTag[a].total);
+  const untaggedAmt = byTag['untagged']?.total||0;
+  const untaggedCount = byTag['untagged']?.count||0;
 
-  // Week breakdown
+  // Week stats
   const weekMap = {};
   txns.forEach(t => {
-    const date = parseDate(t.date);
-    const wn = getWeekNumber(date);
-    const we = isWeekend(date);
-    const key = `W${wn}`;
-    if (!weekMap[key]) weekMap[key] = { weekday: 0, weekend: 0, total: 0 };
-    if (we) weekMap[key].weekend += t.amount;
-    else weekMap[key].weekday += t.amount;
-    weekMap[key].total += t.amount;
+    const d = parseDate(t.date);
+    const wk = 'W'+getWeekOfMonth(d);
+    const we = isWeekend(d);
+    if (!weekMap[wk]) weekMap[wk]={weekend:0,weekday:0,total:0};
+    if (we) weekMap[wk].weekend+=t.amount; else weekMap[wk].weekday+=t.amount;
+    weekMap[wk].total+=t.amount;
   });
-  const weeks = Object.entries(weekMap).sort((a, b) => a[0].localeCompare(b[0]));
+  const weeks = Object.entries(weekMap).sort((a,b)=>a[0].localeCompare(b[0]));
 
-  const days = new Set(txns.map(t => t.date)).size || 1;
-  const avgPerDay = total / days;
-  const avgPerWeek = weeks.length ? total / weeks.length : 0;
+  const activeDays = new Set(txns.map(t=>t.date)).size||1;
+  const avgPerDay = txnTotal/activeDays;
 
-  // Balance prediction
-  const predictedBalance = salary - total - cashSpend;
-
-  const topCats = ALL_TAGS.filter(t => t !== 'untagged' && byTag[t].total > 0).sort((a, b) => byTag[b].total - byTag[a].total);
+  // Hero color
+  const heroClass = balance>salary*0.3?'hero-ok':balance>0?'hero-warn':'hero-bad';
 
   return h('div', { className: 'page' },
-    h('div', { className: 'page-header' },
-      h('div', null,
-        h('div', { className: 'page-title' }, 'Overview'),
-        h('div', { className: 'page-sub' }, txns.length + ' transactions')
+    h('div', { className: 'ph' },
+      h('div', { className: 'ph-title' }, today.toLocaleDateString('en-IN',{month:'long',year:'numeric'})),
+      h('div', { className: 'ph-sub' }, txns.length + ' txns · ' + daysLeft + 'd left')
+    ),
+
+    !salary && h('div', { className: 'note note-amb' }, '⚙ Set your salary in Settings to unlock balance tracking'),
+
+    salary > 0 && h('div', { className: `hero ${heroClass}` },
+      h('div', { className: 'hero-lbl' }, 'Estimated Balance'),
+      h('div', { className: 'hero-amt' }, fmt(balance)),
+      h('div', { className: 'hero-sub' }, fmt(salary)+' salary − '+fmt(grandTotal)+' spent'),
+      h('div', { className: 'hero-row', style:{borderTop:'1px solid currentColor',opacity:.9} },
+        h('div', null,
+          h('div', { className: 'hero-mini-lbl' }, 'Safe / day'),
+          h('div', { className: 'hero-mini-val' }, fmt(safeDailyBudget))
+        ),
+        h('div', { style:{textAlign:'center'} },
+          h('div', { className: 'hero-mini-lbl' }, 'Safe / week'),
+          h('div', { className: 'hero-mini-val' }, fmt(safeWeeklyBudget))
+        ),
+        h('div', { style:{textAlign:'right'} },
+          h('div', { className: 'hero-mini-lbl' }, daysLeft+'d · '+weeksLeft+'w left'),
+          h('div', { className: 'hero-mini-val' }, today.toLocaleDateString('en-IN',{day:'numeric',month:'short'}))
+        )
       )
     ),
 
-    // Hero balance
-    h('div', { className: 'hero-bal' },
-      h('div', { className: 'hero-lbl' }, 'Predicted Balance'),
-      h('div', { className: 'hero-amt', style: { color: predictedBalance >= 0 ? '#3FB950' : '#F85149' } }, fmt(predictedBalance)),
-      h('div', { className: 'hero-sub' }, fmt(salary) + ' salary − ' + fmt(total + cashSpend) + ' spent')
-    ),
-
-    h('div', { className: 'g2' },
-      h('div', { className: 'stat-card' },
-        h('div', { className: 'stat-lbl' }, 'Total Spent'),
-        h('div', { className: `stat-val ${heatClass(total)}` }, fmtK(total)),
-        h('div', { className: 'stat-sub' }, txns.length + ' txns')
+    h('div', { className: 'g3' },
+      h('div', { className: 'sc' },
+        h('div', { className: 'sc-lbl' }, 'UPI Spent'),
+        h('div', { className: `sc-val ${heatClass(txnTotal)}` }, fmtK(txnTotal)),
+        h('div', { className: 'sc-sub' }, txns.length+' txns')
       ),
-      h('div', { className: 'stat-card' },
-        h('div', { className: 'stat-lbl' }, 'Avg / Day'),
-        h('div', { className: `stat-val ${heatClass(avgPerDay)}` }, fmtK(avgPerDay)),
-        h('div', { className: 'stat-sub' }, days + ' active days')
+      h('div', { className: 'sc' },
+        h('div', { className: 'sc-lbl' }, 'Avg/Day'),
+        h('div', { className: `sc-val ${heatClass(avgPerDay)}` }, fmtK(avgPerDay)),
+        h('div', { className: 'sc-sub' }, activeDays+' days')
       ),
-      h('div', { className: 'stat-card' },
-        h('div', { className: 'stat-lbl' }, 'Avg / Week'),
-        h('div', { className: `stat-val ${heatClass(avgPerWeek)}` }, fmtK(avgPerWeek)),
-        h('div', { className: 'stat-sub' }, weeks.length + ' weeks')
-      ),
-      h('div', { className: 'stat-card' },
-        h('div', { className: 'stat-lbl' }, 'Untagged'),
-        h('div', { className: `stat-val ${heatClass(untagged)}` }, fmtK(untagged)),
-        h('div', { className: 'stat-sub' }, (byTag['untagged']?.count || 0) + ' txns')
+      h('div', { className: 'sc' },
+        h('div', { className: 'sc-lbl' }, 'Untagged'),
+        h('div', { className: `sc-val ${heatClass(untaggedAmt)}` }, fmtK(untaggedAmt)),
+        h('div', { className: 'sc-sub' }, untaggedCount+' txns')
       )
     ),
 
-    // Credit & Cash row
-    h('div', { className: 'g2' },
-      h('div', { className: 'stat-card', style: { borderTop: '2px solid #D29922' } },
-        h('div', { className: 'stat-lbl' }, 'Credit Spent'),
-        h('div', { className: 'stat-val', style: { color: '#D29922' } }, fmtK(creditSpent)),
-        h('div', { className: 'stat-sub' }, 'SBI + YES CC')
+    manualTotal > 0 && h('div', { className: 'g2' },
+      debtPaid>0 && h('div', { className: 'sc', style:{borderTop:'2px solid var(--red)'} },
+        h('div', { className: 'sc-lbl' }, 'Debts Paid'),
+        h('div', { className: 'sc-val', style:{color:'var(--red)'} }, fmtK(debtPaid))
       ),
-      h('div', { className: 'stat-card', style: { borderTop: '2px solid #7ee787' } },
-        h('div', { className: 'stat-lbl' }, 'Cash Spent'),
-        h('div', { className: 'stat-val', style: { color: '#7ee787' } }, fmtK(cashTotal)),
-        h('div', { className: 'stat-sub' }, 'logged + tagged')
+      savingsPaid>0 && h('div', { className: 'sc', style:{borderTop:'2px solid var(--grn)'} },
+        h('div', { className: 'sc-lbl' }, 'Savings'),
+        h('div', { className: 'sc-val', style:{color:'var(--grn)'} }, fmtK(savingsPaid))
+      ),
+      lentPaid>0 && h('div', { className: 'sc', style:{borderTop:'2px solid var(--pur)'} },
+        h('div', { className: 'sc-lbl' }, 'Lent Out'),
+        h('div', { className: 'sc-val', style:{color:'var(--pur)'} }, fmtK(lentPaid))
+      ),
+      cashSpend>0 && h('div', { className: 'sc', style:{borderTop:'2px solid var(--amb)'} },
+        h('div', { className: 'sc-lbl' }, 'Cash'),
+        h('div', { className: 'sc-val', style:{color:'var(--amb)'} }, fmtK(cashSpend))
+      )
+    ),
+
+    // Budget meter
+    salary > 0 && h('div', null,
+      h('div', { className: 'sh' }, 'Budget used'),
+      h('div', { className: 'budget-bar' },
+        h('div', { className: 'budget-bar-header' },
+          h('span', { className: 'budget-bar-title' }, 'Month spend'),
+          h('span', { className: `budget-bar-pct ${heatClass(grandTotal)}` }, pct(grandTotal,salary)+'%')
+        ),
+        h('div', { style:{background:'var(--s1)',borderRadius:'99px',height:'8px',overflow:'hidden'} },
+          h('div', { style:{width:pct(grandTotal,salary)+'%',height:'8px',borderRadius:'99px',background:heatHex(grandTotal),transition:'width .6s'} })
+        ),
+        h('div', { style:{display:'flex',justifyContent:'space-between',marginTop:4,fontSize:'.58rem',fontFamily:'var(--mono)',color:'var(--m2)'} },
+          h('span', null, fmt(grandTotal)+' spent'),
+          h('span', null, fmt(salary)+' salary')
+        )
       )
     ),
 
     h('div', { className: 'sh' }, 'By Category'),
-    h('div', { className: 'card' },
-      topCats.length === 0
-        ? h('div', { style: { color: 'var(--m2)', fontSize: '.72rem', padding: '.5rem 0' } }, 'No tagged transactions yet')
-        : topCats.map(tag =>
+    topCats.length === 0
+      ? h('div', { className: 'note note-blu' }, '🏷 Tag your transactions to see category breakdown')
+      : h('div', { className: 'card' },
+        topCats.map(tag =>
           h('div', { key: tag, className: 'cat-row' },
-            h('span', { className: 'cat-icon' }, TAG_LABELS[tag].split(' ')[0]),
-            h('div', { style: { flex: 1, minWidth: 0 } },
-              h('div', { className: 'cat-name' }, tag.charAt(0).toUpperCase() + tag.slice(1)),
-              h('div', { className: 'bar-wrap' },
-                h('div', { className: 'bar-fill', style: { width: Math.min(100, byTag[tag].total / total * 100) + '%', background: heatColor(byTag[tag].total / byTag[tag].count) } })
-              )
+            h('span', { className: 'cat-icon' }, TAG_META[tag].icon),
+            h('div', { style:{flex:1,minWidth:0} },
+              h('div', { className: 'cat-name' }, TAG_META[tag].label),
+              h(Bar, { spend: byTag[tag].total, budget: txnTotal })
             ),
-            h('div', { style: { textAlign: 'right' } },
+            h('div', { style:{textAlign:'right'} },
               h('div', { className: `cat-amt ${heatClass(byTag[tag].total)}` }, fmt(byTag[tag].total)),
-              h('div', { className: 'cat-count' }, byTag[tag].count + ' txns')
+              h('div', { className: 'cat-count' }, byTag[tag].count+' txns')
             )
           )
         ),
-      untagged > 0 && h('div', { className: 'cat-row' },
-        h('span', { className: 'cat-icon' }, '❓'),
-        h('div', { style: { flex: 1 } },
-          h('div', { className: 'cat-name', style: { color: 'var(--m2)' } }, 'Untagged'),
-          h('div', { className: 'bar-wrap' },
-            h('div', { className: 'bar-fill', style: { width: Math.min(100, untagged / total * 100) + '%', background: '#555F6D' } })
+        untaggedAmt > 0 && h('div', { className: 'cat-row' },
+          h('span', { className: 'cat-icon' }, '❓'),
+          h('div', { style:{flex:1,minWidth:0} },
+            h('div', { className: 'cat-name', style:{color:'var(--m2)'} }, 'Untagged'),
+            h(Bar, { spend: untaggedAmt, budget: txnTotal })
+          ),
+          h('div', { style:{textAlign:'right'} },
+            h('div', { className: 'cat-amt', style:{color:'var(--m2)'} }, fmt(untaggedAmt)),
+            h('div', { className: 'cat-count' }, untaggedCount+' txns')
           )
-        ),
-        h('div', { style: { textAlign: 'right' } },
-          h('div', { className: 'cat-amt', style: { color: 'var(--m2)' } }, fmt(untagged)),
-          h('div', { className: 'cat-count' }, byTag['untagged'].count + ' txns')
         )
-      )
-    ),
+      ),
 
-    h('div', { className: 'sh' }, 'Weekly Breakdown'),
-    weeks.length === 0
-      ? h('div', { className: 'empty' }, h('div', { className: 'empty-icon' }, '📅'), h('div', { className: 'empty-title' }, 'No data'))
+    h('div', { className: 'sh' }, 'Weekly'),
+    weeks.length === 0 ? h('div', { className: 'empty' }, h('div',{className:'empty-icon'},'📅'), h('div',{className:'empty-title'},'No data'))
       : h('div', { className: 'card' },
         weeks.map(([wk, data]) =>
-          h('div', { key: wk },
-            h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '.45rem 0', borderBottom: '1px solid var(--bd)' } },
-              h('div', null,
-                h('span', { className: 'week-badge' }, wk),
-                h('span', { style: { fontSize: '.6rem', color: 'var(--m2)', marginLeft: 6 } },
-                  h('span', { className: 'chip chip-w', style: { marginRight: 3 } }, '⛺ ' + fmtK(data.weekend)),
-                  h('span', { className: 'chip chip-we' }, '💼 ' + fmtK(data.weekday))
-                )
-              ),
-              h('span', { className: `big-num ${heatClass(data.total)}`, style: { fontSize: '.82rem' } }, fmt(data.total))
-            )
+          h('div', { key: wk, style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'.42rem 0',borderBottom:'1px solid var(--bd)'} },
+            h('div', null,
+              h('span', { className: 'pill pill-blu', style:{marginRight:6} }, wk),
+              h('span', { style:{fontSize:'.58rem',color:'var(--m2)'} }, '⛺ '+fmtK(data.weekend)+'  💼 '+fmtK(data.weekday))
+            ),
+            h('span', { className: `cat-amt ${heatClass(data.total)}` }, fmt(data.total))
           )
         )
       ),
 
-    // Balance waterfall
-    h('div', { className: 'sh' }, 'Balance Prediction'),
-    h('div', { className: 'card' },
-      h('div', { className: 'wf-row' },
-        h('span', { className: 'wf-lbl' }, '💰 Salary'),
-        h('span', { className: 'wf-val', style: { color: '#3FB950' } }, fmt(salary))
-      ),
-      h('div', { className: 'wf-row' },
-        h('span', { className: 'wf-lbl' }, '− UPI / Debit spends'),
-        h('span', { className: 'wf-val', style: { color: '#F85149' } }, fmt(total))
-      ),
-      cashSpend > 0 && h('div', { className: 'wf-row' },
-        h('span', { className: 'wf-lbl' }, '− Cash spends'),
-        h('span', { className: 'wf-val', style: { color: '#F85149' } }, fmt(cashSpend))
-      ),
-      h('div', { className: 'wf-row', style: { paddingTop: '.6rem', borderTop: '2px solid var(--bd)' } },
-        h('span', { className: 'wf-lbl', style: { fontWeight: 700, color: 'var(--tx)' } }, '= Estimated Balance'),
-        h('span', { style: { fontFamily: 'var(--mono)', fontWeight: 800, fontSize: '.95rem', color: predictedBalance >= 0 ? '#3FB950' : '#F85149' } }, fmt(predictedBalance))
+    salary > 0 && h('div', null,
+      h('div', { className: 'sh' }, 'Spend projection'),
+      h('div', { className: 'card' },
+        h('div', { className: 'wf-row' },
+          h('span',{className:'wf-lbl'},'💰 Salary'),
+          h('span',{className:'wf-val',style:{color:'var(--grn)'}},fmt(salary))
+        ),
+        h('div', { className: 'wf-row' },
+          h('span',{className:'wf-lbl'},'− UPI spends'),
+          h('span',{className:'wf-val',style:{color:'var(--red)'}},fmt(txnTotal))
+        ),
+        manualTotal>0 && h('div', { className: 'wf-row' },
+          h('span',{className:'wf-lbl'},'− Debts / savings / cash / lent'),
+          h('span',{className:'wf-val',style:{color:'var(--red)'}},fmt(manualTotal))
+        ),
+        h('div', { className: 'wf-row', style:{paddingTop:'.5rem',borderTop:'2px solid var(--bd)'} },
+          h('span',{className:'wf-lbl',style:{fontWeight:700,color:'var(--tx)'}},'= Estimated balance'),
+          h('span',{style:{fontFamily:'var(--mono)',fontWeight:800,fontSize:'.9rem',color:balance>=0?'var(--grn)':'var(--red)'}},fmt(balance))
+        ),
+        h('div', { className: 'wf-row' },
+          h('span',{className:'wf-lbl'},'÷ '+daysLeft+' days left'),
+          h('span',{className:'wf-val',style:{color:safeDailyBudget>500?'var(--grn)':'var(--amb)'}},fmt(safeDailyBudget)+'/day')
+        ),
+        h('div', { className: 'wf-row' },
+          h('span',{className:'wf-lbl'},'÷ '+weeksLeft+' weeks left'),
+          h('span',{className:'wf-val',style:{color:safeWeeklyBudget>2000?'var(--grn)':'var(--amb)'}},fmt(safeWeeklyBudget)+'/week')
+        )
       )
     )
   );
 }
 
-// ── TAG PAGE ──────────────────────────────────────────────────────
+// ── TAG PAGE ─────────────────────────────────────────────────────────────────
 function TagPage({ txns, onTagChange }) {
   const [tab, setTab] = useState('untagged');
   const [search, setSearch] = useState('');
 
-  const untagged = txns.filter(t => t.tag === 'untagged');
-  const filtered = tab === 'untagged'
-    ? untagged
-    : txns.filter(t => t.tag === tab);
-
-  const searched = search
-    ? filtered.filter(t => t.receiver.toLowerCase().includes(search.toLowerCase()) || t.date.includes(search))
-    : filtered;
-
   const byTag = {};
-  ALL_TAGS.forEach(tag => { byTag[tag] = txns.filter(t => t.tag === tag).length; });
+  ALL_TAGS.forEach(t => { byTag[t] = 0; });
+  txns.forEach(t => { byTag[t.tag] = (byTag[t.tag]||0)+1; });
+  const untaggedCount = byTag['untagged']||0;
+
+  const filtered = useMemo(() => {
+    let list = tab==='all' ? txns : txns.filter(t=>t.tag===tab);
+    if (search) list = list.filter(t=>t.receiver.toLowerCase().includes(search.toLowerCase())||t.date.includes(search));
+    return [...list].sort((a,b)=>b.amount-a.amount);
+  }, [txns, tab, search]);
+
+  const tabs = ['untagged','all',...ALL_TAGS.filter(t=>t!=='untagged'&&byTag[t]>0)].slice(0,7);
 
   return h('div', { className: 'page' },
-    h('div', { className: 'page-header' },
-      h('div', null,
-        h('div', { className: 'page-title' }, 'Tag'),
-        h('div', { className: 'page-sub' }, untagged.length + ' untagged left')
-      )
+    h('div', { className: 'ph' },
+      h('div', { className: 'ph-title' }, 'Tag'),
+      h('div', { className: 'ph-sub' }, untaggedCount+' untagged')
     ),
+    untaggedCount===0
+      ? h('div',{className:'note note-grn'},'✓ All transactions tagged!')
+      : h('div',{className:'note note-amb'},'⚠ '+untaggedCount+' need a tag'),
 
-    untagged.length === 0
-      ? h('div', { className: 'note note-green' }, '✓ All transactions tagged!')
-      : h('div', { className: 'note note-amb' }, '⚠ ' + untagged.length + ' transactions need tagging'),
-
-    // Quick filter tabs
     h('div', { className: 'tab-bar' },
-      ['untagged', 'all'].concat(ALL_TAGS.filter(t => t !== 'untagged' && byTag[t] > 0)).slice(0, 6).map(t =>
-        h('button', { key: t, className: `tab${tab === t ? ' on' : ''}`, onClick: () => setTab(t) },
-          t === 'all' ? 'All' : t === 'untagged' ? `❓ ${byTag.untagged}` : t
+      tabs.map(t =>
+        h('button', { key:t, className:`tab${tab===t?' on':''}`, onClick:()=>setTab(t) },
+          t==='all'?'All':t==='untagged'?`❓ ${untaggedCount}`:TAG_META[t]?.label||t
         )
       )
     ),
 
-    // Search
     h('input', {
-      type: 'text',
-      placeholder: 'Search receiver or date…',
-      value: search,
-      onChange: e => setSearch(e.target.value),
-      style: { background: 'var(--s2)', border: '1px solid var(--bd)', color: 'var(--tx)', borderRadius: 'var(--rs)', padding: '.45rem .75rem', fontSize: '.72rem', width: '100%', marginBottom: '.5rem', outline: 'none', fontFamily: 'var(--sans)' }
+      type:'text', placeholder:'Search receiver or date…', value:search,
+      onChange:e=>setSearch(e.target.value),
+      style:{marginBottom:'.5rem',fontSize:'.72rem'}
     }),
 
-    searched.length === 0
-      ? h('div', { className: 'empty' },
-          h('div', { className: 'empty-icon' }, '🎉'),
-          h('div', { className: 'empty-title' }, tab === 'untagged' ? 'All tagged!' : 'None here'),
-          h('div', { className: 'empty-body' }, tab === 'untagged' ? 'Every transaction has been tagged.' : 'No transactions in this category.')
+    filtered.length===0
+      ? h('div', { className:'empty' },
+          h('div',{className:'empty-icon'},'🎉'),
+          h('div',{className:'empty-title'},tab==='untagged'?'All tagged!':'Nothing here'),
+          h('div',{className:'empty-body'},tab==='untagged'?'Every transaction has been tagged.':'No transactions in this filter.')
         )
-      : h('div', { className: 'txn-list' },
-        searched.map(txn =>
-          h('div', { key: txn.id, className: 'txn-row' },
-            h('div', { className: 'txn-left' },
-              h('div', { className: 'txn-date' }, txn.date + ' ' + txn.time),
-              h('div', { className: 'txn-receiver' }, txn.receiver.replace(/x+/gi, '…')),
-              h('div', { className: 'txn-tag' },
-                h(TagSelect, { value: txn.tag, onChange: tag => onTagChange(txn.id, tag) })
+      : h('div', { className:'txn-list' },
+        filtered.map(txn =>
+          h('div', { key:txn.id, className:'txn-row' },
+            h('div', { className:'txn-left' },
+              h('div', { className:'txn-date' }, txn.date+' · '+txn.time),
+              h('div', { className:'txn-recv' }, txn.receiver.replace(/x{3,}/gi,'…')),
+              h('div', { style:{marginTop:3} },
+                h('select', {
+                  className:'tag-sel',
+                  value:txn.tag,
+                  onChange:e=>onTagChange(txn.ref,e.target.value)
+                }, ALL_TAGS.map(t=>h('option',{key:t,value:t},TAG_META[t].icon+' '+TAG_META[t].label)))
               )
             ),
-            h('div', { className: 'txn-right' },
-              h('div', { className: `txn-amt ${heatClass(txn.amount)}` }, fmt(txn.amount))
+            h('div', { className:'txn-right' },
+              h('div', { className:`txn-amt ${heatClass(txn.amount)}` }, fmt(txn.amount))
             )
           )
         )
@@ -607,262 +704,341 @@ function TagPage({ txns, onTagChange }) {
   );
 }
 
-// ── INSIGHTS PAGE ─────────────────────────────────────────────────
+// ── INSIGHTS PAGE ─────────────────────────────────────────────────────────────
 function InsightsPage({ txns }) {
-  const total = txns.reduce((a, t) => a + t.amount, 0);
+  if (!txns.length) return h('div',{className:'page'},h('div',{className:'empty',style:{marginTop:'2rem'}},h('div',{className:'empty-icon'},'📊'),h('div',{className:'empty-title'},'No data yet'),h('div',{className:'empty-body'},'Upload a transaction file first.')));
 
-  // Days of week breakdown
+  const total = txns.reduce((a,t)=>a+t.amount,0);
   const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const byDow = Array(7).fill(0);
-  const byDowCount = Array(7).fill(0);
-  txns.forEach(t => {
-    const d = parseDate(t.date).getDay();
-    byDow[d] += t.amount;
-    byDowCount[d]++;
-  });
-  const maxDow = Math.max(...byDow) || 1;
+  const byDow = Array(7).fill(0), byDowCount=Array(7).fill(0);
+  txns.forEach(t=>{ const d=parseDate(t.date).getDay(); byDow[d]+=t.amount; byDowCount[d]++; });
+  const maxDow = Math.max(...byDow,1);
 
-  // Hour breakdown
   const byHour = Array(24).fill(0);
-  txns.forEach(t => {
-    const h = parseInt(t.time.split(':')[0]);
-    byHour[h] += t.amount;
-  });
-  const maxHour = Math.max(...byHour) || 1;
-  const peakHour = byHour.indexOf(maxHour);
+  txns.forEach(t=>{ byHour[parseInt(t.time)]+=t.amount; });
+  const peakHour = byHour.indexOf(Math.max(...byHour));
 
-  // Top receivers
-  const recvMap = {};
-  txns.forEach(t => {
-    const key = t.receiver.replace(/x+/gi, '…');
-    recvMap[key] = (recvMap[key] || 0) + t.amount;
-  });
-  const topReceivers = Object.entries(recvMap).sort((a, b) => b[1] - a[1]).slice(0, 7);
-
-  // Weekend vs weekday
-  let weekendTotal = 0, weekdayTotal = 0, weekendCount = 0, weekdayCount = 0;
-  txns.forEach(t => {
-    const d = parseDate(t.date);
-    if (isWeekend(d)) { weekendTotal += t.amount; weekendCount++; }
-    else { weekdayTotal += t.amount; weekdayCount++; }
-  });
-
-  const days = new Set(txns.map(t => t.date)).size || 1;
-  const weekDays = new Set(txns.filter(t => !isWeekend(parseDate(t.date))).map(t => t.date)).size || 1;
-  const weekendDays = new Set(txns.filter(t => isWeekend(parseDate(t.date))).map(t => t.date)).size || 1;
-
-  // Biggest single day
   const dayMap = {};
-  txns.forEach(t => { dayMap[t.date] = (dayMap[t.date] || 0) + t.amount; });
-  const biggestDay = Object.entries(dayMap).sort((a, b) => b[1] - a[1])[0];
+  txns.forEach(t=>{ dayMap[t.date]=(dayMap[t.date]||0)+t.amount; });
+  const topDays = Object.entries(dayMap).sort((a,b)=>b[1]-a[1]).slice(0,3);
 
-  return h('div', { className: 'page' },
-    h('div', { className: 'page-header' },
-      h('div', null,
-        h('div', { className: 'page-title' }, 'Insights'),
-        h('div', { className: 'page-sub' }, 'Patterns & analytics')
+  const recvMap={};
+  txns.forEach(t=>{ const k=t.receiver.replace(/x{3,}/gi,'…'); recvMap[k]=(recvMap[k]||0)+t.amount; });
+  const topRecv = Object.entries(recvMap).sort((a,b)=>b[1]-a[1]).slice(0,7);
+
+  let weekendT=0,weekdayT=0,weekendD=new Set(),weekdayD=new Set();
+  txns.forEach(t=>{ const d=parseDate(t.date); if(isWeekend(d)){weekendT+=t.amount;weekendD.add(t.date);}else{weekdayT+=t.amount;weekdayD.add(t.date);}});
+
+  return h('div', { className:'page' },
+    h('div', { className:'ph' },
+      h('div', { className:'ph-title' }, 'Insights'),
+      h('div', { className:'ph-sub' }, 'Spending patterns')
+    ),
+
+    h('div',{className:'g2'},
+      h('div',{className:'sc',style:{borderTop:'2px solid var(--amb)'}},
+        h('div',{className:'sc-lbl'},'☀ Weekends'),
+        h('div',{className:`sc-val ${heatClass(weekendT)}`},fmtK(weekendT)),
+        h('div',{className:'sc-sub'},weekendD.size?fmt(weekendT/weekendD.size)+'/day':'—')
+      ),
+      h('div',{className:'sc',style:{borderTop:'2px solid var(--acc)'}},
+        h('div',{className:'sc-lbl'},'💼 Weekdays'),
+        h('div',{className:`sc-val ${heatClass(weekdayT)}`},fmtK(weekdayT)),
+        h('div',{className:'sc-sub'},weekdayD.size?fmt(weekdayT/weekdayD.size)+'/day':'—')
       )
     ),
 
-    // Weekend vs weekday
-    h('div', { className: 'sh' }, 'Weekend vs Weekday'),
-    h('div', { className: 'g2' },
-      h('div', { className: 'stat-card', style: { borderTop: '2px solid #D29922' } },
-        h('div', { className: 'stat-lbl' }, '☀ Weekend'),
-        h('div', { className: `stat-val ${heatClass(weekendTotal)}` }, fmtK(weekendTotal)),
-        h('div', { className: 'stat-sub' }, fmt(weekendTotal/weekendDays) + '/day')
-      ),
-      h('div', { className: 'stat-card', style: { borderTop: '2px solid #58A6FF' } },
-        h('div', { className: 'stat-lbl' }, '💼 Weekday'),
-        h('div', { className: `stat-val ${heatClass(weekdayTotal)}` }, fmtK(weekdayTotal)),
-        h('div', { className: 'stat-sub' }, fmt(weekdayTotal/weekDays) + '/day')
-      )
-    ),
-
-    h('div', { className: 'card' },
-      h('div', { className: 'ins-row' },
-        h('span', { className: 'ins-lbl' }, '📅 Total days'),
-        h('span', { className: 'ins-val' }, days + ' days')
-      ),
-      h('div', { className: 'ins-row' },
-        h('span', { className: 'ins-lbl' }, '📊 Avg per day'),
-        h('span', { className: `ins-val ${heatClass(total/days)}` }, fmt(total/days))
-      ),
-      h('div', { className: 'ins-row' },
-        h('span', { className: 'ins-lbl' }, '🔥 Biggest day'),
-        biggestDay ? h('span', { className: `ins-val ${heatClass(biggestDay[1])}` }, biggestDay[0] + ' · ' + fmt(biggestDay[1])) : h('span', { className: 'ins-val' }, '—')
-      ),
-      h('div', { className: 'ins-row' },
-        h('span', { className: 'ins-lbl' }, '⏰ Peak hour'),
-        h('span', { className: 'ins-val', style: { color: '#BC8CFF' } }, peakHour + ':00 – ' + (peakHour+1) + ':00')
-      ),
-      h('div', { className: 'ins-row' },
-        h('span', { className: 'ins-lbl' }, '💸 Total transactions'),
-        h('span', { className: 'ins-val' }, txns.length)
-      )
-    ),
-
-    // Day of week heatmap
-    h('div', { className: 'sh' }, 'Spend by Day of Week'),
-    h('div', { className: 'card' },
-      byDow.map((amt, i) =>
-        h('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: '.6rem', padding: '.35rem 0', borderBottom: i < 6 ? '1px solid var(--bd)' : 'none' } },
-          h('span', { style: { width: '28px', fontSize: '.65rem', color: 'var(--m1)', fontWeight: 700 } }, dayNames[i]),
-          h('div', { style: { flex: 1, background: 'var(--s3)', borderRadius: '99px', height: '6px', overflow: 'hidden' } },
-            h('div', { style: { width: (amt / maxDow * 100) + '%', height: '6px', background: heatColor(amt / (byDowCount[i]||1)), borderRadius: '99px', transition: 'width .5s' } })
-          ),
-          h('span', { style: { fontFamily: 'var(--mono)', fontSize: '.65rem', fontWeight: 700, color: heatColor(amt / (byDowCount[i]||1)), minWidth: '48px', textAlign: 'right' } }, amt > 0 ? fmtK(amt) : '—')
+    h('div',{className:'card',style:{marginBottom:'.45rem'}},
+      h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'⏰ Peak spend hour'),h('span',{className:'ins-val',style:{color:'var(--pur)'}},peakHour+':00–'+(peakHour+1)+':00')),
+      topDays.map(([date,amt],i)=>
+        h('div',{key:i,className:'ins-row'},
+          h('span',{className:'ins-lbl'},(i===0?'🔥 ':'')+'Top day '+(i+1)+': '+toDateStr(parseDate(date))),
+          h('span',{className:`ins-val ${heatClass(amt)}`},fmt(amt))
         )
       )
     ),
 
-    // Top receivers
-    h('div', { className: 'sh' }, 'Top Receivers'),
-    h('div', { className: 'txn-list' },
-      topReceivers.map(([recv, amt], i) =>
-        h('div', { key: i, className: 'txn-row' },
-          h('div', { className: 'txn-left' },
-            h('div', { className: 'txn-receiver' }, recv),
-            h('div', { className: 'bar-wrap' },
-              h('div', { className: 'bar-fill', style: { width: Math.min(100, amt/topReceivers[0][1]*100) + '%', background: heatColor(amt) } })
+    h('div',{className:'sh'},'Spend by Day of Week'),
+    h('div',{className:'card'},
+      byDow.map((amt,i)=>
+        h('div',{key:i,style:{display:'flex',alignItems:'center',gap:'.55rem',padding:'.32rem 0',borderBottom:i<6?'1px solid var(--bd)':'none'}},
+          h('span',{style:{width:'28px',fontSize:'.63rem',color:'var(--m1)',fontWeight:700}},dayNames[i]),
+          h('div',{style:{flex:1,background:'var(--s1)',borderRadius:'99px',height:'6px',overflow:'hidden'}},
+            h('div',{style:{width:(amt/maxDow*100)+'%',height:'6px',background:heatHex(amt/(byDowCount[i]||1)),borderRadius:'99px',transition:'width .5s'}})
+          ),
+          h('span',{style:{fontFamily:'var(--mono)',fontSize:'.62rem',fontWeight:700,color:heatHex(amt/(byDowCount[i]||1)),minWidth:'46px',textAlign:'right'}},amt>0?fmtK(amt):'—')
+        )
+      )
+    ),
+
+    h('div',{className:'sh'},'Top Receivers'),
+    h('div',{className:'txn-list'},
+      topRecv.map(([recv,amt],i)=>
+        h('div',{key:i,className:'txn-row'},
+          h('div',{className:'txn-left'},
+            h('div',{className:'txn-recv'},recv),
+            h(Bar,{spend:amt,budget:topRecv[0][1]})
+          ),
+          h('div',{className:`txn-amt ${heatClass(amt)}`},fmt(amt))
+        )
+      )
+    )
+  );
+}
+
+// ── MONEY PAGE (debts/savings/lent/cash) ─────────────────────────────────────
+function MoneyPage({ manual, onManualChange, toast }) {
+  const [tab, setTab] = useState('debts');
+
+  function addItem(key) {
+    const list = manual[key]||[];
+    onManualChange({ ...manual, [key]: [...list, {label:'',amount:0,id:Date.now()}] });
+  }
+  function updateItem(key, id, field, val) {
+    onManualChange({ ...manual, [key]: (manual[key]||[]).map(i=>i.id===id?{...i,[field]:val}:i) });
+  }
+  function removeItem(key, id) {
+    onManualChange({ ...manual, [key]: (manual[key]||[]).filter(i=>i.id!==id) });
+  }
+
+  const sections = {
+    debts:   { icon:'💳', color:'var(--red)',   label:'Debt repayments',  placeholder:'e.g. Credit card, loan…' },
+    savings: { icon:'💰', color:'var(--grn)',   label:'Savings set aside', placeholder:'e.g. SIP, FD, emergency…' },
+    lent:    { icon:'🤝', color:'var(--pur)',   label:'Money lent out',    placeholder:'e.g. Lent to Rahul…' },
+  };
+
+  const activeSection = sections[tab];
+  const list = manual[tab]||[];
+  const total = list.reduce((a,i)=>a+i.amount,0);
+  const cashSpend = manual.cashSpend||0;
+
+  return h('div', { className:'page' },
+    h('div', { className:'ph' },
+      h('div', { className:'ph-title' }, 'Money Flows'),
+      h('div', { className:'ph-sub' }, 'Debts · Savings · Lent · Cash')
+    ),
+
+    h('div', { className:'tab-bar' },
+      ['debts','savings','lent','cash'].map(t =>
+        h('button', { key:t, className:`tab${tab===t?' on':''}`, onClick:()=>setTab(t) },
+          sections[t]?.icon||'💵',
+          ' ',
+          t==='cash'?'Cash':sections[t]?.label.split(' ')[0]
+        )
+      )
+    ),
+
+    tab !== 'cash' ? h('div', null,
+      h('div', { className:'note', style:{background:`${activeSection.color}10`,borderColor:activeSection.color,color:activeSection.color} },
+        activeSection.icon+' '+activeSection.label
+      ),
+      list.length === 0
+        ? h('div',{className:'empty',style:{marginBottom:'.5rem'}},h('div',{className:'empty-icon'},activeSection.icon),h('div',{className:'empty-title'},'Nothing added yet'),h('div',{className:'empty-body'},'Tap + Add below to track a '+tab.slice(0,-1)+'.'))
+        : h('div', { className:'card', style:{marginBottom:'.5rem'} },
+          list.map((item,idx) =>
+            h('div', { key:item.id, className:'money-item' },
+              h('div', { className:'f1', style:{display:'flex',flexDirection:'column',gap:4} },
+                h('input', { type:'text', value:item.label, placeholder:activeSection.placeholder, onChange:e=>updateItem(tab,item.id,'label',e.target.value), style:{padding:'.3rem .6rem',fontSize:'.72rem'} }),
+                h('input', { type:'number', value:item.amount||'', inputMode:'numeric', placeholder:'Amount', onChange:e=>updateItem(tab,item.id,'amount',parseFloat(e.target.value)||0), style:{padding:'.3rem .6rem',fontSize:'.72rem'} })
+              ),
+              h('button', { className:'btn-del', onClick:()=>removeItem(tab,item.id) }, '✕')
             )
           ),
-          h('div', { className: `txn-amt ${heatClass(amt)}` }, fmt(amt))
-        )
+          h('div', { style:{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:'.5rem',borderTop:'1px solid var(--bd)',marginTop:'.25rem'} },
+            h('span',{style:{fontSize:'.65rem',fontWeight:700,color:'var(--m1)'}},tab==='debts'?'Total paid':tab==='savings'?'Total saved':'Total lent'),
+            h('span',{style:{fontFamily:'var(--mono)',fontWeight:800,fontSize:'.88rem',color:activeSection.color}},fmt(total))
+          )
+        ),
+      h('button', { className:'btn btn-sec btn-sm', style:{width:'auto',marginBottom:'.5rem'}, onClick:()=>addItem(tab) }, '+ Add '+tab.slice(0,-1))
+    ) : h('div', null,
+      h('div', { className:'note note-amb' }, '💵 Cash purchases not in your bank history'),
+      h('div', { className:'card' },
+        h('label', null, 'Total cash spent'),
+        h('input', { type:'number', inputMode:'numeric', value:cashSpend||'', placeholder:'0', onChange:e=>onManualChange({...manual,cashSpend:parseFloat(e.target.value)||0}) }),
+        cashSpend>0 && h('div', { style:{marginTop:'.4rem',fontSize:'.65rem',fontFamily:'var(--mono)',color:'var(--amb)',fontWeight:600} }, '−'+fmt(cashSpend)+' from balance')
       )
     )
   );
 }
 
-// ── CASH PAGE ─────────────────────────────────────────────────────
-function CashPage({ cashSpend, onCashChange, salary, txns }) {
-  const [input, setInput] = useState('');
-  const total = txns.reduce((a, t) => a + t.amount, 0);
+// ── SETTINGS PAGE ────────────────────────────────────────────────────────────
+function SettingsPage({ settings, onSettingsChange, txnCount, toast }) {
+  const [loc, setLoc] = useState({ ...settings });
+  function save() { onSettingsChange(loc); toast('Settings saved ✓'); }
 
-  return h('div', { className: 'page' },
-    h('div', { className: 'page-header' },
+  return h('div', { className:'page' },
+    h('div', { className:'ph' },
+      h('div', { className:'ph-title' }, 'Settings'),
+      h('div', { className:'ph-sub' }, txnCount+' transactions loaded')
+    ),
+
+    h('div', { className:'sh' }, 'Salary'),
+    h('div', { className:'card' },
+      h('div', { className:'row mb' },
+        h('div', { className:'f1' },
+          h('label', null, 'Monthly salary'),
+          h('input', { type:'number', inputMode:'numeric', value:loc.salary||'', placeholder:'e.g. 102844', onChange:e=>setLoc({...loc,salary:parseFloat(e.target.value)||0}) })
+        )
+      ),
       h('div', null,
-        h('div', { className: 'page-title' }, 'Cash & Balance'),
-        h('div', { className: 'page-sub' }, 'Manual cash tracking')
+        h('label', null, 'Salary credited date'),
+        h('input', { type:'date', value:loc.salaryDate||'', onChange:e=>setLoc({...loc,salaryDate:e.target.value}) }),
+        h('div', { style:{fontSize:'.6rem',color:'var(--m2)',marginTop:4} }, 'Only transactions on or after this date are counted')
       )
     ),
 
-    h('div', { className: 'sh' }, 'Cash Spend'),
-    h('div', { className: 'note note-blue' }, '💵 Add any cash purchases not in your bank history'),
-    h('div', { className: 'card' },
-      h('div', { style: { marginBottom: '.5rem', fontSize: '.58rem', fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--m1)' } }, 'Cash spent this period'),
-      h('input', { type: 'number', inputMode: 'numeric', value: input === '' ? cashSpend || '' : input, placeholder: '0', onChange: e => setInput(e.target.value) }),
-      h('button', { className: 'btn btn-pri', style: { marginTop: '.5rem' }, onClick: () => { onCashChange(Number(input)||0); setInput(''); } }, '✓ Save Cash Amount')
-    ),
-
-    h('div', { className: 'sh' }, 'Balance Forecast'),
-    h('div', { className: 'card' },
+    h('div', { className:'sh' }, 'Auto-tag rules'),
+    h('div', { className:'note note-blu' }, 'ℹ These are automatic. Future: custom keywords coming.'),
+    h('div', { className:'card' },
       [
-        { label: 'Salary', val: salary, color: '#3FB950', sign: '' },
-        { label: 'UPI / Bank Spends', val: total, color: '#F85149', sign: '−' },
-        { label: 'Cash Spends', val: cashSpend, color: '#F85149', sign: '−' },
-      ].map(({ label, val, color, sign }, i) =>
-        h('div', { key: i, className: 'wf-row' },
-          h('span', { className: 'wf-lbl' }, label),
-          h('span', { className: 'wf-val', style: { color } }, sign + fmt(val))
+        ['🏠 ANKA','Rent'],['👨‍👩‍👧 UMAR','Family'],['💰 UBEY','Savings'],
+        ['🥦 Sunday 17:30–19:00','Vegetable'],['🚗 Weekday morning/evening','Uber'],
+        ['🍽️ Swiggy/Zomato/Mojo','Food'],['🛍️ Amazon','Shopping'],
+      ].map(([rule,tag],i,arr)=>
+        h('div',{key:i,style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'.3rem 0',borderBottom:i<arr.length-1?'1px solid var(--bd)':'none'}},
+          h('span',{style:{fontSize:'.68rem',color:'var(--m1)'}},rule),
+          h('span',{className:`tag-${tag.toLowerCase()}`,style:{display:'inline-flex',alignItems:'center',padding:'2px 8px',borderRadius:'99px',fontSize:'.5rem',fontWeight:700,border:'1px solid currentColor',opacity:.9}},tag)
         )
-      ),
-      h('div', { className: 'wf-row', style: { marginTop: '.4rem', paddingTop: '.6rem', borderTop: '2px solid var(--bd)' } },
-        h('span', { className: 'wf-lbl', style: { fontWeight: 800, color: 'var(--tx)' } }, '= Estimated Balance'),
-        h('span', {
-          style: { fontFamily: 'var(--mono)', fontWeight: 800, fontSize: '1rem', color: (salary - total - cashSpend) >= 0 ? '#3FB950' : '#F85149' }
-        }, fmt(salary - total - cashSpend))
       )
     ),
 
-    h('div', { className: 'sh' }, 'Quick Stats'),
-    h('div', { className: 'g2' },
-      h('div', { className: 'stat-card' },
-        h('div', { className: 'stat-lbl' }, 'All Spends'),
-        h('div', { className: `stat-val ${heatClass(total + cashSpend)}` }, fmtK(total + cashSpend))
+    h('div', { className:'sh' }, 'Data'),
+    h('div', { className:'card' },
+      h('div',{className:'ins-row'},
+        h('span',{className:'ins-lbl'},'Transactions loaded'),
+        h('span',{className:'ins-val'},txnCount)
       ),
-      h('div', { className: 'stat-card' },
-        h('div', { className: 'stat-lbl' }, 'Remaining'),
-        h('div', { className: 'stat-val', style: { color: salary - total - cashSpend >= 0 ? '#3FB950' : '#F85149' } },
-          fmtK(Math.abs(salary - total - cashSpend)))
+      h('div',{className:'ins-row'},
+        h('span',{className:'ins-lbl'},'Tags saved in browser'),
+        h('span',{className:'ins-val',style:{color:'var(--grn)'}},'✓ Auto-saved')
       )
-    )
+    ),
+
+    h('button', { className:'btn btn-pri', style:{marginTop:'.5rem'}, onClick:save }, '✓ Save Settings'),
+
+    h('div', { className:'sh', style:{color:'var(--red)'} }, 'Danger zone'),
+    h('button', { className:'btn btn-red', onClick:()=>{
+      if(confirm('Clear all saved tags and settings?')){
+        localStorage.removeItem(LS_SETTINGS);
+        localStorage.removeItem(LS_TAG_MAP);
+        localStorage.removeItem(LS_MANUAL);
+        window.location.reload();
+      }
+    }}, '🗑 Clear all saved data')
   );
 }
 
-// ── APP ───────────────────────────────────────────────────────────
+// ── APP ──────────────────────────────────────────────────────────────────────
 function App() {
-  const [txns, setTxns] = useState([]);
-  const [page, setPage] = useState('upload');
-  const [toast, setToast] = useState('');
-  const [cashSpend, setCashSpend] = useState(0);
-  const toastTimer = useRef();
-  const SALARY = 102844;
+  const [settings, setSettings] = useState(() => loadLS(LS_SETTINGS, { salary:0, salaryDate:'' }));
+  const [tagMap,   setTagMap]   = useState(() => loadLS(LS_TAG_MAP, {}));
+  const [manual,   setManual]   = useState(() => loadLS(LS_MANUAL, { debts:[], savings:[], lent:[], cashSpend:0 }));
+  const [rawTxns,  setRawTxns]  = useState([]);  // parsed, deduped, date-filtered
+  const [page,     setPage]     = useState('upload');
+  const [toastMsg, setToastMsg] = useState('');
+  const toastRef = useRef();
 
   function showToast(msg) {
-    setToast(msg);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(''), 2200);
+    setToastMsg(msg);
+    if (toastRef.current) clearTimeout(toastRef.current);
+    toastRef.current = setTimeout(() => setToastMsg(''), 2200);
   }
 
-  function handleLoad(parsedTxns) {
-    setTxns(parsedTxns);
+  // Persist
+  useEffect(() => { saveLS(LS_SETTINGS, settings); }, [settings]);
+  useEffect(() => { saveLS(LS_TAG_MAP,  tagMap);   }, [tagMap]);
+  useEffect(() => { saveLS(LS_MANUAL,   manual);   }, [manual]);
+
+  // Build display txns: rawTxns + tagMap applied
+  const txns = useMemo(() => {
+    return rawTxns.map(t => ({ ...t, tag: tagMap[t.ref] || t.autoTag }));
+  }, [rawTxns, tagMap]);
+
+  function handleLoad(html) {
+    const parsed = parseHTML(html);
+    // Filter by salary date if set
+    const cutoff = settings.salaryDate ? new Date(settings.salaryDate) : null;
+    const filtered = parsed
+      .filter(t => {
+        if (!cutoff) return true;
+        const d = parseDate(t.date);
+        return d >= cutoff;
+      })
+      .map(t => ({ ...t, autoTag: autoTag(t) }));
+
+    setRawTxns(filtered);
     setPage('overview');
-    showToast(`Loaded ${parsedTxns.length} transactions ✓`);
+    const newCount = filtered.filter(t => !tagMap[t.ref]).length;
+    const total = filtered.length;
+    showToast(`Loaded ${total} txns · ${newCount} new to tag`);
   }
 
-  function handleTagChange(id, tag) {
-    setTxns(prev => prev.map(t => t.id === id ? { ...t, tag } : t));
+  function handleTagChange(ref, tag) {
+    setTagMap(prev => ({ ...prev, [ref]: tag }));
+  }
+
+  function handleManualChange(m) {
+    setManual(m);
+  }
+
+  function handleSettingsChange(s) {
+    setSettings(s);
   }
 
   const hasData = txns.length > 0;
   const untaggedCount = txns.filter(t => t.tag === 'untagged').length;
 
   const navItems = [
-    { id: 'upload',   label: 'Upload',   icon: '📂' },
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'tag',      label: untaggedCount > 0 ? `Tag (${untaggedCount})` : 'Tag', icon: '🏷️' },
-    { id: 'insights', label: 'Insights', icon: '💡' },
-    { id: 'cash',     label: 'Cash',     icon: '💵' },
+    { id:'upload',   label:'Upload' },
+    { id:'overview', label:'Overview' },
+    { id:'tag',      label: untaggedCount>0 ? `Tag ${untaggedCount}` : 'Tag' },
+    { id:'insights', label:'Insights' },
+    { id:'money',    label:'Money' },
+    { id:'settings', label:'Settings' },
   ];
 
   function navIcon(id) {
-    if (id === 'upload') return h('svg', { viewBox: '0 0 24 24' }, h('path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }), h('polyline', { points: '17 8 12 3 7 8' }), h('line', { x1: 12, y1: 3, x2: 12, y2: 15 }));
-    if (id === 'overview') return h('svg', { viewBox: '0 0 24 24' }, h('rect', { x: 3, y: 3, width: 7, height: 7, rx: 1 }), h('rect', { x: 14, y: 3, width: 7, height: 7, rx: 1 }), h('rect', { x: 3, y: 14, width: 7, height: 7, rx: 1 }), h('rect', { x: 14, y: 14, width: 7, height: 7, rx: 1 }));
-    if (id === 'tag') return h('svg', { viewBox: '0 0 24 24' }, h('path', { d: 'M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z' }), h('line', { x1: 7, y1: 7, x2: 7.01, y2: 7 }));
-    if (id === 'insights') return h('svg', { viewBox: '0 0 24 24' }, h('polyline', { points: '22 12 18 12 15 21 9 3 6 12 2 12' }));
-    if (id === 'cash') return h('svg', { viewBox: '0 0 24 24' }, h('rect', { x: 2, y: 5, width: 20, height: 14, rx: 2 }), h('line', { x1: 2, y1: 10, x2: 22, y2: 10 }));
+    if (id==='upload')   return h('svg',{viewBox:'0 0 24 24'},h('path',{d:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'}),h('polyline',{points:'17 8 12 3 7 8'}),h('line',{x1:12,y1:3,x2:12,y2:15}));
+    if (id==='overview') return h('svg',{viewBox:'0 0 24 24'},h('rect',{x:3,y:3,width:7,height:7,rx:1}),h('rect',{x:14,y:3,width:7,height:7,rx:1}),h('rect',{x:3,y:14,width:7,height:7,rx:1}),h('rect',{x:14,y:14,width:7,height:7,rx:1}));
+    if (id==='tag')      return h('svg',{viewBox:'0 0 24 24'},h('path',{d:'M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z'}),h('line',{x1:7,y1:7,x2:7.01,y2:7}));
+    if (id==='insights') return h('svg',{viewBox:'0 0 24 24'},h('polyline',{points:'22 12 18 12 15 21 9 3 6 12 2 12'}));
+    if (id==='money')    return h('svg',{viewBox:'0 0 24 24'},h('rect',{x:2,y:5,width:20,height:14,rx:2}),h('line',{x1:2,y1:10,x2:22,y2:10}));
+    if (id==='settings') return h('svg',{viewBox:'0 0 24 24'},h('circle',{cx:12,cy:12,r:3}),h('path',{d:'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'}));
   }
 
-  return h('div', null,
-    page === 'upload'   && h(UploadPage, { onLoad: handleLoad }),
-    page === 'overview' && h(OverviewPage, { txns, cashSpend, salary: SALARY }),
-    page === 'tag'      && h(TagPage, { txns, onTagChange: handleTagChange }),
-    page === 'insights' && h(InsightsPage, { txns }),
-    page === 'cash'     && h(CashPage, { cashSpend, onCashChange: setCashSpend, salary: SALARY, txns }),
+  // No data guard for non-upload/settings pages
+  const needsData = ['overview','tag','insights'].includes(page) && !hasData;
 
-    // If no data and not on upload, show prompt
-    !hasData && page !== 'upload' && h('div', { style: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(13,17,23,.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 } },
-      h('div', { className: 'card', style: { maxWidth: '280px', textAlign: 'center', margin: '1rem' } },
-        h('div', { style: { fontSize: '2rem', marginBottom: '.5rem' } }, '📂'),
-        h('div', { style: { fontWeight: 700, marginBottom: '.5rem' } }, 'No data yet'),
-        h('div', { style: { fontSize: '.72rem', color: 'var(--m2)', marginBottom: '.75rem' } }, 'Upload your transaction HTML first'),
-        h('button', { className: 'btn btn-pri', onClick: () => setPage('upload') }, 'Go to Upload')
+  return h('div', null,
+    page==='upload'   && h(UploadPage,   { onLoad:handleLoad, hasData }),
+    page==='overview' && (needsData ? null : h(OverviewPage, { txns, settings, manual })),
+    page==='tag'      && (needsData ? null : h(TagPage,      { txns, onTagChange:(ref,tag)=>handleTagChange(ref, tag) })),
+    page==='insights' && (needsData ? null : h(InsightsPage, { txns })),
+    page==='money'    && h(MoneyPage,    { manual, onManualChange:handleManualChange, toast:showToast }),
+    page==='settings' && h(SettingsPage, { settings, onSettingsChange:handleSettingsChange, txnCount:txns.length, toast:showToast }),
+
+    needsData && h('div', { style:{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(247,248,250,.92)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:50,backdropFilter:'blur(4px)'} },
+      h('div', { className:'card', style:{maxWidth:'260px',textAlign:'center',padding:'1.5rem'} },
+        h('div',{style:{fontSize:'2rem',marginBottom:'.5rem'}},'📂'),
+        h('div',{style:{fontWeight:700,marginBottom:'.35rem'}},'No transactions'),
+        h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'.75rem'}},'Upload your YES Bank transaction HTML first.'),
+        h('button',{className:'btn btn-pri',onClick:()=>setPage('upload')},'Go to Upload')
       )
     ),
 
-    h('nav', { className: 'nav' },
+    h('nav', { className:'nav' },
       navItems.map(n =>
-        h('button', { key: n.id, className: `nb${page === n.id ? ' on' : ''}`, onClick: () => setPage(n.id) },
+        h('button', { key:n.id, className:`nb${page===n.id?' on':''}`, onClick:()=>setPage(n.id) },
           navIcon(n.id),
-          h('span', { style: { fontSize: '.48rem', fontWeight: 700 } }, n.label),
-          h('span', { className: 'nb-dot' })
+          h('span',{style:{fontSize:'.44rem',fontWeight:700,letterSpacing:'.05em',textTransform:'uppercase'}},n.label),
+          h('span',{className:'nb-dot'})
         )
       )
     ),
-    h(Toast, { msg: toast })
+    h(Toast, { msg: toastMsg })
   );
 }
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(h(App, null));
 </script>
