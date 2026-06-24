@@ -7,235 +7,234 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  --bg:#F3F0FF;
+  --bg:#F0ECFF;
   --s0:#FFFFFF;
-  --s1:#EDE8FF;
-  --s2:#E0D9FF;
-  --bd:#D0C7F5;
-  --bd2:#B8AEE8;
+  --s1:#EAE4FF;
+  --s2:#DDD6FF;
+  --bd:#CAC0F0;
+  --bd2:#B0A4E0;
   --tx:#1A0A3C;
-  --m1:#5B4A82;
-  --m2:#9B8EBE;
+  --m1:#4A3A72;
+  --m2:#8C7EAE;
 
-  /* Purple palette */
-  --p1:#7C3AED;--p2:#8B5CF6;--p3:#A78BFA;--p4:#C4B5FD;--p5:#EDE9FE;
-  --p-dk:#5B21B6;--p-lt:#F5F3FF;
+  --p1:#6D28D9;--p2:#7C3AED;--p3:#8B5CF6;--p4:#A78BFA;--p5:#EDE9FE;
+  --p-dk:#4C1D95;
 
-  /* Accent colors */
   --rose:#E11D48;--rose-lt:#FFF1F2;--rose-bd:#FECDD3;
   --grn:#059669;--grn-lt:#ECFDF5;--grn-bd:#A7F3D0;
-  --amb:#D97706;--amb-lt:#FFFBEB;--amb-bd:#FDE68A;
-  --sky:#0284C7;--sky-lt:#F0F9FF;--sky-bd:#BAE6FD;
-  --pnk:#DB2777;--pnk-lt:#FDF2F8;--pnk-bd:#FBCFE8;
-  --org:#EA580C;--org-lt:#FFF7ED;--org-bd:#FED7AA;
+  --amb:#B45309;--amb-lt:#FFFBEB;--amb-bd:#FDE68A;
+  --sky:#0369A1;--sky-lt:#F0F9FF;--sky-bd:#BAE6FD;
+  --pnk:#BE185D;--pnk-lt:#FDF2F8;--pnk-bd:#FBCFE8;
+  --org:#C2410C;--org-lt:#FFF7ED;--org-bd:#FED7AA;
+  --teal:#0F766E;--teal-lt:#F0FDFA;--teal-bd:#99F6E4;
 
   --mono:'JetBrains Mono',monospace;
   --sans:'Plus Jakarta Sans',sans-serif;
-  --r:16px;--rs:10px;
-  --nav-h:66px;
+  --r:18px;--rs:12px;
+  --nav-h:68px;
   --safe-b:env(safe-area-inset-bottom,0px);
-  --sh:0 2px 8px rgba(124,58,237,.08),0 1px 3px rgba(0,0,0,.04);
-  --sh2:0 8px 28px rgba(124,58,237,.18),0 2px 8px rgba(0,0,0,.06);
+  --sh:0 2px 10px rgba(109,40,217,.09),0 1px 3px rgba(0,0,0,.04);
+  --sh2:0 8px 32px rgba(109,40,217,.2),0 2px 8px rgba(0,0,0,.06);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--sans);overflow-x:hidden;font-size:14px;line-height:1.5}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--sans);overflow-x:hidden;font-size:16px;line-height:1.5}
 #root{display:flex;flex-direction:column;min-height:100%}
 
 /* ── NAV ── */
 .nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));
-  background:rgba(255,255,255,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-  border-top:1.5px solid var(--bd);display:flex;align-items:stretch;z-index:100;
-  padding-bottom:var(--safe-b);box-shadow:0 -4px 24px rgba(124,58,237,.1)}
+  background:rgba(255,255,255,.98);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-top:2px solid var(--bd);display:flex;align-items:stretch;z-index:100;
+  padding-bottom:var(--safe-b);box-shadow:0 -4px 28px rgba(109,40,217,.12)}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;background:none;border:none;cursor:pointer;color:var(--m2);font-family:var(--sans);
-  font-size:.42rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;transition:color .15s;padding:0}
-.nb.on{color:var(--p1)}
-.nb svg{width:21px;height:21px;stroke-width:1.8;fill:none;stroke:currentColor;transition:stroke .15s}
-.nb-pip{width:18px;height:3px;border-radius:99px;background:linear-gradient(90deg,var(--p1),var(--p2));display:none;margin-top:1px}
+  gap:4px;background:none;border:none;cursor:pointer;color:var(--m2);font-family:var(--sans);
+  font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;transition:color .15s;padding:0}
+.nb.on{color:var(--p2)}
+.nb svg{width:24px;height:24px;stroke-width:1.8;fill:none;stroke:currentColor;transition:stroke .15s}
+.nb-pip{width:20px;height:3px;border-radius:99px;background:linear-gradient(90deg,var(--p1),var(--p3));display:none;margin-top:1px}
 .nb.on .nb-pip{display:block}
 
-.page{flex:1;padding:.5rem 1rem calc(var(--nav-h) + var(--safe-b) + 1rem);max-width:520px;margin:0 auto;width:100%}
+.page{flex:1;padding:.75rem 1rem calc(var(--nav-h) + var(--safe-b) + 1.25rem);max-width:540px;margin:0 auto;width:100%}
 
 /* ── CARDS ── */
-.card{background:var(--s0);border:1.5px solid var(--bd);border-radius:var(--r);padding:.85rem 1rem;margin-bottom:.5rem;box-shadow:var(--sh)}
+.card{background:var(--s0);border:1.5px solid var(--bd);border-radius:var(--r);padding:1rem 1.15rem;margin-bottom:.6rem;box-shadow:var(--sh)}
 
 /* ── PAGE HEADER ── */
-.ph{padding:.7rem 0 .55rem;display:flex;align-items:baseline;justify-content:space-between}
-.ph-title{font-size:1.2rem;font-weight:900;color:var(--tx);letter-spacing:-.03em}
-.ph-sub{font-size:.58rem;color:var(--m2);font-family:var(--mono)}
+.ph{padding:.8rem 0 .65rem;display:flex;align-items:baseline;justify-content:space-between}
+.ph-title{font-size:1.5rem;font-weight:900;color:var(--tx);letter-spacing:-.03em}
+.ph-sub{font-size:12px;color:var(--m2);font-family:var(--mono)}
 
 /* ── SECTION HEADER ── */
-.sh{font-size:.46rem;letter-spacing:.18em;text-transform:uppercase;color:var(--p1);font-weight:900;
-  margin:1.1rem 0 .5rem;display:flex;align-items:center;gap:.5rem}
-.sh::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--bd),transparent)}
+.sh{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--p2);font-weight:900;
+  margin:1.3rem 0 .6rem;display:flex;align-items:center;gap:.6rem}
+.sh::after{content:'';flex:1;height:1.5px;background:linear-gradient(90deg,var(--bd),transparent)}
 
-/* ── HERO ── */
-.hero{border-radius:var(--r);padding:1.1rem;margin-bottom:.5rem;border:1.5px solid;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;opacity:.12;background:currentColor}
-.hero-lbl{font-size:.46rem;font-weight:900;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.2rem;opacity:.8}
-.hero-amt{font-family:var(--mono);font-size:2.2rem;font-weight:700;line-height:1;letter-spacing:-.04em;margin-bottom:.32rem}
-.hero-sub{font-size:.6rem;font-family:var(--mono);opacity:.75}
-.hero-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-top:.7rem;padding-top:.6rem;border-top:1px solid currentColor;opacity:.9}
-.hg-lbl{font-size:.45rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7;margin-bottom:.15rem;font-weight:800}
-.hg-val{font-family:var(--mono);font-weight:700;font-size:.8rem}
-.hero-ok{background:linear-gradient(140deg,#F0FDF4,#DCFCE7);border-color:var(--grn-bd);color:#065F46}
-.hero-warn{background:linear-gradient(140deg,#FFFBEB,#FEF9C3);border-color:var(--amb-bd);color:#78350F}
+/* ── HERO CARD ── */
+.hero{border-radius:var(--r);padding:1.3rem;margin-bottom:.6rem;border:1.5px solid;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50px;right:-50px;width:160px;height:160px;border-radius:50%;opacity:.1;background:currentColor;pointer-events:none}
+.hero-lbl{font-size:11px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.3rem;opacity:.75}
+.hero-amt{font-family:var(--mono);font-size:2.8rem;font-weight:700;line-height:1;letter-spacing:-.04em;margin-bottom:.4rem}
+.hero-sub{font-size:12px;font-family:var(--mono);opacity:.75}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;margin-top:.85rem;padding-top:.7rem;border-top:1px solid currentColor;opacity:.9}
+.hg-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;opacity:.72;margin-bottom:.2rem;font-weight:800}
+.hg-val{font-family:var(--mono);font-weight:700;font-size:1rem}
+.hero-ok{background:linear-gradient(140deg,#ECFDF5,#D1FAE5);border-color:var(--grn-bd);color:#065F46}
+.hero-warn{background:linear-gradient(140deg,#FFFBEB,#FEF3C7);border-color:var(--amb-bd);color:#78350F}
 .hero-bad{background:linear-gradient(140deg,#FFF1F2,#FFE4E6);border-color:var(--rose-bd);color:#9F1239}
 .hero-pur{background:linear-gradient(140deg,#F5F3FF,#EDE9FE);border-color:var(--p4);color:var(--p-dk)}
 
-/* ── STATS ── */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.45rem}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.45rem;margin-bottom:.45rem}
-.sc{background:var(--s0);border:1.5px solid var(--bd);border-radius:var(--r);padding:.65rem .85rem;box-shadow:var(--sh)}
-.sc-lbl{font-size:.44rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--m2);margin-bottom:.26rem}
-.sc-val{font-family:var(--mono);font-size:1.1rem;font-weight:700;line-height:1}
-.sc-sub{font-size:.55rem;color:var(--m2);margin-top:.2rem;font-family:var(--mono)}
-.sc-top{border-top:2.5px solid}
+/* ── STAT CARDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem}
+.sc{background:var(--s0);border:1.5px solid var(--bd);border-radius:var(--r);padding:.85rem 1rem;box-shadow:var(--sh)}
+.sc-lbl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--m2);margin-bottom:.3rem}
+.sc-val{font-family:var(--mono);font-size:1.35rem;font-weight:700;line-height:1}
+.sc-sub{font-size:11px;color:var(--m2);margin-top:.22rem;font-family:var(--mono)}
+.sc-top{border-top:3px solid}
 
-/* ── HEAT ── amounts → purple shades then warm */
-.h0{color:#7C3AED}.h1{color:#6D28D9}.h2{color:#059669}.h3{color:#0D9488}
-.h4{color:#CA8A04}.h5{color:#D97706}.h6{color:#EA580C}.h7{color:#DC2626}
+/* ── HEAT COLORS ── */
+.h0{color:#6D28D9}.h1{color:#7C3AED}.h2{color:#059669}.h3{color:#0D9488}
+.h4{color:#B45309}.h5{color:#D97706}.h6{color:#C2410C}.h7{color:#DC2626}
 .h8{color:#B91C1C}.h9{color:#991B1B}
 
+/* ── BAR ── */
+.bw{background:var(--s1);border-radius:99px;height:5px;margin-top:6px;overflow:hidden}
+.bf{height:5px;border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
 /* ── NOTES ── */
-.note{display:flex;align-items:center;gap:7px;padding:.42rem .8rem;border-radius:var(--rs);
-  font-size:.67rem;font-weight:700;margin-bottom:.45rem;border-left:3px solid}
-.n-pur{background:var(--p-lt);border-color:var(--p1);color:var(--p-dk)}
+.note{display:flex;align-items:center;gap:8px;padding:.55rem .9rem;border-radius:var(--rs);
+  font-size:13px;font-weight:700;margin-bottom:.5rem;border-left:3.5px solid}
+.n-pur{background:var(--p5);border-color:var(--p2);color:var(--p-dk)}
 .n-grn{background:var(--grn-lt);border-color:var(--grn);color:#065F46}
 .n-amb{background:var(--amb-lt);border-color:var(--amb);color:#78350F}
 .n-red{background:var(--rose-lt);border-color:var(--rose);color:#9F1239}
 .n-sky{background:var(--sky-lt);border-color:var(--sky);color:var(--sky)}
+.n-teal{background:var(--teal-lt);border-color:var(--teal);color:var(--teal)}
 
 /* ── TAGS ── */
-.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;
-  font-size:.48rem;font-weight:800;letter-spacing:.04em;border:1px solid;white-space:nowrap}
-.tag-rent     {background:#EEF2FF;border-color:#C7D2FE;color:#3730A3}
-.tag-family   {background:var(--p-lt);border-color:var(--p4);color:var(--p-dk)}
-.tag-savings  {background:var(--grn-lt);border-color:var(--grn-bd);color:#065F46}
-.tag-vegetable{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
-.tag-uber     {background:var(--rose-lt);border-color:var(--rose-bd);color:var(--rose)}
-.tag-yescc    {background:var(--amb-lt);border-color:var(--amb-bd);color:#92400E}
-.tag-recharge {background:var(--sky-lt);border-color:var(--sky-bd);color:var(--sky)}
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;
+  font-size:11px;font-weight:800;letter-spacing:.04em;border:1.5px solid;white-space:nowrap}
+.tag-rent      {background:#EEF2FF;border-color:#C7D2FE;color:#3730A3}
+.tag-electricity{background:var(--amb-lt);border-color:var(--amb-bd);color:var(--amb)}
+.tag-family    {background:var(--p5);border-color:var(--p4);color:var(--p-dk)}
+.tag-savings   {background:var(--grn-lt);border-color:var(--grn-bd);color:#065F46}
+.tag-vegetable {background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
+.tag-uber      {background:var(--rose-lt);border-color:var(--rose-bd);color:var(--rose)}
+.tag-yescc     {background:var(--amb-lt);border-color:var(--amb-bd);color:var(--amb)}
+.tag-recharge  {background:var(--sky-lt);border-color:var(--sky-bd);color:var(--sky)}
 .tag-entertainment{background:var(--pnk-lt);border-color:var(--pnk-bd);color:var(--pnk)}
-.tag-other    {background:var(--s1);border-color:var(--bd2);color:var(--m1)}
-.tag-furniture{background:var(--org-lt);border-color:var(--org-bd);color:var(--org)}
-.tag-untagged {background:var(--s2);border-color:var(--bd2);color:var(--m2)}
+.tag-milk      {background:var(--teal-lt);border-color:var(--teal-bd);color:var(--teal)}
+.tag-other     {background:var(--s1);border-color:var(--bd2);color:var(--m1)}
+.tag-furniture {background:var(--org-lt);border-color:var(--org-bd);color:var(--org)}
+.tag-bills     {background:#F5F3FF;border-color:#DDD6FE;color:#5B21B6}
+.tag-untagged  {background:var(--s2);border-color:var(--bd2);color:var(--m2)}
 
 /* ── INPUTS ── */
 input,select,textarea{width:100%;background:var(--s1);border:1.5px solid var(--bd);color:var(--tx);
-  border-radius:var(--rs);font-family:var(--sans);font-size:.8rem;font-weight:600;
-  padding:.5rem .8rem;outline:none;transition:border-color .15s,box-shadow .15s;-moz-appearance:textfield}
+  border-radius:var(--rs);font-family:var(--sans);font-size:15px;font-weight:600;
+  padding:.6rem .9rem;outline:none;transition:border-color .15s,box-shadow .15s;-moz-appearance:textfield}
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
-input:focus,select:focus{border-color:var(--p2);box-shadow:0 0 0 3px rgba(139,92,246,.15);background:var(--s0)}
+input:focus,select:focus{border-color:var(--p3);box-shadow:0 0 0 3px rgba(139,92,246,.15);background:var(--s0)}
 input::placeholder{color:var(--m2)}
-label{font-size:.54rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--m1);display:block;margin-bottom:4px}
+label{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--m1);display:block;margin-bottom:5px}
 
 /* ── BUTTONS ── */
-.btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:.6rem 1rem;
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:.75rem 1.1rem;
   border-radius:var(--rs);border:none;cursor:pointer;font-family:var(--sans);font-weight:800;
-  font-size:.78rem;transition:all .12s;width:100%}
+  font-size:15px;transition:all .12s;width:100%}
 .btn:active{transform:scale(.97)}
 .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.btn-pri{background:linear-gradient(135deg,var(--p-dk),var(--p1));color:#fff;box-shadow:0 3px 14px rgba(124,58,237,.35)}
+.btn-pri{background:linear-gradient(135deg,var(--p-dk),var(--p2));color:#fff;box-shadow:0 4px 16px rgba(109,40,217,.35)}
 .btn-sec{background:var(--s0);border:1.5px solid var(--bd);color:var(--m1)}
-.btn-red{background:var(--rose-lt);border:1px solid var(--rose-bd);color:var(--rose)}
-.btn-sm{padding:.3rem .7rem;font-size:.63rem;width:auto}
-.del-btn{background:none;border:none;color:var(--m2);cursor:pointer;padding:4px 6px;
-  border-radius:6px;font-size:.78rem;transition:color .1s;flex-shrink:0}
+.btn-red{background:var(--rose-lt);border:1.5px solid var(--rose-bd);color:var(--rose)}
+.btn-sm{padding:.38rem .85rem;font-size:13px;width:auto}
+.del-btn{background:none;border:none;color:var(--m2);cursor:pointer;padding:5px 7px;
+  border-radius:7px;font-size:16px;transition:color .1s;flex-shrink:0}
 .del-btn:hover{color:var(--rose)}
 
-/* ── BAR ── */
-.bw{background:var(--s1);border-radius:99px;height:4px;margin-top:5px;overflow:hidden}
-.bf{height:4px;border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)}
-
 /* ── UPLOAD ── */
-.upload-zone{border:2px dashed var(--bd2);border-radius:var(--r);padding:2rem 1rem;
+.upload-zone{border:2px dashed var(--bd2);border-radius:var(--r);padding:2.5rem 1rem;
   text-align:center;cursor:pointer;transition:all .2s;background:var(--s0)}
-.upload-zone.drag,.upload-zone:hover{border-color:var(--p2);background:var(--p-lt)}
+.upload-zone.drag,.upload-zone:hover{border-color:var(--p3);background:var(--p5)}
 .upload-zone input{display:none}
 
 /* ── TRANSACTION ROWS ── */
-.txn-list{background:var(--s0);border:1.5px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem;box-shadow:var(--sh)}
-.txn-row{display:flex;align-items:flex-start;gap:.5rem;padding:.58rem .85rem;border-bottom:1px solid var(--bd);transition:background .1s}
+.txn-list{background:var(--s0);border:1.5px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:.6rem;box-shadow:var(--sh)}
+.txn-row{display:flex;align-items:flex-start;gap:.6rem;padding:.72rem 1rem;border-bottom:1px solid var(--bd);transition:background .1s}
 .txn-row:last-child{border-bottom:none}
 .txn-row:hover{background:var(--s1)}
 .txn-left{flex:1;min-width:0}
-.txn-date{font-size:.5rem;color:var(--m2);font-family:var(--mono);margin-bottom:2px}
-.txn-recv{font-size:.72rem;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.txn-date{font-size:11px;color:var(--m2);font-family:var(--mono);margin-bottom:3px}
+.txn-recv{font-size:14px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
 .txn-right{text-align:right;flex-shrink:0}
-.txn-amt{font-family:var(--mono);font-weight:700;font-size:.82rem}
+.txn-amt{font-family:var(--mono);font-weight:700;font-size:15px}
 .tag-sel{background:var(--s1);border:1.5px solid var(--bd);color:var(--tx);border-radius:99px;
-  font-family:var(--sans);font-size:.5rem;font-weight:800;padding:2px 8px;
+  font-family:var(--sans);font-size:12px;font-weight:800;padding:3px 10px;
   outline:none;cursor:pointer;width:auto}
-.tag-sel:focus{border-color:var(--p2)}
+.tag-sel:focus{border-color:var(--p3)}
 
 /* ── WATERFALL ── */
-.wf-row{display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid var(--bd)}
+.wf-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--bd)}
 .wf-row:last-child{border-bottom:none}
-.wf-lbl{font-size:.68rem;color:var(--m1);font-weight:500}
-.wf-val{font-family:var(--mono);font-weight:700;font-size:.72rem}
+.wf-lbl{font-size:13px;color:var(--m1);font-weight:500}
+.wf-val{font-family:var(--mono);font-weight:700;font-size:13px}
 
 /* ── CAT ROW ── */
-.cat-row{display:flex;align-items:center;gap:.5rem;padding:.48rem 0;border-bottom:1px solid var(--bd)}
+.cat-row{display:flex;align-items:center;gap:.6rem;padding:.55rem 0;border-bottom:1px solid var(--bd)}
 .cat-row:last-child{border-bottom:none}
-.cat-icon{font-size:.9rem;width:24px;text-align:center;flex-shrink:0}
-.cat-name{font-size:.72rem;font-weight:700}
-.cat-cnt{font-size:.52rem;color:var(--m2);font-family:var(--mono)}
-.cat-amt{font-family:var(--mono);font-weight:700;font-size:.8rem}
+.cat-icon{font-size:1.1rem;width:28px;text-align:center;flex-shrink:0}
+.cat-name{font-size:14px;font-weight:700}
+.cat-cnt{font-size:11px;color:var(--m2);font-family:var(--mono)}
+.cat-amt{font-family:var(--mono);font-weight:700;font-size:14px}
 
 /* ── TAB BAR ── */
-.tab-bar{display:flex;background:var(--s1);border-radius:11px;padding:3px;margin-bottom:.7rem;gap:2px;border:1.5px solid var(--bd)}
-.tab{flex:1;padding:.3rem .25rem;border:none;border-radius:8px;cursor:pointer;font-family:var(--sans);
-  font-size:.48rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+.tab-bar{display:flex;background:var(--s1);border-radius:12px;padding:3px;margin-bottom:.75rem;gap:2px;border:1.5px solid var(--bd)}
+.tab{flex:1;padding:.38rem .3rem;border:none;border-radius:9px;cursor:pointer;font-family:var(--sans);
+  font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
   color:var(--m2);background:transparent;transition:all .15s;white-space:nowrap}
-.tab.on{color:var(--p1);background:var(--s0);box-shadow:var(--sh)}
+.tab.on{color:var(--p2);background:var(--s0);box-shadow:var(--sh)}
 
 /* ── INS ROW ── */
-.ins-row{display:flex;justify-content:space-between;align-items:center;padding:.42rem 0;border-bottom:1px solid var(--bd)}
+.ins-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--bd)}
 .ins-row:last-child{border-bottom:none}
-.ins-lbl{font-size:.68rem;color:var(--m1);font-weight:500}
-.ins-val{font-family:var(--mono);font-weight:700;font-size:.73rem}
+.ins-lbl{font-size:13px;color:var(--m1);font-weight:500}
+.ins-val{font-family:var(--mono);font-weight:700;font-size:14px}
 
 /* ── EMPTY ── */
-.empty{display:flex;flex-direction:column;align-items:center;padding:2.2rem 1rem;text-align:center;
-  gap:.45rem;background:var(--s0);border:1.5px dashed var(--bd2);border-radius:var(--r)}
-.empty-icon{font-size:2.2rem}.empty-title{font-size:.85rem;font-weight:800;color:var(--m1)}
-.empty-body{font-size:.68rem;color:var(--m2);max-width:200px;line-height:1.5}
+.empty{display:flex;flex-direction:column;align-items:center;padding:2.5rem 1rem;text-align:center;
+  gap:.5rem;background:var(--s0);border:1.5px dashed var(--bd2);border-radius:var(--r)}
+.empty-icon{font-size:2.5rem}.empty-title{font-size:1rem;font-weight:800;color:var(--m1)}
+.empty-body{font-size:13px;color:var(--m2);max-width:220px;line-height:1.5}
 
 /* ── MONEY ITEM ── */
-.money-item{display:flex;align-items:center;gap:.45rem;padding:.48rem 0;border-bottom:1px solid var(--bd)}
+.money-item{display:flex;align-items:center;gap:.5rem;padding:.55rem 0;border-bottom:1px solid var(--bd)}
 .money-item:last-child{border-bottom:none}
 
 /* ── WEEKEND CARD ── */
-.wknd-card{background:var(--s0);border:1.5px solid var(--pnk-bd);border-radius:var(--r);overflow:hidden;margin-bottom:.5rem;box-shadow:var(--sh)}
-.wknd-head{display:flex;justify-content:space-between;align-items:center;padding:.6rem .85rem;
-  background:linear-gradient(135deg,var(--pnk-lt),#FDF2F8);border-bottom:1px solid var(--pnk-bd)}
-.wknd-day{display:flex;justify-content:space-between;align-items:center;padding:.42rem .85rem;border-bottom:1px solid var(--bd)}
+.wknd-card{background:var(--s0);border:1.5px solid var(--pnk-bd);border-radius:var(--r);overflow:hidden;margin-bottom:.6rem;box-shadow:var(--sh)}
+.wknd-head{display:flex;justify-content:space-between;align-items:center;padding:.7rem 1rem;
+  background:linear-gradient(135deg,#FDF2F8,#FCE7F3);border-bottom:1px solid var(--pnk-bd)}
+.wknd-day{display:flex;justify-content:space-between;align-items:center;padding:.5rem 1rem;border-bottom:1px solid var(--bd)}
 .wknd-day:last-child{border-bottom:none}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 10px);left:50%;transform:translateX(-50%);
-  background:linear-gradient(135deg,var(--p-dk),var(--p1));color:#fff;padding:.42rem 1.2rem;
-  border-radius:99px;font-size:.68rem;font-weight:800;z-index:200;animation:fu .18s ease;
-  white-space:nowrap;box-shadow:0 4px 20px rgba(124,58,237,.35)}
+.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 12px);left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,var(--p-dk),var(--p2));color:#fff;padding:.5rem 1.4rem;
+  border-radius:99px;font-size:13px;font-weight:800;z-index:200;animation:fu .18s ease;
+  white-space:nowrap;box-shadow:0 4px 24px rgba(109,40,217,.4)}
 @keyframes fu{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-/* ── PILL ── */
-.pill{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:99px;
-  font-size:.5rem;font-weight:800;letter-spacing:.05em;border:1px solid;white-space:nowrap}
-.pill-pur{background:var(--p-lt);border-color:var(--p4);color:var(--p-dk)}
-.pill-grn{background:var(--grn-lt);border-color:var(--grn-bd);color:var(--grn)}
-.pill-pnk{background:var(--pnk-lt);border-color:var(--pnk-bd);color:var(--pnk)}
+/* ── UPLOAD WELCOME CARD ── */
+.welcome-card{background:linear-gradient(135deg,var(--p1),var(--p3));border-radius:var(--r);
+  color:#fff;padding:1.2rem;margin-bottom:.75rem;box-shadow:var(--sh2);position:relative;overflow:hidden}
+.welcome-card::after{content:'💸';position:absolute;right:.75rem;top:50%;transform:translateY(-50%);
+  font-size:3rem;opacity:.2}
 
-/* ── GRADIENT BG ACCENT ── */
-.grad-bg{background:linear-gradient(135deg,var(--p1),var(--p2));border-radius:var(--r);color:#fff;padding:1rem;margin-bottom:.5rem;box-shadow:var(--sh2)}
-
-hr{border:none;border-top:1px solid var(--bd);margin:.6rem 0}
+hr{border:none;border-top:1px solid var(--bd);margin:.65rem 0}
 .row{display:flex;align-items:center;gap:.5rem}
 .f1{flex:1}
-.mb{margin-bottom:.5rem}
+.mb{margin-bottom:.6rem}
 
-@media(max-width:380px){.g3{grid-template-columns:1fr 1fr}.ph-title{font-size:1rem}}
+@media(max-width:380px){.g3{grid-template-columns:1fr 1fr}.ph-title{font-size:1.25rem}}
 </style>
 </head>
 <body>
@@ -243,96 +242,118 @@ hr{border:none;border-top:1px solid var(--bd);margin:.6rem 0}
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script>
-const{createElement:h,useState,useEffect,useRef,useMemo,useCallback}=React;
+const{createElement:h,useState,useEffect,useRef,useMemo}=React;
 
-// ── STORAGE KEYS ───────────────────────────────────────────────────────────
-const LS={
-  RAW:'sa_raw_v4',       // parsed raw transactions (JSON array)
-  TAGS:'sa_tags_v4',     // {ref: tag}
-  SET:'sa_settings_v4',  // settings object
-  MAN:'sa_manual_v4',    // manual flows
-};
-function ls_get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}
-function ls_set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+const LS={RAW:'sa_raw_v5',TAGS:'sa_tags_v5',SET:'sa_set_v5',MAN:'sa_man_v5'};
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
-// ── TAG DEFINITIONS ────────────────────────────────────────────────────────
-const TAGS=['rent','family','savings','vegetable','uber','yescc','recharge','entertainment','other','furniture','untagged'];
+// ── TAGS ──────────────────────────────────────────────────────────────────
+const TAGS=['rent','electricity','family','savings','milk','vegetable','uber','yescc','recharge',
+            'entertainment','furniture','bills','other','untagged'];
 const TM={
-  rent:         {icon:'🏠',label:'Rent'},
-  family:       {icon:'👨‍👩‍👧',label:'Family'},
-  savings:      {icon:'💰',label:'Savings'},
-  vegetable:    {icon:'🥦',label:'Vegetable'},
-  uber:         {icon:'🚗',label:'Uber'},
-  yescc:        {icon:'💳',label:'YES CC'},
-  recharge:     {icon:'📱',label:'Recharge'},
-  entertainment:{icon:'🎉',label:'Fun'},
-  other:        {icon:'🧾',label:'Other'},
-  furniture:    {icon:'🪑',label:'Furniture'},
-  untagged:     {icon:'❓',label:'Untagged'},
+  rent:          {icon:'🏠',label:'Rent',color:'#3730A3'},
+  electricity:   {icon:'⚡',label:'Electricity',color:'#B45309'},
+  family:        {icon:'👨‍👩‍👧',label:'Family',color:'#4C1D95'},
+  savings:       {icon:'💰',label:'Savings',color:'#065F46'},
+  milk:          {icon:'🥛',label:'Milk / Provi',color:'#0F766E'},
+  vegetable:     {icon:'🥦',label:'Vegetable',color:'#15803D'},
+  uber:          {icon:'🚗',label:'Uber',color:'#9F1239'},
+  yescc:         {icon:'💳',label:'YES Credit',color:'#78350F'},
+  recharge:      {icon:'📱',label:'Recharge',color:'#0369A1'},
+  entertainment: {icon:'🛍️',label:'Mall / Fun',color:'#BE185D'},
+  furniture:     {icon:'🪑',label:'Furniture',color:'#C2410C'},
+  bills:         {icon:'📋',label:'Bills',color:'#5B21B6'},
+  other:         {icon:'🧾',label:'Other',color:'#4A3A72'},
+  untagged:      {icon:'❓',label:'Untagged',color:'#8C7EAE'},
 };
 
-// ── HELPERS ────────────────────────────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────────────────────────
 const fmt=n=>'₹'+Math.abs(Math.round(n)).toLocaleString('en-IN');
 const fmtK=n=>n>=1000?'₹'+(n/1000).toFixed(1)+'k':'₹'+Math.round(n);
 const pct=(a,b)=>b?Math.min(100,Math.round(a/b*100)):0;
-
-function parseDate(str){const[d,m,y]=str.split('/');return new Date(+y,+m-1,+d)}
+function parseDate(s){const[d,m,y]=s.split('/');return new Date(+y,+m-1,+d)}
 function isWeekend(d){const w=d.getDay();return w===0||w===6}
 function weekOfMonth(d){const f=new Date(d.getFullYear(),d.getMonth(),1);return Math.ceil((d.getDate()+f.getDay())/7)}
 
-// Extract display name from receiver: text after @ up to ( or end
+// Show the part after @ up to ( — cleaner than full VPA
 function cleanRecv(recv){
-  if(!recv)return recv;
-  const m=recv.match(/@([^(@]+)/);
-  return m?m[1].split('(')[0].trim():recv;
+  if(!recv)return '';
+  // Try to get name from parens first
+  const pm=recv.match(/\(([^)]+)\)/);
+  if(pm){
+    const name=pm[1].replace(/x+/gi,'').trim();
+    if(name.length>=3&&!/^\s*$/.test(name))return name;
+  }
+  // Fall back to part after @
+  const am=recv.match(/@([^(@\s]+)/);
+  return am?am[1]:'?';
 }
 
-const HEAT_T=[100,250,500,800,1200,2000,3500,5000,10000];
-const HEAT_C=['#7C3AED','#6D28D9','#059669','#0D9488','#CA8A04','#D97706','#EA580C','#DC2626','#B91C1C','#991B1B'];
-function heatCls(n){const i=HEAT_T.findIndex(t=>n<t);return'h'+(i===-1?9:i)}
-function heatHex(n){const i=HEAT_T.findIndex(t=>n<t);return HEAT_C[i===-1?9:i]}
+const HEAT_T=[100,250,500,900,1500,2500,4000,6000,12000];
+const HEAT_C=['#6D28D9','#7C3AED','#059669','#0D9488','#B45309','#D97706','#C2410C','#DC2626','#B91C1C','#991B1B'];
+function heatCls(n){const i=HEAT_T.findIndex(t=>n<t);return'h'+(i<0?9:i)}
+function heatHex(n){const i=HEAT_T.findIndex(t=>n<t);return HEAT_C[i<0?9:i]}
 
-// ── AUTO-TAGGER ────────────────────────────────────────────────────────────
+// ── AUTO-TAGGER ───────────────────────────────────────────────────────────
 function autoTag(txn){
   const recv=(txn.receiver||'').toUpperCase();
   const vpa=(txn.receiverVpa||'').toLowerCase();
   const[hh,mm]=txn.time.split(':').map(Number);
   const mins=hh*60+mm;
   const date=parseDate(txn.date);
-  const dow=date.getDay();
+  const dow=date.getDay(); // 0=Sun,6=Sat
   const we=dow===0||dow===6;
   const wd=dow>=1&&dow<=5;
   const amt=txn.amount;
 
-  // YES Credit Card — bank column
+  // YES Bank Credit Card — from bank column
   if(txn.isYesCC) return 'yescc';
 
-  // Named keywords (check receiver name in parens)
-  if(recv.includes('ANKA')) return 'rent';
+  // ── Named receivers — highest priority ──
+  // ANKA: 15000 = rent, anything else = electricity
+  if(recv.includes('ANKA')) return amt===15000?'rent':'electricity';
+
+  // UMAR = family (father)
   if(recv.includes('UMAR')) return 'family';
+
+  // UBEY = savings
   if(recv.includes('UBEY')) return 'savings';
+
+  // MOJO = furniture rent (variable)
   if(recv.includes('MOJO')) return 'furniture';
 
-  // Recharge: @icici or @airtel in VPA
-  if(vpa.includes('@icici')||vpa.includes('@airtel')||vpa.includes('rxairtel')) return 'recharge';
-  // Also Jio recharge
+  // Milk / provi: recurring small payments to same VPA
+  // xxxxx92158@ybl (rpet) and bokre@ybl — both are milk bills
+  if(vpa.includes('92158@ybl')||vpa.startsWith('bokre@ybl')) return 'milk';
+
+  // Pronto = milk delivery app (cf.xronto@cashfreensdlpb, paytm-xxx64064@ptybl)
+  if(recv.includes('PRONTO')||vpa.includes('xronto@cashfree')) return 'milk';
+
+  // Recharge: @icici (Jio/Airtel), @airtel, rxairtel
+  if(vpa.includes('@icici')&&(recv.includes('JIO')||recv.includes('AIRTEL'))) return 'recharge';
+  if(vpa.includes('rxairtel')||vpa.includes('@airtel')) return 'recharge';
   if(recv.includes('JIO')) return 'recharge';
+
+  // Bills: recurring utility-looking payments to kotakpay (non-credit-card), indus, ctet
+  if(vpa.includes('kotakpay')&&!recv.includes('CARDP')) return 'bills';
+  if(recv.includes('CTET')) return 'bills';
 
   // Sunday 17:30–19:00 → vegetable
   if(dow===0&&mins>=17*60+30&&mins<=19*60) return 'vegetable';
 
-  // Weekday 08:50–09:40 or 18:10–19:30 → uber
+  // Weekday 08:50–09:40 or 18:10–19:30 → uber (hybrid office commute)
   if(wd&&((mins>=8*60+50&&mins<=9*60+40)||(mins>=18*60+10&&mins<=19*60+30))) return 'uber';
 
-  // Weekend non-vegetable → entertainment
+  // Weekend (Sat/Sun) → Mall / Entertainment
   if(we) return 'entertainment';
 
-  // Weekday < 500 → other, ≥ 500 → untagged
+  // Weekday: < ₹500 → other; ≥ ₹500 → untagged (manual review)
   if(wd&&amt<500) return 'other';
   return 'untagged';
 }
 
-// ── PARSER ─────────────────────────────────────────────────────────────────
+// ── PARSER ────────────────────────────────────────────────────────────────
 function parseHTML(html){
   const doc=new DOMParser().parseFromString(html,'text/html');
   const rows=doc.querySelectorAll('table tr');
@@ -341,12 +362,9 @@ function parseHTML(html){
     if(first){first=false;return}
     const cells=Array.from(row.querySelectorAll('td,th')).map(c=>c.innerText.trim());
     if(cells.length<11)return;
-    const[date,time,bank,acct,,receiver,ref,,amount,drCr,status]=cells;
-    if(!date||status!=='SUCCESS')return;
-    // include both DR and CR? No — only DR
-    if(drCr!=='DR')return;
-    const isYesCC=bank.toUpperCase().includes('CREDIT');
-    // Extract VPA from receiver string (full raw)
+    const[date,time,bank,,senderRaw,receiver,ref,,amount,drCr,status]=cells;
+    if(!date||drCr!=='DR'||status!=='SUCCESS')return;
+    const isYesCC=bank.toUpperCase().includes('CREDIT CARD');
     const vpam=receiver.match(/^([^(]+)/);
     const receiverVpa=vpam?vpam[1].trim():'';
     txns.push({date,time,bank,receiver,receiverVpa,ref,amount:parseFloat(amount)||0,isYesCC});
@@ -356,45 +374,34 @@ function parseHTML(html){
   return out;
 }
 
-// ── SALARY DATE AUTO-DETECT ────────────────────────────────────────────────
-function detectSalaryDate(rawTxns){
-  // Find earliest txn with ANKA, UMAR, UBEY, or MOJO in receiver
-  const keywords=['ANKA','UMAR','UBEY','MOJO'];
-  const hits=rawTxns.filter(t=>keywords.some(k=>t.receiver.toUpperCase().includes(k)));
+function detectSalaryDate(raws){
+  const kw=['ANKA','UMAR','UBEY','MOJO'];
+  const hits=raws.filter(t=>kw.some(k=>t.receiver.toUpperCase().includes(k)));
   if(!hits.length)return null;
   hits.sort((a,b)=>parseDate(a.date)-parseDate(b.date));
-  return hits[0].date; // DD/MM/YYYY
+  return hits[0].date;
 }
 
-// ── COMPONENTS ─────────────────────────────────────────────────────────────
+// ── COMPONENTS ───────────────────────────────────────────────────────────
 function Toast({msg}){if(!msg)return null;return h('div',{className:'toast'},msg)}
 function Bar({spend,budget}){
   const p=budget?Math.min(100,spend/budget*100):0;
   return h('div',{className:'bw'},h('div',{className:'bf',style:{width:p+'%',background:heatHex(spend)}}));
 }
 
-// ── UPLOAD PAGE ─────────────────────────────────────────────────────────────
+// ── UPLOAD ────────────────────────────────────────────────────────────────
 function UploadPage({onLoad,hasSaved}){
   const[drag,setDrag]=useState(false);
   const ref=useRef();
-  function handleFile(file){
-    if(!file)return;
-    const r=new FileReader();
-    r.onload=e=>onLoad(e.target.result);
-    r.readAsText(file);
-  }
+  function handleFile(f){if(!f)return;const r=new FileReader();r.onload=e=>onLoad(e.target.result);r.readAsText(f)}
   return h('div',{className:'page'},
-    h('div',{className:'ph'},
-      h('div',{className:'ph-title'},'💸 Spend Tracker'),
-      h('div',{className:'ph-sub'},'YES Bank UPI history')
+    h('div',{className:'ph'},h('div',{className:'ph-title'},'💸 Spend Tracker'),h('div',{className:'ph-sub'},'YES Bank · BHIM')),
+    h('div',{className:'welcome-card'},
+      h('div',{style:{fontSize:'12px',fontWeight:900,letterSpacing:'.16em',textTransform:'uppercase',opacity:.8,marginBottom:'.3rem'}},'Upload transaction history'),
+      h('div',{style:{fontSize:'15px',fontWeight:700,lineHeight:1.4,marginBottom:'.35rem'}},'Tags & settings saved in your browser — no repeat work.'),
+      h('div',{style:{fontSize:'12px',opacity:.8}},'Salary date auto-detected · YES CC auto-tagged · ANKA→Rent/Electricity · Milk bills detected')
     ),
-    hasSaved&&h('div',{className:'note n-grn'},'✓ Previous data intact — uploading adds new transactions & keeps your tags'),
-    // Gradient welcome card
-    h('div',{className:'grad-bg',style:{marginBottom:'.75rem'}},
-      h('div',{style:{fontSize:'.5rem',fontWeight:900,letterSpacing:'.16em',textTransform:'uppercase',opacity:.75,marginBottom:'.25rem'}},'Upload your bank HTML'),
-      h('div',{style:{fontSize:'.85rem',fontWeight:700,lineHeight:1.4,marginBottom:'.4rem'}},'Your tags & settings are saved in your browser — no re-tagging needed next time.'),
-      h('div',{style:{fontSize:'.6rem',opacity:.8}},'Salary date auto-detected · YES CC auto-tagged · @icici/@airtel → Recharge')
-    ),
+    hasSaved&&h('div',{className:'note n-grn'},'✓ Your previous data is saved — uploading merges new transactions'),
     h('div',{
       className:`upload-zone${drag?' drag':''}`,
       onClick:()=>ref.current.click(),
@@ -403,32 +410,55 @@ function UploadPage({onLoad,hasSaved}){
       onDrop:e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files[0])}
     },
       h('input',{ref,type:'file',accept:'.html,.htm',onChange:e=>handleFile(e.target.files[0])}),
-      h('div',{style:{fontSize:'2.5rem',marginBottom:'.5rem'}},'📂'),
-      h('div',{style:{fontSize:'.92rem',fontWeight:900,marginBottom:'.2rem'}},'Drop your transaction HTML'),
-      h('div',{style:{fontSize:'.65rem',color:'var(--m2)',marginBottom:'.75rem'}},'From YES Bank UPI / BHIM export'),
-      h('span',{style:{display:'inline-block',padding:'.42rem 1.2rem',background:'linear-gradient(135deg,#5B21B6,#7C3AED)',color:'#fff',borderRadius:'99px',fontSize:'.72rem',fontWeight:800,cursor:'pointer',boxShadow:'0 3px 14px rgba(124,58,237,.35)'}},'Choose File')
+      h('div',{style:{fontSize:'3rem',marginBottom:'.6rem'}},'📂'),
+      h('div',{style:{fontSize:'1.05rem',fontWeight:900,marginBottom:'.25rem'}},'Drop your transaction HTML'),
+      h('div',{style:{fontSize:'13px',color:'var(--m2)',marginBottom:'.85rem'}},'Export from YES Bank UPI / BHIM app'),
+      h('span',{style:{display:'inline-block',padding:'.5rem 1.4rem',background:'linear-gradient(135deg,#4C1D95,#7C3AED)',color:'#fff',borderRadius:'99px',fontSize:'14px',fontWeight:800,cursor:'pointer',boxShadow:'0 3px 16px rgba(109,40,217,.4)'}},'Choose File')
+    ),
+    h('div',{className:'sh',style:{marginTop:'1.4rem'}},'Smart auto-tag rules'),
+    h('div',{className:'card'},
+      [
+        ['🏠','ANKA (₹15,000)','Rent — fixed monthly'],
+        ['⚡','ANKA (other amounts)','Electricity — variable'],
+        ['👨‍👩‍👧','UMAR','Family (your father)'],
+        ['💰','UBEY','Savings transfer'],
+        ['🪑','MOJO','Furniture rent — variable'],
+        ['🥛','rpet@ybl · bokre@ybl · Pronto','Milk / Provi bill'],
+        ['💳','YES BANK CREDIT CARD (bank col)','YES Credit Card auto'],
+        ['📱','@icici Jio/Airtel · rxairtel','Recharge'],
+        ['🥦','Sunday 5:30–7 PM','Vegetable market'],
+        ['🚗','Weekday 8:50–9:40 AM or 6:10–7:30 PM','Uber (office commute)'],
+        ['🛍️','Saturday & Sunday (other)','Mall / Entertainment'],
+        ['🧾','Weekday < ₹500','Other small spends'],
+        ['❓','Weekday ≥ ₹500','Untagged — you review'],
+      ].map(([icon,rule,desc],i,arr)=>
+        h('div',{key:i,style:{display:'flex',alignItems:'flex-start',gap:'.55rem',padding:'.38rem 0',borderBottom:i<arr.length-1?'1px solid var(--bd)':'none'}},
+          h('span',{style:{fontSize:'1rem',width:'22px',flexShrink:0,marginTop:'1px'}},icon),
+          h('div',{style:{flex:1}},
+            h('div',{style:{fontSize:'13px',fontWeight:700,color:'var(--tx)'}},'',rule),
+            h('div',{style:{fontSize:'11px',color:'var(--m2)',marginTop:'1px'}},desc)
+          )
+        )
+      )
     )
   );
 }
 
-// ── OVERVIEW ────────────────────────────────────────────────────────────────
+// ── OVERVIEW ─────────────────────────────────────────────────────────────
 function OverviewPage({txns,settings,manual}){
   const today=new Date();
   const salary=settings.salary||0;
   const cashInHand=settings.cashInHand||0;
   const sbiSpent=settings.sbiSpent||0;
   const totalIn=salary+cashInHand;
-
   const debtPaid=(manual.debts||[]).reduce((a,d)=>a+d.amount,0);
   const savPaid=(manual.savings||[]).reduce((a,s)=>a+s.amount,0);
   const lentOut=(manual.lent||[]).reduce((a,l)=>a+l.amount,0);
   const cashSpend=manual.cashSpend||0;
   const manTotal=debtPaid+savPaid+lentOut+cashSpend;
-
   const txnTotal=txns.reduce((a,t)=>a+t.amount,0);
   const grandTotal=txnTotal+manTotal+sbiSpent;
   const balance=totalIn-grandTotal;
-
   const lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
   const dLeft=Math.max(1,lastDay-today.getDate());
   const wLeft=Math.max(1,Math.ceil(dLeft/7));
@@ -437,136 +467,110 @@ function OverviewPage({txns,settings,manual}){
 
   const byTag={};
   TAGS.forEach(t=>{byTag[t]={total:0,count:0}});
-  txns.forEach(t=>{
-    if(!byTag[t.tag])byTag[t.tag]={total:0,count:0};
-    byTag[t.tag].total+=t.amount;byTag[t.tag].count++;
-  });
-
+  txns.forEach(t=>{if(!byTag[t.tag])byTag[t.tag]={total:0,count:0};byTag[t.tag].total+=t.amount;byTag[t.tag].count++});
   const yesCC=byTag['yescc']?.total||0;
   const untagAmt=byTag['untagged']?.total||0;
   const untagCnt=byTag['untagged']?.count||0;
   const activeDays=new Set(txns.map(t=>t.date)).size||1;
   const topCats=TAGS.filter(t=>t!=='untagged'&&byTag[t]?.total>0).sort((a,b)=>byTag[b].total-byTag[a].total);
-
-  const hClass=salary===0?'hero-pur':balance>totalIn*0.35?'hero-ok':balance>0?'hero-warn':'hero-bad';
+  const hc=salary===0?'hero-pur':balance>totalIn*.35?'hero-ok':balance>0?'hero-warn':'hero-bad';
 
   return h('div',{className:'page'},
     h('div',{className:'ph'},
       h('div',{className:'ph-title'},today.toLocaleDateString('en-IN',{month:'long',year:'numeric'})),
       h('div',{className:'ph-sub'},txns.length+' txns · '+dLeft+'d left')
     ),
+    !salary&&h('div',{className:'note n-pur'},'⚙ Add salary in Settings to see balance & daily limits'),
 
-    !salary&&h('div',{className:'note n-pur'},'⚙ Add salary in Settings to unlock balance tracking'),
-
-    salary>0&&h('div',{className:`hero ${hClass}`},
+    salary>0&&h('div',{className:`hero ${hc}`},
       h('div',{className:'hero-lbl'},'Estimated Balance'),
       h('div',{className:'hero-amt'},fmt(balance)),
-      h('div',{className:'hero-sub'},fmt(totalIn)+' in − '+fmt(grandTotal)+' out'),
+      h('div',{className:'hero-sub'},fmt(totalIn)+' in — '+fmt(grandTotal)+' out'),
       h('div',{className:'hero-grid'},
-        h('div',null,h('div',{className:'hg-lbl'},'Safe/Day'),h('div',{className:'hg-val'},fmt(safeDay))),
-        h('div',{style:{textAlign:'center'}},h('div',{className:'hg-lbl'},'Safe/Week'),h('div',{className:'hg-val'},fmt(safeWeek))),
-        h('div',{style:{textAlign:'right'}},h('div',{className:'hg-lbl'},dLeft+'d · '+wLeft+'w'),h('div',{className:'hg-val'},today.toLocaleDateString('en-IN',{day:'numeric',month:'short'})))
+        h('div',null,h('div',{className:'hg-lbl'},'Safe / Day'),h('div',{className:'hg-val'},fmt(safeDay))),
+        h('div',{style:{textAlign:'center'}},h('div',{className:'hg-lbl'},'Safe / Week'),h('div',{className:'hg-val'},fmt(safeWeek))),
+        h('div',{style:{textAlign:'right'}},h('div',{className:'hg-lbl'},dLeft+'d · '+wLeft+'w left'),h('div',{className:'hg-val'},today.toLocaleDateString('en-IN',{day:'numeric',month:'short'})))
       )
     ),
 
     h('div',{className:'g3'},
-      h('div',{className:'sc'},
-        h('div',{className:'sc-lbl'},'UPI Total'),
-        h('div',{className:`sc-val ${heatCls(txnTotal)}`},fmtK(txnTotal)),
-        h('div',{className:'sc-sub'},txns.length+' txns')
-      ),
-      h('div',{className:'sc'},
-        h('div',{className:'sc-lbl'},'Avg/Day'),
-        h('div',{className:`sc-val ${heatCls(txnTotal/activeDays)}`},fmtK(txnTotal/activeDays)),
-        h('div',{className:'sc-sub'},activeDays+' days')
-      ),
-      h('div',{className:'sc'},
-        h('div',{className:'sc-lbl'},'Untagged'),
-        h('div',{className:`sc-val ${heatCls(untagAmt)}`},fmtK(untagAmt)),
-        h('div',{className:'sc-sub'},untagCnt+' txns')
-      )
+      h('div',{className:'sc'},h('div',{className:'sc-lbl'},'UPI Total'),h('div',{className:`sc-val ${heatCls(txnTotal)}`},fmtK(txnTotal)),h('div',{className:'sc-sub'},txns.length+' txns')),
+      h('div',{className:'sc'},h('div',{className:'sc-lbl'},'Avg / Day'),h('div',{className:`sc-val ${heatCls(txnTotal/activeDays)}`},fmtK(txnTotal/activeDays)),h('div',{className:'sc-sub'},activeDays+' days')),
+      h('div',{className:'sc'},h('div',{className:'sc-lbl'},'Untagged'),h('div',{className:`sc-val ${heatCls(untagAmt)}`},fmtK(untagAmt)),h('div',{className:'sc-sub'},untagCnt+' txns'))
     ),
 
-    // Credit & off-bank flows
     (yesCC>0||sbiSpent>0||manTotal>0)&&h('div',{className:'g2'},
       (yesCC>0||sbiSpent>0)&&h('div',{className:'sc sc-top',style:{borderTopColor:'#D97706'}},
         h('div',{className:'sc-lbl'},'Credit Spent'),
         h('div',{className:'sc-val',style:{color:'#D97706'}},fmtK(yesCC+sbiSpent)),
         h('div',{className:'sc-sub'},[yesCC>0&&'YES '+fmtK(yesCC),sbiSpent>0&&'SBI '+fmtK(sbiSpent)].filter(Boolean).join(' + '))
       ),
-      manTotal>0&&h('div',{className:'sc sc-top',style:{borderTopColor:'var(--p2)'}},
+      manTotal>0&&h('div',{className:'sc sc-top',style:{borderTopColor:'var(--p3)'}},
         h('div',{className:'sc-lbl'},'Off-bank'),
-        h('div',{className:'sc-val',style:{color:'var(--p2)'}},fmtK(manTotal)),
+        h('div',{className:'sc-val',style:{color:'var(--p3)'}},fmtK(manTotal)),
         h('div',{className:'sc-sub'},[debtPaid>0&&'Debt',savPaid>0&&'Sav',lentOut>0&&'Lent',cashSpend>0&&'Cash'].filter(Boolean).join(' · '))
       )
     ),
 
-    // Budget bar
     salary>0&&h('div',{className:'card mb'},
-      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'.3rem'}},
-        h('span',{style:{fontSize:'.7rem',fontWeight:700}},'Budget used'),
-        h('span',{style:{fontFamily:'var(--mono)',fontSize:'.63rem',fontWeight:700,color:heatHex(grandTotal)}},pct(grandTotal,totalIn)+'%')
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'.4rem'}},
+        h('span',{style:{fontSize:'14px',fontWeight:700}},'Budget used'),
+        h('span',{style:{fontFamily:'var(--mono)',fontSize:'13px',fontWeight:700,color:heatHex(grandTotal)}},pct(grandTotal,totalIn)+'%')
       ),
-      h('div',{style:{background:'var(--s1)',borderRadius:'99px',height:'8px',overflow:'hidden'}},
-        h('div',{style:{width:pct(grandTotal,totalIn)+'%',height:'8px',borderRadius:'99px',background:`linear-gradient(90deg,var(--p2),${heatHex(grandTotal)})`,transition:'width .6s'}})
+      h('div',{style:{background:'var(--s1)',borderRadius:'99px',height:'10px',overflow:'hidden'}},
+        h('div',{style:{width:pct(grandTotal,totalIn)+'%',height:'10px',borderRadius:'99px',
+          background:`linear-gradient(90deg,var(--p3),${heatHex(grandTotal)})`,transition:'width .7s'}})
       ),
-      h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:4,fontSize:'.55rem',fontFamily:'var(--mono)',color:'var(--m2)'}},
-        h('span',null,fmt(grandTotal)+' spent'),
-        h('span',null,fmt(totalIn)+' total in')
+      h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:5,fontSize:'12px',fontFamily:'var(--mono)',color:'var(--m2)'}},
+        h('span',null,fmt(grandTotal)+' spent'),h('span',null,fmt(totalIn)+' total')
       )
     ),
 
     h('div',{className:'sh'},'By Category'),
     topCats.length===0
-      ?h('div',{className:'note n-pur'},'🏷 Tag transactions to see breakdown')
+      ?h('div',{className:'note n-pur'},'🏷 Tag your transactions to see breakdown')
       :h('div',{className:'card'},
-        topCats.map(tag=>
-          h('div',{key:tag,className:'cat-row'},
-            h('span',{className:'cat-icon'},TM[tag].icon),
-            h('div',{style:{flex:1,minWidth:0}},
-              h('div',{className:'cat-name'},TM[tag].label),
-              h(Bar,{spend:byTag[tag].total,budget:txnTotal})
-            ),
-            h('div',{style:{textAlign:'right'}},
-              h('div',{className:`cat-amt ${heatCls(byTag[tag].total)}`},fmt(byTag[tag].total)),
-              h('div',{className:'cat-cnt'},byTag[tag].count+' txns')
-            )
+        topCats.map(tag=>h('div',{key:tag,className:'cat-row'},
+          h('span',{className:'cat-icon'},TM[tag].icon),
+          h('div',{style:{flex:1,minWidth:0}},
+            h('div',{className:'cat-name'},TM[tag].label),
+            h(Bar,{spend:byTag[tag].total,budget:txnTotal})
+          ),
+          h('div',{style:{textAlign:'right'}},
+            h('div',{className:`cat-amt ${heatCls(byTag[tag].total)}`},fmt(byTag[tag].total)),
+            h('div',{className:'cat-cnt'},byTag[tag].count+' txns')
           )
-        ),
+        )),
         untagAmt>0&&h('div',{className:'cat-row'},
           h('span',{className:'cat-icon'},'❓'),
           h('div',{style:{flex:1}},h('div',{className:'cat-name',style:{color:'var(--m2)'}},'Untagged'),h(Bar,{spend:untagAmt,budget:txnTotal})),
-          h('div',{style:{textAlign:'right'}},
-            h('div',{className:'cat-amt',style:{color:'var(--m2)'}},fmt(untagAmt)),
-            h('div',{className:'cat-cnt'},untagCnt+' txns')
-          )
+          h('div',{style:{textAlign:'right'}},h('div',{className:'cat-amt',style:{color:'var(--m2)'}},fmt(untagAmt)),h('div',{className:'cat-cnt'},untagCnt+' txns'))
         )
       ),
 
-    // Waterfall
     salary>0&&h('div',null,
       h('div',{className:'sh'},'Where it went'),
       h('div',{className:'card'},
         h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'💰 Salary'),h('span',{className:'wf-val',style:{color:'var(--grn)'}},fmt(salary))),
         cashInHand>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'💵 Cash in hand'),h('span',{className:'wf-val',style:{color:'var(--grn)'}},fmt(cashInHand))),
         h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− UPI transactions'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(txnTotal))),
-        sbiSpent>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− SBI credit spent'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(sbiSpent))),
+        sbiSpent>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− SBI credit'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(sbiSpent))),
         debtPaid>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Debts paid'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(debtPaid))),
-        savPaid>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Savings transferred'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(savPaid))),
+        savPaid>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Savings'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(savPaid))),
         lentOut>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Lent out'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(lentOut))),
-        cashSpend>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Cash spends'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(cashSpend))),
-        h('div',{className:'wf-row',style:{paddingTop:'.48rem',borderTop:'2px solid var(--bd)'}},
+        cashSpend>0&&h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'− Cash'),h('span',{className:'wf-val',style:{color:'var(--rose)'}},fmt(cashSpend))),
+        h('div',{className:'wf-row',style:{paddingTop:'.55rem',borderTop:'2px solid var(--bd)'}},
           h('span',{className:'wf-lbl',style:{fontWeight:800,color:'var(--tx)'}},'= Balance'),
-          h('span',{style:{fontFamily:'var(--mono)',fontWeight:900,fontSize:'.88rem',color:balance>=0?'var(--grn)':'var(--rose)'}},fmt(balance))
+          h('span',{style:{fontFamily:'var(--mono)',fontWeight:900,fontSize:'1rem',color:balance>=0?'var(--grn)':'var(--rose)'}},fmt(balance))
         ),
         h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'÷ '+dLeft+' days left'),h('span',{className:'wf-val',style:{color:safeDay>500?'var(--grn)':'var(--amb)'}},fmt(safeDay)+'/day')),
-        h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'÷ '+wLeft+' weeks left'),h('span',{className:'wf-val',style:{color:safeWeek>2000?'var(--grn)':'var(--amb)'}},fmt(safeWeek)+'/wk'))
+        h('div',{className:'wf-row'},h('span',{className:'wf-lbl'},'÷ '+wLeft+' weeks left'),h('span',{className:'wf-val',style:{color:safeWeek>2000?'var(--grn)':'var(--amb)'}},fmt(safeWeek)+'/week'))
       )
     )
   );
 }
 
-// ── TAG PAGE ─────────────────────────────────────────────────────────────────
+// ── TAG PAGE ─────────────────────────────────────────────────────────────
 function TagPage({txns,onTagChange}){
   const[tab,setTab]=useState('untagged');
   const[search,setSearch]=useState('');
@@ -576,51 +580,46 @@ function TagPage({txns,onTagChange}){
 
   const filtered=useMemo(()=>{
     let list=tab==='all'?txns:txns.filter(t=>t.tag===tab);
-    if(search){
-      const q=search.toLowerCase();
-      list=list.filter(t=>cleanRecv(t.receiver).toLowerCase().includes(q)||t.date.includes(q)||t.receiver.toLowerCase().includes(q));
-    }
+    if(search){const q=search.toLowerCase();list=list.filter(t=>cleanRecv(t.receiver).toLowerCase().includes(q)||t.date.includes(q)||t.receiver.toLowerCase().includes(q))}
     return[...list].sort((a,b)=>b.amount-a.amount);
   },[txns,tab,search]);
 
   const tabs=['untagged','all',...TAGS.filter(t=>t!=='untagged'&&byTag[t]>0)].slice(0,7);
 
   return h('div',{className:'page'},
-    h('div',{className:'ph'},h('div',{className:'ph-title'},'Tag'),h('div',{className:'ph-sub'},untagCnt+' untagged (weekday ≥ ₹500)')),
+    h('div',{className:'ph'},h('div',{className:'ph-title'},'Tag'),h('div',{className:'ph-sub'},untagCnt+' untagged')),
     untagCnt===0
-      ?h('div',{className:'note n-grn'},'✓ All tagged!')
-      :h('div',{className:'note n-amb'},'⚠ '+untagCnt+' weekday transactions ≥ ₹500 need a tag'),
+      ?h('div',{className:'note n-grn'},'✓ All transactions tagged!')
+      :h('div',{className:'note n-amb'},'⚠ '+untagCnt+' weekday spends ≥ ₹500 need your review'),
     h('div',{className:'tab-bar'},
       tabs.map(t=>h('button',{key:t,className:`tab${tab===t?' on':''}`,onClick:()=>setTab(t)},
         t==='all'?'All':t==='untagged'?`❓ ${untagCnt}`:(TM[t]?.icon||'')+' '+(TM[t]?.label||t)
       ))
     ),
-    h('input',{type:'text',placeholder:'Search…',value:search,onChange:e=>setSearch(e.target.value),style:{marginBottom:'.5rem',fontSize:'.72rem'}}),
+    h('input',{type:'text',placeholder:'Search name, date…',value:search,onChange:e=>setSearch(e.target.value),style:{marginBottom:'.6rem'}}),
     filtered.length===0
       ?h('div',{className:'empty'},h('div',{className:'empty-icon'},'🎉'),h('div',{className:'empty-title'},'Nothing here'),h('div',{className:'empty-body'},'No transactions in this filter.'))
       :h('div',{className:'txn-list'},
-        filtered.map(txn=>
-          h('div',{key:txn.ref,className:'txn-row'},
-            h('div',{className:'txn-left'},
-              h('div',{className:'txn-date'},txn.date+' · '+txn.time+(txn.isYesCC?' · YES CC':'')),
-              h('div',{className:'txn-recv'},cleanRecv(txn.receiver)),
-              h('div',{style:{marginTop:3}},
-                h('select',{className:'tag-sel',value:txn.tag,onChange:e=>onTagChange(txn.ref,e.target.value)},
-                  TAGS.map(t=>h('option',{key:t,value:t},TM[t].icon+' '+TM[t].label))
-                )
+        filtered.map(txn=>h('div',{key:txn.ref,className:'txn-row'},
+          h('div',{className:'txn-left'},
+            h('div',{className:'txn-date'},txn.date+' · '+txn.time+(txn.isYesCC?' · YES CC':'')),
+            h('div',{className:'txn-recv'},cleanRecv(txn.receiver)),
+            h('div',{style:{marginTop:4}},
+              h('select',{className:'tag-sel',value:txn.tag,onChange:e=>onTagChange(txn.ref,e.target.value)},
+                TAGS.map(t=>h('option',{key:t,value:t},TM[t].icon+' '+TM[t].label))
               )
-            ),
-            h('div',{className:'txn-right'},
-              h('div',{className:`txn-amt ${heatCls(txn.amount)}`},fmt(txn.amount)),
-              txn.isYesCC&&h('div',{style:{fontSize:'.46rem',color:'#D97706',fontWeight:800,marginTop:2}},'YES CC')
             )
+          ),
+          h('div',{className:'txn-right'},
+            h('div',{className:`txn-amt ${heatCls(txn.amount)}`},fmt(txn.amount)),
+            txn.isYesCC&&h('div',{style:{fontSize:'10px',color:'#D97706',fontWeight:800,marginTop:3}},'YES CC')
           )
-        )
+        ))
       )
   );
 }
 
-// ── INSIGHTS PAGE ─────────────────────────────────────────────────────────────
+// ── INSIGHTS ──────────────────────────────────────────────────────────────
 function InsightsPage({txns,settings,manual}){
   if(!txns.length)return h('div',{className:'page'},h('div',{className:'empty',style:{marginTop:'2rem'}},h('div',{className:'empty-icon'},'📊'),h('div',{className:'empty-title'},'No data'),h('div',{className:'empty-body'},'Upload a file first.')));
 
@@ -647,301 +646,191 @@ function InsightsPage({txns,settings,manual}){
   const wdTxns=txns.filter(t=>!isWeekend(parseDate(t.date)));
   const weTotal=weTxns.reduce((a,t)=>a+t.amount,0);
   const wdTotal=wdTxns.reduce((a,t)=>a+t.amount,0);
-
   const weDays=new Set(weTxns.map(t=>t.date)).size||1;
   const wdDays=new Set(wdTxns.map(t=>t.date)).size||1;
   const activeDays=new Set(txns.map(t=>t.date)).size||1;
   const avgDay=txnTotal/activeDays;
-
   const weekSet=new Set();
   txns.forEach(t=>{const d=parseDate(t.date);weekSet.add(d.getFullYear()+'-'+d.getMonth()+'-W'+weekOfMonth(d))});
   const avgWeek=txnTotal/(weekSet.size||1);
 
   // Weekend by week
-  const wkndByWk={};
+  const wkByWk={};
   weTxns.forEach(t=>{
     const d=parseDate(t.date);
     const wk='W'+weekOfMonth(d);
-    const dk=t.date;
-    if(!wkndByWk[wk])wkndByWk[wk]={total:0,days:{}};
-    wkndByWk[wk].total+=t.amount;
-    if(!wkndByWk[wk].days[dk])wkndByWk[wk].days[dk]={total:0,date:d};
-    wkndByWk[wk].days[dk].total+=t.amount;
+    if(!wkByWk[wk])wkByWk[wk]={total:0,days:{}};
+    wkByWk[wk].total+=t.amount;
+    if(!wkByWk[wk].days[t.date])wkByWk[wk].days[t.date]={total:0,date:d};
+    wkByWk[wk].days[t.date].total+=t.amount;
   });
-  const wkndWeeks=Object.entries(wkndByWk).sort((a,b)=>a[0].localeCompare(b[0]));
+  const wkndWeeks=Object.entries(wkByWk).sort((a,b)=>a[0].localeCompare(b[0]));
   const DNS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   return h('div',{className:'page'},
-    h('div',{className:'ph'},h('div',{className:'ph-title'},'Insights'),h('div',{className:'ph-sub'},'What your spending looks like')),
+    h('div',{className:'ph'},h('div',{className:'ph-title'},'Insights'),h('div',{className:'ph-sub'},'Patterns & projections')),
 
-    // Key projections
     h('div',{className:'card mb'},
-      salary>0&&h('div',{className:'ins-row'},
-        h('span',{className:'ins-lbl'},'📅 Left to spend / day'),
-        h('span',{className:'ins-val',style:{color:balance/dLeft>500?'var(--grn)':'var(--amb)'}},fmt(balance>0?balance/dLeft:0))
-      ),
-      salary>0&&h('div',{className:'ins-row'},
-        h('span',{className:'ins-lbl'},'📅 Left to spend / week'),
-        h('span',{className:'ins-val',style:{color:balance/wLeft>2000?'var(--grn)':'var(--amb)'}},fmt(balance>0?balance/wLeft:0))
-      ),
-      h('div',{className:'ins-row'},
-        h('span',{className:'ins-lbl'},'📊 Avg / day (actual)'),
-        h('span',{className:`ins-val ${heatCls(avgDay)}`},fmt(avgDay))
-      ),
-      h('div',{className:'ins-row'},
-        h('span',{className:'ins-lbl'},'📊 Avg / week (actual)'),
-        h('span',{className:`ins-val ${heatCls(avgWeek)}`},fmt(avgWeek))
-      )
+      salary>0&&h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'📅 Left to spend / day'),h('span',{className:'ins-val',style:{color:balance/dLeft>500?'var(--grn)':'var(--amb)'}},fmt(balance>0?balance/dLeft:0))),
+      salary>0&&h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'📅 Left to spend / week'),h('span',{className:'ins-val',style:{color:balance/wLeft>2000?'var(--grn)':'var(--amb)'}},fmt(balance>0?balance/wLeft:0))),
+      h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'📊 Avg / day (actual)'),h('span',{className:`ins-val ${heatCls(avgDay)}`},fmt(avgDay))),
+      h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'📊 Avg / week (actual)'),h('span',{className:`ins-val ${heatCls(avgWeek)}`},fmt(avgWeek)))
     ),
 
-    // YES CC
     h('div',{className:'sh'},'YES Credit Card'),
     yesCC===0
-      ?h('div',{className:'note n-pur'},'No YES CC transactions found')
+      ?h('div',{className:'note n-pur'},'No YES CC transactions found — they auto-tag from the bank column')
       :h('div',{className:'card'},
-        h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Total YES CC'),h('span',{className:'ins-val',style:{color:'#D97706',fontSize:'.88rem',fontWeight:900}},fmt(yesCC))),
+        h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Total YES CC'),h('span',{className:'ins-val',style:{color:'#D97706',fontSize:'1rem',fontWeight:900}},fmt(yesCC))),
         h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Transactions'),h('span',{className:'ins-val'},yesTxns.length+' txns')),
         h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Avg per txn'),h('span',{className:`ins-val ${heatCls(yesCC/yesTxns.length)}`},fmt(yesCC/(yesTxns.length||1))))
       ),
 
-    // Weekend vs Weekday
     h('div',{className:'sh'},'Weekend vs Weekday'),
     h('div',{className:'g2'},
-      h('div',{className:'sc sc-top',style:{borderTopColor:'var(--pnk)'}},
-        h('div',{className:'sc-lbl'},'☀ Weekend'),
-        h('div',{className:`sc-val ${heatCls(weTotal)}`},fmtK(weTotal)),
-        h('div',{className:'sc-sub'},fmt(weTotal/weDays)+'/day')
-      ),
-      h('div',{className:'sc sc-top',style:{borderTopColor:'var(--p2)'}},
-        h('div',{className:'sc-lbl'},'💼 Weekday'),
-        h('div',{className:`sc-val ${heatCls(wdTotal)}`},fmtK(wdTotal)),
-        h('div',{className:'sc-sub'},fmt(wdTotal/wdDays)+'/day')
-      )
+      h('div',{className:'sc sc-top',style:{borderTopColor:'var(--pnk)'}},h('div',{className:'sc-lbl'},'🛍️ Weekend'),h('div',{className:`sc-val ${heatCls(weTotal)}`},fmtK(weTotal)),h('div',{className:'sc-sub'},fmt(weTotal/weDays)+'/day')),
+      h('div',{className:'sc sc-top',style:{borderTopColor:'var(--p3)'}},h('div',{className:'sc-lbl'},'💼 Weekday'),h('div',{className:`sc-val ${heatCls(wdTotal)}`},fmtK(wdTotal)),h('div',{className:'sc-sub'},fmt(wdTotal/wdDays)+'/day'))
     ),
 
-    // Weekend by week detail
-    wkndWeeks.length===0
-      ?h('div',{className:'note n-pur'},'No weekend transactions')
-      :h('div',null,
-        h('div',{className:'sh'},'Weekend Breakdown'),
-        wkndWeeks.map(([wk,data])=>
-          h('div',{key:wk,className:'wknd-card'},
-            h('div',{className:'wknd-head'},
-              h('span',{style:{fontWeight:900,fontSize:'.8rem',color:'var(--pnk)'}},'🎉 '+wk+' Weekend'),
-              h('span',{style:{fontFamily:'var(--mono)',fontWeight:700,fontSize:'.88rem',color:heatHex(data.total)}},fmt(data.total))
-            ),
-            Object.entries(data.days).sort((a,b)=>a[0].localeCompare(b[0])).map(([ds,dd])=>
-              h('div',{key:ds,className:'wknd-day'},
-                h('div',null,
-                  h('div',{style:{fontSize:'.7rem',fontWeight:700}},DNS[dd.date.getDay()]+' '+ds),
-                ),
-                h('span',{style:{fontFamily:'var(--mono)',fontWeight:700,color:heatHex(dd.total)}},fmt(dd.total))
-              )
+    wkndWeeks.length>0&&h('div',null,
+      h('div',{className:'sh'},'Weekend Breakdown'),
+      wkndWeeks.map(([wk,data])=>
+        h('div',{key:wk,className:'wknd-card'},
+          h('div',{className:'wknd-head'},
+            h('span',{style:{fontWeight:900,fontSize:'15px',color:'var(--pnk)'}},'🛍️ '+wk+' Weekend'),
+            h('span',{style:{fontFamily:'var(--mono)',fontWeight:700,fontSize:'16px',color:heatHex(data.total)}},fmt(data.total))
+          ),
+          Object.entries(data.days).sort((a,b)=>a[0].localeCompare(b[0])).map(([ds,dd])=>
+            h('div',{key:ds,className:'wknd-day'},
+              h('div',{style:{fontSize:'14px',fontWeight:700}},DNS[dd.date.getDay()]+', '+ds),
+              h('span',{style:{fontFamily:'var(--mono)',fontWeight:700,color:heatHex(dd.total)}},fmt(dd.total))
             )
           )
         )
       )
+    )
   );
 }
 
-// ── MONEY PAGE ─────────────────────────────────────────────────────────────
+// ── MONEY PAGE ────────────────────────────────────────────────────────────
 function MoneyPage({manual,onManualChange}){
   const[tab,setTab]=useState('debts');
-  function addItem(key){onManualChange({...manual,[key]:[...(manual[key]||[]),{label:'',amount:0,id:Date.now()}]})}
-  function updItem(key,id,f,v){onManualChange({...manual,[key]:(manual[key]||[]).map(i=>i.id===id?{...i,[f]:v}:i)})}
-  function delItem(key,id){onManualChange({...manual,[key]:(manual[key]||[]).filter(i=>i.id!==id)})}
-  const SEC={
-    debts: {icon:'💳',color:'var(--rose)',hint:'Credit bills, loans, EMIs'},
-    savings:{icon:'💰',color:'var(--grn)',hint:'SIP, FD, emergency fund'},
-    lent:  {icon:'🤝',color:'var(--p2)',hint:'Money you gave out to return'},
-  };
+  function add(k){onManualChange({...manual,[k]:[...(manual[k]||[]),{label:'',amount:0,id:Date.now()}]})}
+  function upd(k,id,f,v){onManualChange({...manual,[k]:(manual[k]||[]).map(i=>i.id===id?{...i,[f]:v}:i)})}
+  function del(k,id){onManualChange({...manual,[k]:(manual[k]||[]).filter(i=>i.id!==id)})}
+  const SEC={debts:{icon:'💳',color:'var(--rose)',hint:'Credit bills, loans, EMIs — deducted from balance'},savings:{icon:'💰',color:'var(--grn)',hint:'SIP, FD, savings — deducted from balance'},lent:{icon:'🤝',color:'var(--p3)',hint:'Money given out to someone — deducted from balance'}};
   const sec=SEC[tab];
   const list=manual[tab]||[];
   const total=list.reduce((a,i)=>a+i.amount,0);
   const cashSpend=manual.cashSpend||0;
   return h('div',{className:'page'},
     h('div',{className:'ph'},h('div',{className:'ph-title'},'Money Flows'),h('div',{className:'ph-sub'},'All deducted from balance')),
-    h('div',{className:'tab-bar'},
-      ['debts','savings','lent','cash'].map(t=>
-        h('button',{key:t,className:`tab${tab===t?' on':''}`,onClick:()=>setTab(t)},
-          (SEC[t]?.icon||'💵')+' '+(t==='cash'?'Cash':t.charAt(0).toUpperCase()+t.slice(1))
-        )
-      )
-    ),
-    tab!=='cash'
-      ?h('div',null,
-        h('div',{className:'note',style:{background:`${sec.color}12`,borderColor:sec.color,color:sec.color}},sec.icon+' '+sec.hint),
-        list.length===0
-          ?h('div',{className:'empty',style:{marginBottom:'.5rem'}},h('div',{className:'empty-icon'},sec.icon),h('div',{className:'empty-title'},'None added'))
-          :h('div',{className:'card mb'},
-            list.map(item=>
-              h('div',{key:item.id,className:'money-item'},
-                h('div',{className:'f1',style:{display:'flex',flexDirection:'column',gap:4}},
-                  h('input',{type:'text',value:item.label,placeholder:'Label…',onChange:e=>updItem(tab,item.id,'label',e.target.value),style:{padding:'.3rem .6rem',fontSize:'.72rem'}}),
-                  h('input',{type:'number',value:item.amount||'',inputMode:'numeric',placeholder:'Amount',onChange:e=>updItem(tab,item.id,'amount',parseFloat(e.target.value)||0),style:{padding:'.3rem .6rem',fontSize:'.72rem'}})
-                ),
-                h('button',{className:'del-btn',onClick:()=>delItem(tab,item.id)},'✕')
-              )
+    h('div',{className:'tab-bar'},['debts','savings','lent','cash'].map(t=>h('button',{key:t,className:`tab${tab===t?' on':''}`,onClick:()=>setTab(t)},(SEC[t]?.icon||'💵')+' '+(t==='cash'?'Cash':t.charAt(0).toUpperCase()+t.slice(1))))),
+    tab!=='cash'?h('div',null,
+      h('div',{className:'note',style:{background:`${sec.color}14`,borderColor:sec.color,color:sec.color}},sec.icon+' '+sec.hint),
+      list.length===0?h('div',{className:'empty',style:{marginBottom:'.6rem'}},h('div',{className:'empty-icon'},sec.icon),h('div',{className:'empty-title'},'None added'))
+        :h('div',{className:'card mb'},
+          list.map(item=>h('div',{key:item.id,className:'money-item'},
+            h('div',{className:'f1',style:{display:'flex',flexDirection:'column',gap:5}},
+              h('input',{type:'text',value:item.label,placeholder:'Label…',onChange:e=>upd(tab,item.id,'label',e.target.value)}),
+              h('input',{type:'number',value:item.amount||'',inputMode:'numeric',placeholder:'Amount',onChange:e=>upd(tab,item.id,'amount',parseFloat(e.target.value)||0)})
             ),
-            h('div',{style:{display:'flex',justifyContent:'space-between',paddingTop:'.45rem',borderTop:'1px solid var(--bd)',marginTop:'.2rem'}},
-              h('span',{style:{fontSize:'.62rem',fontWeight:700,color:'var(--m1)'}},'Total'),
-              h('span',{style:{fontFamily:'var(--mono)',fontWeight:900,fontSize:'.88rem',color:sec.color}},fmt(total))
-            )
-          ),
-        h('button',{className:'btn btn-sec btn-sm',style:{marginBottom:'.5rem'},onClick:()=>addItem(tab)},'+ Add')
+            h('button',{className:'del-btn',onClick:()=>del(tab,item.id)},'✕')
+          )),
+          h('div',{style:{display:'flex',justifyContent:'space-between',paddingTop:'.5rem',borderTop:'1px solid var(--bd)',marginTop:'.25rem'}},
+            h('span',{style:{fontSize:'13px',fontWeight:700,color:'var(--m1)'}},'Total'),
+            h('span',{style:{fontFamily:'var(--mono)',fontWeight:900,fontSize:'1rem',color:sec.color}},fmt(total))
+          )
+        ),
+      h('button',{className:'btn btn-sec btn-sm',style:{marginBottom:'.6rem'},onClick:()=>add(tab)},'+ Add')
+    ):h('div',null,
+      h('div',{className:'note n-amb'},'💵 Cash purchases not captured in bank history — deducted from balance'),
+      h('div',{className:'card'},h('label',null,'Total cash spent this period'),h('input',{type:'number',inputMode:'numeric',value:cashSpend||'',placeholder:'0',onChange:e=>onManualChange({...manual,cashSpend:parseFloat(e.target.value)||0})}),
+        cashSpend>0&&h('div',{style:{marginTop:'.45rem',fontSize:'12px',fontFamily:'var(--mono)',color:'var(--amb)',fontWeight:700}},'−'+fmt(cashSpend)+' deducted from balance')
       )
-      :h('div',null,
-        h('div',{className:'note n-amb'},'💵 Cash purchases not in bank history'),
-        h('div',{className:'card'},
-          h('label',null,'Total cash spent'),
-          h('input',{type:'number',inputMode:'numeric',value:cashSpend||'',placeholder:'0',onChange:e=>onManualChange({...manual,cashSpend:parseFloat(e.target.value)||0})}),
-          cashSpend>0&&h('div',{style:{marginTop:'.4rem',fontSize:'.62rem',fontFamily:'var(--mono)',color:'var(--amb)',fontWeight:700}},'−'+fmt(cashSpend)+' from balance')
-        )
-      )
+    )
   );
 }
 
-// ── SETTINGS PAGE ─────────────────────────────────────────────────────────
+// ── SETTINGS ──────────────────────────────────────────────────────────────
 function SettingsPage({settings,onSave,txnCount,autoDate,toast}){
   const[loc,setLoc]=useState({...settings});
-  function save(){onSave(loc);toast('Saved ✓')}
-
+  function save(){onSave(loc);toast('Settings saved ✓')}
   return h('div',{className:'page'},
-    h('div',{className:'ph'},h('div',{className:'ph-title'},'Settings'),h('div',{className:'ph-sub'},txnCount+' transactions')),
-
+    h('div',{className:'ph'},h('div',{className:'ph-title'},'Settings'),h('div',{className:'ph-sub'},txnCount+' transactions loaded')),
     h('div',{className:'sh'},'Income'),
     h('div',{className:'card'},
-      h('div',{className:'mb'},
-        h('label',null,'Monthly salary'),
-        h('input',{type:'number',inputMode:'numeric',value:loc.salary||'',placeholder:'e.g. 102844',onChange:e=>setLoc({...loc,salary:parseFloat(e.target.value)||0})})
-      ),
-      h('div',{className:'mb'},
-        h('label',null,'Cash in hand (added to salary)'),
-        h('input',{type:'number',inputMode:'numeric',value:loc.cashInHand||'',placeholder:'0',onChange:e=>setLoc({...loc,cashInHand:parseFloat(e.target.value)||0})}),
-        h('div',{style:{fontSize:'.58rem',color:'var(--m2)',marginTop:3}},'This is added to your total income')
-      ),
-      h('div',null,
-        h('label',null,'SBI credit card spent (enter manually)'),
-        h('input',{type:'number',inputMode:'numeric',value:loc.sbiSpent||'',placeholder:'0',onChange:e=>setLoc({...loc,sbiSpent:parseFloat(e.target.value)||0})}),
-        h('div',{style:{fontSize:'.58rem',color:'var(--m2)',marginTop:3}},'Deducted from your balance')
-      )
+      h('div',{className:'mb'},h('label',null,'Monthly salary'),h('input',{type:'number',inputMode:'numeric',value:loc.salary||'',placeholder:'e.g. 102844',onChange:e=>setLoc({...loc,salary:parseFloat(e.target.value)||0})})),
+      h('div',{className:'mb'},h('label',null,'Cash in hand (adds to total income)'),h('input',{type:'number',inputMode:'numeric',value:loc.cashInHand||'',placeholder:'0',onChange:e=>setLoc({...loc,cashInHand:parseFloat(e.target.value)||0})})),
+      h('div',null,h('label',null,'SBI credit card spent this month'),h('input',{type:'number',inputMode:'numeric',value:loc.sbiSpent||'',placeholder:'0',onChange:e=>setLoc({...loc,sbiSpent:parseFloat(e.target.value)||0})}),h('div',{style:{fontSize:'12px',color:'var(--m2)',marginTop:4}},'Enter manually — deducted from your balance'))
     ),
-
     h('div',{className:'sh'},'Salary Start Date'),
     h('div',{className:'card'},
-      autoDate&&h('div',{className:'note n-grn',style:{marginBottom:'.5rem'}},'✓ Auto-detected: '+autoDate+' (date of first ANKA/UMAR/UBEY/MOJO payment)'),
-      h('div',null,
-        h('label',null,'Override start date (optional)'),
-        h('input',{type:'date',value:loc.salaryDate||'',onChange:e=>setLoc({...loc,salaryDate:e.target.value})}),
-        h('div',{style:{fontSize:'.58rem',color:'var(--m2)',marginTop:3}},'Leave blank to use auto-detected date. Only transactions from this date are counted.')
-      )
+      autoDate&&h('div',{className:'note n-grn',style:{marginBottom:'.5rem'}},'✓ Auto-detected: '+autoDate+' — first payment to ANKA/UMAR/UBEY/MOJO'),
+      h('label',null,'Override (optional)'),
+      h('input',{type:'date',value:loc.salaryDate||'',onChange:e=>setLoc({...loc,salaryDate:e.target.value})}),
+      h('div',{style:{fontSize:'12px',color:'var(--m2)',marginTop:4}},'Only transactions from this date are counted. Leave blank to use auto-detected date.')
     ),
-
-    h('button',{className:'btn btn-pri',style:{marginTop:'.3rem',marginBottom:'.5rem'},onClick:save},'✓ Save Settings'),
-
-    h('div',{className:'sh'},'Auto-tag Rules'),
+    h('button',{className:'btn btn-pri',style:{marginTop:'.4rem',marginBottom:'.6rem'},onClick:save},'✓ Save Settings'),
+    h('div',{className:'sh'},'Data'),
     h('div',{className:'card'},
-      [
-        ['YES BANK CREDIT CARD','→ YES CC (auto from bank column)','yescc'],
-        ['ANKA receiver','→ Rent','rent'],
-        ['UMAR receiver','→ Family','family'],
-        ['UBEY receiver','→ Savings','savings'],
-        ['MOJO receiver','→ Furniture Rent','furniture'],
-        ['@icici / @airtel / Jio','→ Recharge','recharge'],
-        ['Sunday 5:30–7 PM','→ Vegetable','vegetable'],
-        ['Weekday 8:50–9:40 AM / 6:10–7:30 PM','→ Uber','uber'],
-        ['Weekend (other)','→ Entertainment','entertainment'],
-        ['Weekday < ₹500','→ Other','other'],
-        ['Weekday ≥ ₹500','→ Untagged (manual)','untagged'],
-      ].map(([rule,tag,cls],i,arr)=>
-        h('div',{key:i,style:{display:'flex',alignItems:'center',gap:'.5rem',padding:'.26rem 0',borderBottom:i<arr.length-1?'1px solid var(--bd)':'none'}},
-          h('span',{style:{fontSize:'.65rem',color:'var(--m1)',flex:1}},rule),
-          h('span',{className:`tag tag-${cls}`,style:{flexShrink:0}},tag)
-        )
-      )
+      h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Transactions loaded'),h('span',{className:'ins-val'},txnCount)),
+      h('div',{className:'ins-row'},h('span',{className:'ins-lbl'},'Tags & settings'),h('span',{className:'ins-val',style:{color:'var(--grn)'}},'✓ Auto-saved to browser'))
     ),
-
-    h('div',{className:'sh',style:{color:'var(--rose)'}},'Danger'),
-    h('button',{className:'btn btn-red',onClick:()=>{
-      if(confirm('Clear all saved data?')){
-        Object.values(LS).forEach(k=>localStorage.removeItem(k));
-        window.location.reload();
-      }
-    }},'🗑 Clear all saved data')
+    h('div',{className:'sh',style:{color:'var(--rose)'}},'Danger Zone'),
+    h('button',{className:'btn btn-red',onClick:()=>{if(confirm('Clear all data, tags and settings?')){Object.values(LS).forEach(k=>localStorage.removeItem(k));window.location.reload()}}},
+      '🗑 Clear all saved data')
   );
 }
 
-// ── APP ────────────────────────────────────────────────────────────────────
+// ── APP ───────────────────────────────────────────────────────────────────
 function App(){
-  // Load everything from localStorage on mount
-  const[settings,setSettings]=useState(()=>ls_get(LS.SET,{salary:0,cashInHand:0,sbiSpent:0,salaryDate:''}));
-  const[tagMap,setTagMap]=useState(()=>ls_get(LS.TAGS,{}));
-  const[manual,setManual]=useState(()=>ls_get(LS.MAN,{debts:[],savings:[],lent:[],cashSpend:0}));
-  const[rawTxns,setRawTxns]=useState(()=>ls_get(LS.RAW,[]));  // ← persisted!
-  const[page,setPage]=useState(()=>ls_get(LS.RAW,[]).length>0?'overview':'upload');
+  const[settings,setSettings]=useState(()=>lsGet(LS.SET,{salary:0,cashInHand:0,sbiSpent:0,salaryDate:''}));
+  const[tagMap,setTagMap]=useState(()=>lsGet(LS.TAGS,{}));
+  const[manual,setManual]=useState(()=>lsGet(LS.MAN,{debts:[],savings:[],lent:[],cashSpend:0}));
+  const[rawTxns,setRawTxns]=useState(()=>lsGet(LS.RAW,[]));
+  const[page,setPage]=useState(()=>lsGet(LS.RAW,[]).length>0?'overview':'upload');
   const[toastMsg,setToastMsg]=useState('');
   const toastRef=useRef();
 
-  function toast(msg){
-    setToastMsg(msg);
-    if(toastRef.current)clearTimeout(toastRef.current);
-    toastRef.current=setTimeout(()=>setToastMsg(''),2400);
-  }
+  function toast(msg){setToastMsg(msg);if(toastRef.current)clearTimeout(toastRef.current);toastRef.current=setTimeout(()=>setToastMsg(''),2400)}
 
-  // Persist all state changes
-  useEffect(()=>{ls_set(LS.SET,settings)},[settings]);
-  useEffect(()=>{ls_set(LS.TAGS,tagMap)},[tagMap]);
-  useEffect(()=>{ls_set(LS.MAN,manual)},[manual]);
-  useEffect(()=>{ls_set(LS.RAW,rawTxns)},[rawTxns]);
+  useEffect(()=>{lsSet(LS.SET,settings)},[settings]);
+  useEffect(()=>{lsSet(LS.TAGS,tagMap)},[tagMap]);
+  useEffect(()=>{lsSet(LS.MAN,manual)},[manual]);
+  useEffect(()=>{lsSet(LS.RAW,rawTxns)},[rawTxns]);
 
-  // Auto-detect salary date from saved raw txns
-  const autoDate=useMemo(()=>{
-    const d=detectSalaryDate(rawTxns);
-    return d||null;
-  },[rawTxns]);
+  const autoDate=useMemo(()=>detectSalaryDate(rawTxns),[rawTxns]);
 
-  // Effective cutoff: override > auto > none
-  const cutoffDate=useMemo(()=>{
+  const cutoff=useMemo(()=>{
     if(settings.salaryDate)return new Date(settings.salaryDate);
-    if(autoDate){const[d,m,y]=autoDate.split('/');return new Date(+y,+m-1,+d);}
+    if(autoDate){const[d,m,y]=autoDate.split('/');return new Date(+y,+m-1,+d)}
     return null;
   },[settings.salaryDate,autoDate]);
 
-  // Build display txns with tags applied + cutoff filter
   const txns=useMemo(()=>
     rawTxns
-      .filter(t=>!cutoffDate||parseDate(t.date)>=cutoffDate)
+      .filter(t=>!cutoff||parseDate(t.date)>=cutoff)
       .map(t=>({...t,tag:tagMap[t.ref]||(t.autoTag||'untagged')}))
-  ,[rawTxns,tagMap,cutoffDate]);
+  ,[rawTxns,tagMap,cutoff]);
 
   function handleLoad(html){
     const parsed=parseHTML(html);
-    // Merge with existing: keep existing refs, add new ones
     const existingRefs=new Set(rawTxns.map(t=>t.ref));
-    const newTxns=parsed.filter(t=>!existingRefs.has(t.ref)).map(t=>({...t,autoTag:autoTag(t)}));
-    // Re-tag all existing too (in case autoTag logic changed)
-    const existingRetagged=rawTxns.map(t=>({...t,autoTag:autoTag(t)}));
-    const merged=[...existingRetagged,...newTxns];
+    const newOnes=parsed.filter(t=>!existingRefs.has(t.ref)).map(t=>({...t,autoTag:autoTag(t)}));
+    const reTagged=rawTxns.map(t=>({...t,autoTag:autoTag(t)}));
+    const merged=[...reTagged,...newOnes];
     setRawTxns(merged);
     setPage('overview');
-    toast(`${merged.length} total · ${newTxns.length} new · tags preserved ✓`);
+    toast(merged.length+' total · '+newOnes.length+' new · tags kept ✓');
   }
 
   function handleTagChange(ref,tag){setTagMap(prev=>({...prev,[ref]:tag}))}
-  function handleSettingsSave(s){setSettings(s)}
-  function handleManualChange(m){setManual(m)}
 
   const hasData=rawTxns.length>0;
   const untagCnt=txns.filter(t=>t.tag==='untagged').length;
 
-  const navItems=[
-    {id:'upload',  label:'Upload'},
-    {id:'overview',label:'Overview'},
-    {id:'tag',     label:untagCnt>0?`Tag ${untagCnt}`:'Tag'},
-    {id:'insights',label:'Insights'},
-    {id:'money',   label:'Money'},
-    {id:'settings',label:'Settings'},
-  ];
+  const NAV=[{id:'upload',label:'Upload'},{id:'overview',label:'Overview'},{id:'tag',label:untagCnt>0?`Tag ${untagCnt}`:'Tag'},{id:'insights',label:'Insights'},{id:'money',label:'Money'},{id:'settings',label:'Settings'}];
 
   function navIcon(id){
     if(id==='upload')   return h('svg',{viewBox:'0 0 24 24'},h('path',{d:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'}),h('polyline',{points:'17 8 12 3 7 8'}),h('line',{x1:12,y1:3,x2:12,y2:15}));
@@ -959,26 +848,24 @@ function App(){
     page==='overview' &&(needsData?null:h(OverviewPage, {txns,settings,manual})),
     page==='tag'      &&(needsData?null:h(TagPage,      {txns,onTagChange:handleTagChange})),
     page==='insights' &&(needsData?null:h(InsightsPage, {txns,settings,manual})),
-    page==='money'    &&h(MoneyPage,   {manual,onManualChange:handleManualChange}),
-    page==='settings' &&h(SettingsPage,{settings,onSave:handleSettingsSave,txnCount:txns.length,autoDate,toast}),
+    page==='money'    &&h(MoneyPage,    {manual,onManualChange:setManual}),
+    page==='settings' &&h(SettingsPage, {settings,onSave:setSettings,txnCount:txns.length,autoDate,toast}),
 
-    needsData&&h('div',{style:{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(243,240,255,.92)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:50,backdropFilter:'blur(4px)'}},
-      h('div',{className:'card',style:{maxWidth:'260px',textAlign:'center',padding:'1.5rem',border:'1.5px solid var(--p4)'}},
-        h('div',{style:{fontSize:'2rem',marginBottom:'.5rem'}},'📂'),
-        h('div',{style:{fontWeight:900,marginBottom:'.35rem'}},'No transactions'),
-        h('div',{style:{fontSize:'.7rem',color:'var(--m2)',marginBottom:'.75rem'}},'Upload your YES Bank transaction HTML.'),
+    needsData&&h('div',{style:{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(240,236,255,.93)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:50,backdropFilter:'blur(6px)'}},
+      h('div',{className:'card',style:{maxWidth:'280px',textAlign:'center',padding:'1.75rem',border:'2px solid var(--p4)'}},
+        h('div',{style:{fontSize:'2.5rem',marginBottom:'.6rem'}},'📂'),
+        h('div',{style:{fontWeight:900,fontSize:'1.1rem',marginBottom:'.4rem'}},'No transactions'),
+        h('div',{style:{fontSize:'13px',color:'var(--m2)',marginBottom:'.85rem',lineHeight:1.5}},'Upload your YES Bank transaction HTML to get started.'),
         h('button',{className:'btn btn-pri',onClick:()=>setPage('upload')},'Go to Upload')
       )
     ),
 
     h('nav',{className:'nav'},
-      navItems.map(n=>
-        h('button',{key:n.id,className:`nb${page===n.id?' on':''}`,onClick:()=>setPage(n.id)},
-          navIcon(n.id),
-          h('span',{style:{fontSize:'.41rem',fontWeight:800,letterSpacing:'.06em',textTransform:'uppercase'}},n.label),
-          h('span',{className:'nb-pip'})
-        )
-      )
+      NAV.map(n=>h('button',{key:n.id,className:`nb${page===n.id?' on':''}`,onClick:()=>setPage(n.id)},
+        navIcon(n.id),
+        h('span',{style:{fontSize:'10px',fontWeight:800,letterSpacing:'.06em',textTransform:'uppercase'}},n.label),
+        h('span',{className:'nb-pip'})
+      ))
     ),
     h(Toast,{msg:toastMsg})
   );
