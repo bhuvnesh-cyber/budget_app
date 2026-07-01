@@ -1,413 +1,341 @@
-import { useState, useEffect, useMemo } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Budget Tracker</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#F0ECFF;color:#1A0A3C;font-family:system-ui,-apple-system,sans-serif;overflow-x:hidden;font-size:16px;line-height:1.5}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const{createElement:h,useState,useEffect,useMemo}=React;
 
-// ── STORAGE ────────────────────────────────────────────────────────────────
-const LS_KEY = "bhuvnesh_budget_v1";
-const save = (d) => { try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch {} };
-const load = (def) => { try { const v = localStorage.getItem(LS_KEY); return v ? { ...def, ...JSON.parse(v) } : def; } catch { return def; } };
+const LS_KEY='bhuvnesh_budget_v1';
+const saveLS=d=>{try{localStorage.setItem(LS_KEY,JSON.stringify(d))}catch{}};
+const loadLS=def=>{try{const v=localStorage.getItem(LS_KEY);return v?{...def,...JSON.parse(v)}:def}catch{return def}};
 
-// ── DEFAULT STATE ──────────────────────────────────────────────────────────
-const DEFAULT = {
-  salary: 102846,
-  sbiSpent: 0,      // splits equally → grocery + amazon
-  yesSpent: 0,      // goes → other
-
-  // Fixed category budgets (editable) + actual spend
-  fixed: [
-    { id: "rent",       label: "Rent",             icon: "🏠", budget: 15000, spent: 0 },
-    { id: "electricity",label: "Electricity",       icon: "⚡", budget: 1000,  spent: 0 },
-    { id: "family",     label: "Family (UMAR)",     icon: "👨‍👩‍👧", budget: 15000, spent: 0 },
-    { id: "savings",    label: "Savings (UBEY)",    icon: "💰", budget: 5000,  spent: 0 },
-    { id: "furniture",  label: "Furniture Rent",    icon: "🪑", budget: 4421,  spent: 0 },
-    { id: "wifi",       label: "WiFi (Hathway)",    icon: "📶", budget: 754,   spent: 0 },
-    { id: "petrol",     label: "Petrol",            icon: "⛽", budget: 709,   spent: 0 },
-    { id: "recharge",   label: "Recharge",          icon: "📱", budget: 698,   spent: 0 },
-    { id: "milk",       label: "Milk / Provi",      icon: "🥛", budget: 548,   spent: 0 },
-    { id: "grocery_fixed", label: "Grocery (P9 Farms)", icon: "🛒", budget: 600, spent: 0 },
-    { id: "atm",        label: "ATM Cash",          icon: "🏧", budget: 6500,  spent: 0 },
+const DEFAULT={
+  salary:102846,
+  sbiSpent:0,
+  yesSpent:0,
+  fixed:[
+    {id:'rent',       label:'Rent',              icon:'🏠',budget:15000,spent:0},
+    {id:'electricity',label:'Electricity',        icon:'⚡',budget:1000, spent:0},
+    {id:'family',     label:'Family (UMAR)',      icon:'👨‍👩‍👧',budget:15000,spent:0},
+    {id:'savings',    label:'Savings (UBEY)',     icon:'💰',budget:5000, spent:0},
+    {id:'furniture',  label:'Furniture Rent',     icon:'🪑',budget:4421, spent:0},
+    {id:'wifi',       label:'WiFi (Hathway)',     icon:'📶',budget:754,  spent:0},
+    {id:'petrol',     label:'Petrol',             icon:'⛽',budget:709,  spent:0},
+    {id:'recharge',   label:'Recharge',           icon:'📱',budget:698,  spent:0},
+    {id:'milk',       label:'Milk / Provi',       icon:'🥛',budget:548,  spent:0},
+    {id:'grocery_f',  label:'Grocery (P9 Farms)', icon:'🛒',budget:600,  spent:0},
+    {id:'atm',        label:'ATM Cash',           icon:'🏧',budget:6500, spent:0},
   ],
-
-  // Variable category budgets + actual spend
-  variable: [
-    { id: "vegetable",  label: "Vegetable",         icon: "🥦", budget: 2000,  spent: 0 },
-    { id: "mall",       label: "Mall / Fun",        icon: "🛍️", budget: 5000,  spent: 0 },
-    { id: "uber",       label: "Uber",              icon: "🚗", budget: 2000,  spent: 0 },
-    { id: "grocery_var",label: "Grocery",           icon: "🛒", budget: 0,     spent: 0, fromSBI: true },
-    { id: "other",      label: "Other",             icon: "🧾", budget: 0,     spent: 0, fromYES: true },
+  variable:[
+    {id:'vegetable',  label:'Vegetable',          icon:'🥦',budget:2000, spent:0},
+    {id:'mall',       label:'Mall / Fun',         icon:'🛍️',budget:5000, spent:0},
+    {id:'uber',       label:'Uber',               icon:'🚗',budget:2000, spent:0},
+    {id:'grocery_v',  label:'Grocery',            icon:'🛒',budget:0,    spent:0,fromSBI:true},
+    {id:'other',      label:'Other',              icon:'🧾',budget:0,    spent:0,fromYES:true},
   ],
-
-  page: "overview",
+  page:'overview',
 };
 
-// ── HELPERS ────────────────────────────────────────────────────────────────
-const fmt = (n) => "₹" + Math.abs(Math.round(n)).toLocaleString("en-IN");
-const fmtK = (n) => n >= 1000 ? "₹" + (n / 1000).toFixed(1) + "k" : "₹" + Math.round(n);
-const pct = (a, b) => b ? Math.min(100, (a / b) * 100) : 0;
-
-function spendColor(spent, budget) {
-  if (!budget) return "#7C3AED";
-  const r = spent / budget;
-  if (r >= 1) return "#DC2626";
-  if (r >= 0.75) return "#D97706";
-  if (r >= 0.5) return "#0D9488";
-  return "#059669";
+const fmt=n=>'₹'+Math.abs(Math.round(n)).toLocaleString('en-IN');
+const fmtK=n=>n>=1000?'₹'+(n/1000).toFixed(1)+'k':'₹'+Math.round(n);
+const pct=(a,b)=>b?Math.min(100,a/b*100):0;
+function spendColor(spent,budget){
+  if(!budget)return'#7C3AED';
+  const r=spent/budget;
+  if(r>=1)return'#DC2626';
+  if(r>=0.75)return'#D97706';
+  if(r>=0.5)return'#0D9488';
+  return'#059669';
 }
 
-// ── PROGRESS BAR ───────────────────────────────────────────────────────────
-function Bar({ spent, budget, height = 6 }) {
-  const p = Math.min(100, budget ? (spent / budget) * 100 : 0);
-  const color = spendColor(spent, budget);
-  return (
-    <div style={{ background: "#E8E4FF", borderRadius: 99, height, overflow: "hidden", marginTop: 6 }}>
-      <div style={{ width: `${p}%`, height, background: color, borderRadius: 99, transition: "width .4s cubic-bezier(.4,0,.2,1)" }} />
-    </div>
+// ── BAR ───────────────────────────────────────────────────────────────────
+function Bar({spent,budget,h:height=6}){
+  const p=Math.min(100,budget?(spent/budget)*100:0);
+  const color=spendColor(spent,budget);
+  return h('div',{style:{background:'#E8E4FF',borderRadius:99,height,overflow:'hidden',marginTop:6}},
+    h('div',{style:{width:p+'%',height,background:color,borderRadius:99,transition:'width .4s'}}));
+}
+
+// ── AMOUNT INPUT ──────────────────────────────────────────────────────────
+function AmtInput({value,onChange,disabled,small}){
+  return h('div',{style:{position:'relative'}},
+    h('span',{style:{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#7C3AED',fontWeight:700,fontSize:small?13:15,pointerEvents:'none'}},'₹'),
+    h('input',{
+      type:'number',inputMode:'numeric',
+      value:value||'',
+      onChange:e=>onChange(parseFloat(e.target.value)||0),
+      disabled:!!disabled,
+      style:{
+        width:'100%',
+        background:disabled?'#F0ECFF':'#F5F3FF',
+        border:`1.5px solid ${disabled?'#CAC0F0':'#A78BFA'}`,
+        borderRadius:10,color:disabled?'#8C7EAE':'#1A0A3C',
+        fontFamily:'monospace',fontSize:small?13:15,fontWeight:700,
+        padding:small?'6px 8px 6px 22px':'9px 10px 9px 26px',
+        outline:'none',cursor:disabled?'not-allowed':'auto',
+      }
+    })
   );
 }
 
-// ── AMOUNT INPUT ────────────────────────────────────────────────────────────
-function AmtInput({ value, onChange, placeholder = "0", disabled = false, small = false }) {
-  return (
-    <div style={{ position: "relative" }}>
-      <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#7C3AED", fontWeight: 700, fontSize: small ? 13 : 15, pointerEvents: "none" }}>₹</span>
-      <input
-        type="number"
-        inputMode="numeric"
-        value={value || ""}
-        onChange={e => onChange(parseFloat(e.target.value) || 0)}
-        placeholder={placeholder}
-        disabled={disabled}
-        style={{
-          width: "100%",
-          background: disabled ? "#F0ECFF" : "#F5F3FF",
-          border: `1.5px solid ${disabled ? "#CAC0F0" : "#A78BFA"}`,
-          borderRadius: 10,
-          color: disabled ? "#8C7EAE" : "#1A0A3C",
-          fontFamily: "monospace",
-          fontSize: small ? 13 : 15,
-          fontWeight: 700,
-          padding: small ? "6px 8px 6px 22px" : "9px 10px 9px 26px",
-          outline: "none",
-          MozAppearance: "textfield",
-          cursor: disabled ? "not-allowed" : "auto",
-        }}
-      />
-    </div>
+// ── CATEGORY ROW ──────────────────────────────────────────────────────────
+function CatRow({cat,onBudgetChange,onSpentChange,disabled,autoLabel}){
+  const over=cat.spent>cat.budget&&cat.budget>0;
+  const color=spendColor(cat.spent,cat.budget);
+  return h('div',{style:{padding:'12px 0',borderBottom:'1px solid #E8E4FF'}},
+    h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:8}},
+      h('span',{style:{fontSize:'1.1rem',width:28,textAlign:'center',flexShrink:0}},cat.icon),
+      h('div',{style:{flex:1}},
+        h('div',{style:{display:'flex',alignItems:'center',gap:6}},
+          h('span',{style:{fontSize:14,fontWeight:800}},cat.label),
+          autoLabel&&h('span',{style:{fontSize:10,fontWeight:800,padding:'1px 7px',borderRadius:99,background:'#EDE9FE',color:'#7C3AED',border:'1px solid #C4B5FD'}},autoLabel)
+        ),
+        cat.budget>0&&h('div',{style:{fontSize:11,color,fontFamily:'monospace',fontWeight:700,marginTop:1}},
+          fmt(cat.spent)+' / '+fmt(cat.budget)+' · '+Math.round(pct(cat.spent,cat.budget))+'%'+(over?' · OVER':''))
+      ),
+      h('div',{style:{textAlign:'right',flexShrink:0}},
+        h('div',{style:{fontSize:16,fontFamily:'monospace',fontWeight:900,color}},fmtK(cat.spent)),
+        over&&h('div',{style:{fontSize:10,fontWeight:800,color:'#DC2626'}},'+'+fmt(cat.spent-cat.budget)+' over')
+      )
+    ),
+    h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}},
+      h('div',null,
+        h('div',{style:{fontSize:10,fontWeight:800,letterSpacing:'.08em',textTransform:'uppercase',color:'#8C7EAE',marginBottom:4}},'Budget'),
+        h(AmtInput,{value:cat.budget,onChange:onBudgetChange,small:true,disabled})
+      ),
+      h('div',null,
+        h('div',{style:{fontSize:10,fontWeight:800,letterSpacing:'.08em',textTransform:'uppercase',color:'#8C7EAE',marginBottom:4}},'Spent'),
+        h(AmtInput,{value:cat.spent,onChange:onSpentChange,small:true,disabled})
+      )
+    ),
+    h(Bar,{spent:cat.spent,budget:cat.budget})
   );
 }
 
-// ── CATEGORY ROW ────────────────────────────────────────────────────────────
-function CatRow({ cat, onBudgetChange, onSpentChange, disabled = false, autoLabel = "" }) {
-  const over = cat.spent > cat.budget && cat.budget > 0;
-  const color = spendColor(cat.spent, cat.budget);
+// ── OVERVIEW ──────────────────────────────────────────────────────────────
+function Overview({state}){
+  const sbiHalf=state.sbiSpent/2;
+  const totalFixed=state.fixed.reduce((a,c)=>a+c.spent,0);
+  const totalVar=state.variable.reduce((a,c)=>{
+    if(c.fromSBI)return a+sbiHalf;
+    if(c.fromYES)return a+state.yesSpent;
+    return a+c.spent;
+  },0);
+  const creditTotal=state.sbiSpent+state.yesSpent;
+  const grandTotal=totalFixed+totalVar;
+  const balance=state.salary-grandTotal;
+  const fixedBudget=state.fixed.reduce((a,c)=>a+c.budget,0);
+  const varBudget=state.variable.reduce((a,c)=>{
+    if(c.fromSBI)return a+sbiHalf;
+    if(c.fromYES)return a+state.yesSpent;
+    return a+c.budget;
+  },0);
+  const totalBudget=fixedBudget+varBudget;
+  const balColor=balance>=0?'#059669':'#DC2626';
+  const balBg=balance>=0?'linear-gradient(140deg,#ECFDF5,#D1FAE5)':'linear-gradient(140deg,#FFF1F2,#FFE4E6)';
+  const balBorder=balance>=0?'#A7F3D0':'#FECDD3';
 
-  return (
-    <div style={{ padding: "12px 0", borderBottom: "1px solid #E8E4FF" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-        <span style={{ fontSize: "1.1rem", width: 28, textAlign: "center", flexShrink: 0 }}>{cat.icon}</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: "#1A0A3C" }}>{cat.label}</span>
-            {autoLabel && <span style={{ fontSize: 10, fontWeight: 800, padding: "1px 7px", borderRadius: 99, background: "#EDE9FE", color: "#7C3AED", border: "1px solid #C4B5FD" }}>{autoLabel}</span>}
-          </div>
-          {cat.budget > 0 && (
-            <div style={{ fontSize: 11, color: color, fontFamily: "monospace", fontWeight: 700, marginTop: 1 }}>
-              {fmt(cat.spent)} / {fmt(cat.budget)} · {Math.round(pct(cat.spent, cat.budget))}%
-              {over && " · OVER"}
-            </div>
-          )}
-        </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 16, fontFamily: "monospace", fontWeight: 900, color }}>{fmtK(cat.spent)}</div>
-          {over && <div style={{ fontSize: 10, fontWeight: 800, color: "#DC2626" }}>+{fmt(cat.spent - cat.budget)} over</div>}
-        </div>
-      </div>
+  return h('div',null,
+    // Hero
+    h('div',{style:{background:balBg,border:`1.5px solid ${balBorder}`,borderRadius:18,padding:'1.25rem',marginBottom:12,color:balColor,position:'relative',overflow:'hidden'}},
+      h('div',{style:{position:'absolute',top:-40,right:-40,width:140,height:140,borderRadius:'50%',background:'currentColor',opacity:.08,pointerEvents:'none'}}),
+      h('div',{style:{fontSize:11,fontWeight:900,letterSpacing:'.18em',textTransform:'uppercase',opacity:.75,marginBottom:4}},'Estimated Balance'),
+      h('div',{style:{fontFamily:'monospace',fontSize:'2.6rem',fontWeight:700,lineHeight:1,letterSpacing:'-.04em',marginBottom:6}},fmt(balance)),
+      h('div',{style:{fontSize:12,fontFamily:'monospace',opacity:.75}},fmt(state.salary)+' salary − '+fmt(grandTotal)+' total spent'),
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginTop:14,paddingTop:12,borderTop:'1px solid currentColor',opacity:.9}},
+        [['Fixed',fmt(totalFixed)],['Variable',fmt(totalVar)],['Credit',fmt(creditTotal)]].map(([l,v])=>
+          h('div',{key:l},
+            h('div',{style:{fontSize:10,textTransform:'uppercase',letterSpacing:'.1em',opacity:.72,fontWeight:800,marginBottom:2}},l),
+            h('div',{style:{fontFamily:'monospace',fontWeight:700,fontSize:'.95rem'}},v)
+          )
+        )
+      )
+    ),
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", color: "#8C7EAE", marginBottom: 4 }}>Budget</div>
-          <AmtInput value={cat.budget} onChange={onBudgetChange} small disabled={disabled} />
-        </div>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", color: "#8C7EAE", marginBottom: 4 }}>Spent</div>
-          <AmtInput value={cat.spent} onChange={onSpentChange} small disabled={disabled} />
-        </div>
-      </div>
+    // Budget bar
+    h('div',{style:{background:'#fff',border:'1.5px solid #CAC0F0',borderRadius:16,padding:'14px 16px',marginBottom:10,boxShadow:'0 2px 10px rgba(109,40,217,.07)'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:6}},
+        h('span',{style:{fontSize:13,fontWeight:700}},'Budget used'),
+        h('span',{style:{fontFamily:'monospace',fontSize:13,fontWeight:800,color:spendColor(grandTotal,totalBudget)}},Math.round(pct(grandTotal,totalBudget))+'%')
+      ),
+      h('div',{style:{background:'#EAE4FF',borderRadius:99,height:10,overflow:'hidden'}},
+        h('div',{style:{width:Math.min(100,pct(grandTotal,totalBudget))+'%',height:10,borderRadius:99,background:`linear-gradient(90deg,#8B5CF6,${spendColor(grandTotal,totalBudget)})`,transition:'width .6s'}})
+      ),
+      h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:5,fontSize:11,fontFamily:'monospace',color:'#8C7EAE'}},
+        h('span',null,fmt(grandTotal)+' spent'),
+        h('span',null,fmt(totalBudget)+' budgeted')
+      )
+    ),
 
-      <Bar spent={cat.spent} budget={cat.budget} />
-    </div>
+    // Waterfall
+    h('div',{style:{background:'#fff',border:'1.5px solid #CAC0F0',borderRadius:16,padding:'4px 16px',boxShadow:'0 2px 10px rgba(109,40,217,.07)'}},
+      [['💰 Salary',fmt(state.salary),'#059669'],['🏠 Fixed spent',fmt(totalFixed),'#E11D48'],['🛍️ Variable spent',fmt(totalVar),'#E11D48'],['💳 Credit total',fmt(creditTotal),'#D97706']].map(([l,v,c],i,arr)=>
+        h('div',{key:l,style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:i<arr.length-1?'1px solid #EAE4FF':'none'}},
+          h('span',{style:{fontSize:13,color:'#4A3A72',fontWeight:500}},l),
+          h('span',{style:{fontFamily:'monospace',fontWeight:700,fontSize:13,color:c}},v)
+        )
+      ),
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 0',borderTop:'2px solid #CAC0F0',marginTop:2}},
+        h('span',{style:{fontSize:14,fontWeight:800}},'= Balance'),
+        h('span',{style:{fontFamily:'monospace',fontWeight:900,fontSize:'1.05rem',color:balColor}},fmt(balance))
+      )
+    )
   );
 }
 
-// ── OVERVIEW ────────────────────────────────────────────────────────────────
-function Overview({ state }) {
-  const sbiHalf = state.sbiSpent / 2;
-  const totalFixed = state.fixed.reduce((a, c) => a + c.spent, 0);
-  const totalVariable = state.variable.reduce((a, c) => {
-    if (c.fromSBI) return a + sbiHalf;
-    if (c.fromYES) return a + state.yesSpent;
-    return a + c.spent;
-  }, 0);
-  const creditTotal = state.sbiSpent + state.yesSpent;
-  const grandTotal = totalFixed + totalVariable;
-  const balance = state.salary - grandTotal;
-  const fixedBudget = state.fixed.reduce((a, c) => a + c.budget, 0);
-  const varBudget = state.variable.reduce((a, c) => {
-    if (c.fromSBI) return a + sbiHalf;
-    if (c.fromYES) return a + state.yesSpent;
-    return a + c.budget;
-  }, 0);
-  const totalBudget = fixedBudget + varBudget;
-
-  const balColor = balance >= 0 ? "#059669" : "#DC2626";
-  const balBg = balance >= 0 ? "linear-gradient(140deg,#ECFDF5,#D1FAE5)" : "linear-gradient(140deg,#FFF1F2,#FFE4E6)";
-  const balBorder = balance >= 0 ? "#A7F3D0" : "#FECDD3";
-
-  return (
-    <div>
-      {/* Hero balance card */}
-      <div style={{ background: balBg, border: `1.5px solid ${balBorder}`, borderRadius: 18, padding: "1.25rem", marginBottom: 12, color: balColor, position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -40, right: -40, width: 140, height: 140, borderRadius: "50%", background: "currentColor", opacity: .08, pointerEvents: "none" }} />
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".18em", textTransform: "uppercase", opacity: .75, marginBottom: 4 }}>Estimated Balance</div>
-        <div style={{ fontFamily: "monospace", fontSize: "2.6rem", fontWeight: 700, lineHeight: 1, letterSpacing: "-.04em", marginBottom: 6 }}>{fmt(balance)}</div>
-        <div style={{ fontSize: 12, fontFamily: "monospace", opacity: .75 }}>{fmt(state.salary)} salary − {fmt(grandTotal)} total spent</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 14, paddingTop: 12, borderTop: "1px solid currentColor", opacity: .9 }}>
-          {[["Fixed", fmt(totalFixed)], ["Variable", fmt(totalVariable)], ["Credit", fmt(creditTotal)]].map(([l, v]) => (
-            <div key={l}>
-              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", opacity: .72, fontWeight: 800, marginBottom: 2 }}>{l}</div>
-              <div style={{ fontFamily: "monospace", fontWeight: 700, fontSize: "0.95rem" }}>{v}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Budget usage bar */}
-      <div style={{ background: "#fff", border: "1.5px solid #CAC0F0", borderRadius: 16, padding: "14px 16px", marginBottom: 10, boxShadow: "0 2px 10px rgba(109,40,217,.07)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 700 }}>Budget used</span>
-          <span style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 800, color: spendColor(grandTotal, totalBudget) }}>{Math.round(pct(grandTotal, totalBudget))}%</span>
-        </div>
-        <div style={{ background: "#EAE4FF", borderRadius: 99, height: 10, overflow: "hidden" }}>
-          <div style={{ width: `${Math.min(100, pct(grandTotal, totalBudget))}%`, height: 10, borderRadius: 99, background: `linear-gradient(90deg,#8B5CF6,${spendColor(grandTotal, totalBudget)})`, transition: "width .6s" }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 11, fontFamily: "monospace", color: "#8C7EAE" }}>
-          <span>{fmt(grandTotal)} spent</span><span>{fmt(totalBudget)} budgeted</span>
-        </div>
-      </div>
-
-      {/* Quick summary rows */}
-      <div style={{ background: "#fff", border: "1.5px solid #CAC0F0", borderRadius: 16, padding: "4px 16px", boxShadow: "0 2px 10px rgba(109,40,217,.07)" }}>
-        {[
-          ["💰 Salary", fmt(state.salary), "#059669"],
-          ["🏠 Fixed spent", fmt(totalFixed), "#E11D48"],
-          ["🛍️ Variable spent", fmt(totalVariable), "#E11D48"],
-          ["💳 Credit total", fmt(creditTotal), "#D97706"],
-        ].map(([l, v, c], i, arr) => (
-          <div key={l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < arr.length - 1 ? "1px solid #EAE4FF" : "none" }}>
-            <span style={{ fontSize: 13, color: "#4A3A72", fontWeight: 500 }}>{l}</span>
-            <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 13, color: c }}>{v}</span>
-          </div>
-        ))}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderTop: "2px solid #CAC0F0", marginTop: 2 }}>
-          <span style={{ fontSize: 14, fontWeight: 800, color: "#1A0A3C" }}>= Balance</span>
-          <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "1.05rem", color: balColor }}>{fmt(balance)}</span>
-        </div>
-      </div>
-    </div>
+// ── FIXED PAGE ────────────────────────────────────────────────────────────
+function FixedPage({state,update}){
+  const total=state.fixed.reduce((a,c)=>a+c.spent,0);
+  const budget=state.fixed.reduce((a,c)=>a+c.budget,0);
+  function updateCat(id,field,val){update({fixed:state.fixed.map(c=>c.id===id?{...c,[field]:val}:c)})}
+  return h('div',null,
+    h('div',{style:{background:'#fff',border:'1.5px solid #CAC0F0',borderRadius:16,padding:'0 16px',boxShadow:'0 2px 10px rgba(109,40,217,.07)',marginBottom:12}},
+      state.fixed.map(cat=>h(CatRow,{key:cat.id,cat,
+        onBudgetChange:v=>updateCat(cat.id,'budget',v),
+        onSpentChange:v=>updateCat(cat.id,'spent',v)}))
+    ),
+    h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(135deg,#F5F3FF,#EDE9FE)',border:'1.5px solid #A78BFA',borderRadius:12,padding:'12px 16px'}},
+      h('span',{style:{fontSize:13,fontWeight:700,color:'#4C1D95'}},'Fixed Total'),
+      h('div',{style:{textAlign:'right'}},
+        h('div',{style:{fontFamily:'monospace',fontWeight:900,fontSize:'1.1rem',color:spendColor(total,budget)}},fmt(total)),
+        h('div',{style:{fontSize:11,color:'#8C7EAE',fontFamily:'monospace'}},'of '+fmt(budget)+' budget')
+      )
+    )
   );
 }
 
-// ── FIXED PAGE ──────────────────────────────────────────────────────────────
-function FixedPage({ state, update }) {
-  const total = state.fixed.reduce((a, c) => a + c.spent, 0);
-  const budget = state.fixed.reduce((a, c) => a + c.budget, 0);
-
-  function updateCat(id, field, val) {
-    update({ fixed: state.fixed.map(c => c.id === id ? { ...c, [field]: val } : c) });
-  }
-
-  return (
-    <div>
-      <div style={{ background: "#fff", border: "1.5px solid #CAC0F0", borderRadius: 16, padding: "0 16px", boxShadow: "0 2px 10px rgba(109,40,217,.07)", marginBottom: 12 }}>
-        {state.fixed.map(cat => (
-          <CatRow key={cat.id} cat={cat}
-            onBudgetChange={v => updateCat(cat.id, "budget", v)}
-            onSpentChange={v => updateCat(cat.id, "spent", v)} />
-        ))}
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "linear-gradient(135deg,#F5F3FF,#EDE9FE)", border: "1.5px solid #A78BFA", borderRadius: 12, padding: "12px 16px" }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#4C1D95" }}>Fixed Total</span>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "1.1rem", color: spendColor(total, budget) }}>{fmt(total)}</div>
-          <div style={{ fontSize: 11, color: "#8C7EAE", fontFamily: "monospace" }}>of {fmt(budget)} budget</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── VARIABLE PAGE ───────────────────────────────────────────────────────────
-function VariablePage({ state, update }) {
-  const sbiHalf = state.sbiSpent / 2;
-
-  function updateCat(id, field, val) {
-    update({ variable: state.variable.map(c => c.id === id ? { ...c, [field]: val } : c) });
-  }
-
-  const enriched = state.variable.map(c => {
-    if (c.fromSBI) return { ...c, spent: sbiHalf, budget: sbiHalf };
-    if (c.fromYES) return { ...c, spent: state.yesSpent, budget: state.yesSpent };
+// ── VARIABLE PAGE ─────────────────────────────────────────────────────────
+function VariablePage({state,update}){
+  const sbiHalf=state.sbiSpent/2;
+  function updateCat(id,field,val){update({variable:state.variable.map(c=>c.id===id?{...c,[field]:val}:c)})}
+  const enriched=state.variable.map(c=>{
+    if(c.fromSBI)return{...c,spent:sbiHalf,budget:sbiHalf};
+    if(c.fromYES)return{...c,spent:state.yesSpent,budget:state.yesSpent};
     return c;
   });
+  const total=enriched.reduce((a,c)=>a+c.spent,0);
+  const budget=enriched.reduce((a,c)=>a+c.budget,0);
 
-  const total = enriched.reduce((a, c) => a + c.spent, 0);
-  const budget = enriched.reduce((a, c) => a + c.budget, 0);
+  return h('div',null,
+    // Credit inputs
+    h('div',{style:{background:'linear-gradient(135deg,#FFFBEB,#FEF3C7)',border:'1.5px solid #FDE68A',borderRadius:16,padding:'14px 16px',marginBottom:12}},
+      h('div',{style:{fontSize:11,fontWeight:900,letterSpacing:'.14em',textTransform:'uppercase',color:'#92400E',marginBottom:10}},'Credit Card Spends (auto-distributed)'),
+      h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}},
+        h('div',null,
+          h('div',{style:{fontSize:11,fontWeight:800,color:'#78350F',marginBottom:5}},'💳 SBI → Grocery ÷ 2'),
+          h(AmtInput,{value:state.sbiSpent,onChange:v=>update({sbiSpent:v})}),
+          state.sbiSpent>0&&h('div',{style:{fontSize:11,color:'#92400E',fontFamily:'monospace',marginTop:4}},'🛒 '+fmt(sbiHalf)+' each')
+        ),
+        h('div',null,
+          h('div',{style:{fontSize:11,fontWeight:800,color:'#78350F',marginBottom:5}},'💳 YES CC → Other'),
+          h(AmtInput,{value:state.yesSpent,onChange:v=>update({yesSpent:v})}),
+          state.yesSpent>0&&h('div',{style:{fontSize:11,color:'#92400E',fontFamily:'monospace',marginTop:4}},'🧾 '+fmt(state.yesSpent)+' to Other')
+        )
+      )
+    ),
 
-  return (
-    <div>
-      {/* Credit inputs */}
-      <div style={{ background: "linear-gradient(135deg,#FFFBEB,#FEF3C7)", border: "1.5px solid #FDE68A", borderRadius: 16, padding: "14px 16px", marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#92400E", marginBottom: 10 }}>Credit Card Spends (auto-distributed)</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#78350F", marginBottom: 5 }}>💳 SBI Spent → Grocery ÷ 2</div>
-            <AmtInput value={state.sbiSpent} onChange={v => update({ sbiSpent: v })} />
-            {state.sbiSpent > 0 && <div style={{ fontSize: 11, color: "#92400E", fontFamily: "monospace", marginTop: 4 }}>🛒 {fmt(sbiHalf)} each</div>}
-          </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#78350F", marginBottom: 5 }}>💳 YES CC Spent → Other</div>
-            <AmtInput value={state.yesSpent} onChange={v => update({ yesSpent: v })} />
-            {state.yesSpent > 0 && <div style={{ fontSize: 11, color: "#92400E", fontFamily: "monospace", marginTop: 4 }}>🧾 {fmt(state.yesSpent)} to Other</div>}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ background: "#fff", border: "1.5px solid #CAC0F0", borderRadius: 16, padding: "0 16px", boxShadow: "0 2px 10px rgba(109,40,217,.07)", marginBottom: 12 }}>
-        {enriched.map(cat => (
-          <CatRow key={cat.id} cat={cat}
-            disabled={cat.fromSBI || cat.fromYES}
-            autoLabel={cat.fromSBI ? "From SBI" : cat.fromYES ? "From YES CC" : ""}
-            onBudgetChange={v => updateCat(cat.id, "budget", v)}
-            onSpentChange={v => updateCat(cat.id, "spent", v)} />
-        ))}
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "linear-gradient(135deg,#F5F3FF,#EDE9FE)", border: "1.5px solid #A78BFA", borderRadius: 12, padding: "12px 16px" }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#4C1D95" }}>Variable Total</span>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "1.1rem", color: spendColor(total, budget) }}>{fmt(total)}</div>
-          <div style={{ fontSize: 11, color: "#8C7EAE", fontFamily: "monospace" }}>of {fmt(budget)} budget</div>
-        </div>
-      </div>
-    </div>
+    h('div',{style:{background:'#fff',border:'1.5px solid #CAC0F0',borderRadius:16,padding:'0 16px',boxShadow:'0 2px 10px rgba(109,40,217,.07)',marginBottom:12}},
+      enriched.map(cat=>h(CatRow,{key:cat.id,cat,
+        disabled:cat.fromSBI||cat.fromYES,
+        autoLabel:cat.fromSBI?'From SBI':cat.fromYES?'From YES CC':'',
+        onBudgetChange:v=>updateCat(cat.id,'budget',v),
+        onSpentChange:v=>updateCat(cat.id,'spent',v)}))
+    ),
+    h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(135deg,#F5F3FF,#EDE9FE)',border:'1.5px solid #A78BFA',borderRadius:12,padding:'12px 16px'}},
+      h('span',{style:{fontSize:13,fontWeight:700,color:'#4C1D95'}},'Variable Total'),
+      h('div',{style:{textAlign:'right'}},
+        h('div',{style:{fontFamily:'monospace',fontWeight:900,fontSize:'1.1rem',color:spendColor(total,budget)}},fmt(total)),
+        h('div',{style:{fontSize:11,color:'#8C7EAE',fontFamily:'monospace'}},'of '+fmt(budget)+' budget')
+      )
+    )
   );
 }
 
-// ── SETTINGS PAGE ───────────────────────────────────────────────────────────
-function SettingsPage({ state, update }) {
-  return (
-    <div>
-      <div style={{ background: "#fff", border: "1.5px solid #CAC0F0", borderRadius: 16, padding: "14px 16px", boxShadow: "0 2px 10px rgba(109,40,217,.07)", marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#7C3AED", marginBottom: 12 }}>Income</div>
-        <div style={{ marginBottom: 4, fontSize: 12, fontWeight: 800, color: "#4A3A72" }}>Monthly Salary</div>
-        <AmtInput value={state.salary} onChange={v => update({ salary: v })} placeholder="102846" />
-        <div style={{ fontSize: 11, color: "#8C7EAE", marginTop: 6 }}>All spends are deducted from this amount including credit card spends.</div>
-      </div>
-
-      <div style={{ background: "linear-gradient(135deg,#F5F3FF,#EDE9FE)", border: "1.5px solid #A78BFA", borderRadius: 16, padding: "14px 16px", marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".14em", textTransform: "uppercase", color: "#6D28D9", marginBottom: 8 }}>How credit spends work</div>
-        {[
-          ["💳 SBI spent", "Split equally between Grocery + Amazon"],
-          ["💳 YES CC spent", "Goes entirely to Other"],
-          ["Both cards", "Deducted from salary in balance calculation"],
-        ].map(([l, d]) => (
-          <div key={l} style={{ display: "flex", gap: 8, padding: "8px 0", borderBottom: "1px solid #DDD6FE" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#4C1D95", minWidth: 100 }}>{l}</div>
-            <div style={{ fontSize: 12, color: "#6D28D9" }}>{d}</div>
-          </div>
-        ))}
-      </div>
-
-      <button
-        onClick={() => { if (confirm("Reset all data to defaults?")) { localStorage.removeItem(LS_KEY); window.location.reload(); } }}
-        style={{ width: "100%", padding: "12px", background: "#FFF1F2", border: "1.5px solid #FECDD3", borderRadius: 12, color: "#DC2626", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-        🗑 Reset all data
-      </button>
-    </div>
+// ── SETTINGS PAGE ─────────────────────────────────────────────────────────
+function SettingsPage({state,update}){
+  return h('div',null,
+    h('div',{style:{background:'#fff',border:'1.5px solid #CAC0F0',borderRadius:16,padding:'14px 16px',boxShadow:'0 2px 10px rgba(109,40,217,.07)',marginBottom:12}},
+      h('div',{style:{fontSize:11,fontWeight:900,letterSpacing:'.14em',textTransform:'uppercase',color:'#7C3AED',marginBottom:12}},'Income'),
+      h('div',{style:{marginBottom:4,fontSize:12,fontWeight:800,color:'#4A3A72'}},'Monthly Salary'),
+      h(AmtInput,{value:state.salary,onChange:v=>update({salary:v})}),
+      h('div',{style:{fontSize:11,color:'#8C7EAE',marginTop:6}},'All spends deducted from this — including credit card spends.')
+    ),
+    h('div',{style:{background:'linear-gradient(135deg,#F5F3FF,#EDE9FE)',border:'1.5px solid #A78BFA',borderRadius:16,padding:'14px 16px',marginBottom:12}},
+      h('div',{style:{fontSize:11,fontWeight:900,letterSpacing:'.14em',textTransform:'uppercase',color:'#6D28D9',marginBottom:8}},'How credit spends work'),
+      [['💳 SBI spent','Split equally → Grocery + Amazon'],['💳 YES CC spent','Goes entirely → Other'],['Both cards','Deducted from your salary balance']].map(([l,d])=>
+        h('div',{key:l,style:{display:'flex',gap:8,padding:'8px 0',borderBottom:'1px solid #DDD6FE'}},
+          h('div',{style:{fontSize:13,fontWeight:700,color:'#4C1D95',minWidth:110}},l),
+          h('div',{style:{fontSize:12,color:'#6D28D9'}},d)
+        )
+      )
+    ),
+    h('button',{
+      onClick:()=>{if(confirm('Reset all data to defaults?')){localStorage.removeItem(LS_KEY);window.location.reload()}},
+      style:{width:'100%',padding:'12px',background:'#FFF1F2',border:'1.5px solid #FECDD3',borderRadius:12,color:'#DC2626',fontWeight:800,fontSize:14,cursor:'pointer',fontFamily:'inherit'}
+    },'🗑 Reset all data')
   );
 }
 
-// ── APP ────────────────────────────────────────────────────────────────────
-export default function App() {
-  const [state, setState] = useState(() => load(DEFAULT));
+// ── APP ───────────────────────────────────────────────────────────────────
+function App(){
+  const[state,setState]=useState(()=>loadLS(DEFAULT));
+  useEffect(()=>{saveLS(state)},[state]);
+  const update=patch=>setState(prev=>({...prev,...patch}));
+  const page=state.page;
+  const setPage=p=>update({page:p});
 
-  useEffect(() => { save(state); }, [state]);
-
-  const update = (patch) => setState(prev => ({ ...prev, ...patch }));
-  const page = state.page;
-  const setPage = (p) => update({ page: p });
-
-  // Compute totals for badge on variable tab
-  const unbudgetedVar = state.variable.filter(c => !c.fromSBI && !c.fromYES && c.budget === 0).length;
-
-  const NAV = [
-    { id: "overview",  label: "Overview", icon: (on) => (
-      <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke="currentColor" strokeWidth={1.8}>
-        <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
-        <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
-      </svg>)
-    },
-    { id: "fixed",     label: "Fixed", icon: (on) => (
-      <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke="currentColor" strokeWidth={1.8}>
-        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-      </svg>)
-    },
-    { id: "variable",  label: "Variable", icon: (on) => (
-      <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke="currentColor" strokeWidth={1.8}>
-        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-      </svg>)
-    },
-    { id: "settings",  label: "Settings", icon: (on) => (
-      <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke="currentColor" strokeWidth={1.8}>
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>)
-    },
+  const NAV=[
+    {id:'overview',label:'Overview',icon:()=>h('svg',{viewBox:'0 0 24 24',width:22,height:22,fill:'none',stroke:'currentColor',strokeWidth:1.8},h('rect',{x:3,y:3,width:7,height:7,rx:1.5}),h('rect',{x:14,y:3,width:7,height:7,rx:1.5}),h('rect',{x:3,y:14,width:7,height:7,rx:1.5}),h('rect',{x:14,y:14,width:7,height:7,rx:1.5}))},
+    {id:'fixed',   label:'Fixed',   icon:()=>h('svg',{viewBox:'0 0 24 24',width:22,height:22,fill:'none',stroke:'currentColor',strokeWidth:1.8},h('rect',{x:2,y:7,width:20,height:14,rx:2}),h('path',{d:'M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2'}))},
+    {id:'variable',label:'Variable', icon:()=>h('svg',{viewBox:'0 0 24 24',width:22,height:22,fill:'none',stroke:'currentColor',strokeWidth:1.8},h('path',{d:'M12 2L2 7l10 5 10-5-10-5z'}),h('path',{d:'M2 17l10 5 10-5'}),h('path',{d:'M2 12l10 5 10-5'}))},
+    {id:'settings',label:'Settings', icon:()=>h('svg',{viewBox:'0 0 24 24',width:22,height:22,fill:'none',stroke:'currentColor',strokeWidth:1.8},h('circle',{cx:12,cy:12,r:3}),h('path',{d:'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'})))},
   ];
 
-  const PAGE_TITLES = { overview: "💸 Budget", fixed: "🏠 Fixed", variable: "🛍️ Variable", settings: "⚙️ Settings" };
+  const TITLES={overview:'💸 Budget',fixed:'🏠 Fixed',variable:'🛍️ Variable',settings:'⚙️ Settings'};
 
-  return (
-    <div style={{ background: "#F0ECFF", minHeight: "100vh", fontFamily: "system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color: "#1A0A3C" }}>
-      {/* Header */}
-      <div style={{ background: "rgba(255,255,255,.9)", backdropFilter: "blur(20px)", borderBottom: "1.5px solid #CAC0F0", position: "sticky", top: 0, zIndex: 50, padding: "14px 16px 10px" }}>
-        <div style={{ maxWidth: 540, margin: "0 auto", display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-          <div style={{ fontSize: "1.4rem", fontWeight: 900, letterSpacing: "-.03em" }}>{PAGE_TITLES[page]}</div>
-          <div style={{ fontSize: 12, color: "#8C7EAE", fontFamily: "monospace" }}>
-            {new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div style={{ maxWidth: 540, margin: "0 auto", padding: "12px 16px 100px" }}>
-        {page === "overview"  && <Overview  state={state} />}
-        {page === "fixed"     && <FixedPage state={state} update={update} />}
-        {page === "variable"  && <VariablePage state={state} update={update} />}
-        {page === "settings"  && <SettingsPage state={state} update={update} />}
-      </div>
-
-      {/* Bottom Nav */}
-      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(255,255,255,.98)", backdropFilter: "blur(24px)", borderTop: "2px solid #CAC0F0", display: "flex", zIndex: 100, boxShadow: "0 -4px 28px rgba(109,40,217,.1)", paddingBottom: "env(safe-area-inset-bottom,0px)" }}>
-        {NAV.map(n => {
-          const on = page === n.id;
-          return (
-            <button key={n.id} onClick={() => setPage(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, background: "none", border: "none", cursor: "pointer", color: on ? "#7C3AED" : "#8C7EAE", padding: "10px 0 12px", fontFamily: "inherit", fontSize: 10, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", transition: "color .15s", position: "relative" }}>
-              {n.icon(on)}
-              <span>{n.label}</span>
-              {on && <div style={{ width: 20, height: 3, borderRadius: 99, background: "linear-gradient(90deg,#6D28D9,#8B5CF6)", position: "absolute", top: 0 }} />}
-            </button>
-          );
-        })}
-      </nav>
-    </div>
+  return h('div',{style:{background:'#F0ECFF',minHeight:'100vh',fontFamily:"system-ui,-apple-system,sans-serif",color:'#1A0A3C'}},
+    // Header
+    h('div',{style:{background:'rgba(255,255,255,.9)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',borderBottom:'1.5px solid #CAC0F0',position:'sticky',top:0,zIndex:50,padding:'14px 16px 10px'}},
+      h('div',{style:{maxWidth:540,margin:'0 auto',display:'flex',alignItems:'baseline',justifyContent:'space-between'}},
+        h('div',{style:{fontSize:'1.4rem',fontWeight:900,letterSpacing:'-.03em'}},TITLES[page]),
+        h('div',{style:{fontSize:12,color:'#8C7EAE',fontFamily:'monospace'}},new Date().toLocaleDateString('en-IN',{month:'long',year:'numeric'}))
+      )
+    ),
+    // Content
+    h('div',{style:{maxWidth:540,margin:'0 auto',padding:'12px 16px 100px'}},
+      page==='overview' &&h(Overview,  {state}),
+      page==='fixed'    &&h(FixedPage, {state,update}),
+      page==='variable' &&h(VariablePage,{state,update}),
+      page==='settings' &&h(SettingsPage,{state,update})
+    ),
+    // Nav
+    h('nav',{style:{position:'fixed',bottom:0,left:0,right:0,background:'rgba(255,255,255,.98)',backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',borderTop:'2px solid #CAC0F0',display:'flex',zIndex:100,boxShadow:'0 -4px 28px rgba(109,40,217,.1)',paddingBottom:'env(safe-area-inset-bottom,0px)'}},
+      NAV.map(n=>{
+        const on=page===n.id;
+        return h('button',{key:n.id,onClick:()=>setPage(n.id),style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,background:'none',border:'none',cursor:'pointer',color:on?'#7C3AED':'#8C7EAE',padding:'10px 0 12px',fontFamily:'inherit',fontSize:10,fontWeight:800,letterSpacing:'.06em',textTransform:'uppercase',position:'relative',transition:'color .15s'}},
+          on&&h('div',{style:{width:20,height:3,borderRadius:99,background:'linear-gradient(90deg,#6D28D9,#8B5CF6)',position:'absolute',top:0}}),
+          n.icon(),
+          h('span',null,n.label)
+        );
+      })
+    )
   );
 }
+
+ReactDOM.createRoot(document.getElementById('root')).render(h(App,null));
+</script>
+</body>
+</html>
