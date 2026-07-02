@@ -2,19 +2,23 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Budget Tracker</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Money Manager</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:#F0ECFF;color:#1A0A3C;font-family:system-ui,-apple-system,sans-serif;overflow-x:hidden;font-size:16px;line-height:1.5}
+html,body,#root{height:100%;height:100dvh;overflow:hidden;background:#1C1C1E}
 input[type=number]{-moz-appearance:textfield}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+::-webkit-scrollbar{width:0;height:0}
+input[type=date]{color-scheme:dark}
 </style>
 </head>
 <body>
 <div id="root"></div>
-<script>
-/**
+<script>/**
  * @license React
  * react.production.min.js
  *
@@ -45,10 +49,8 @@ compare:void 0===b?null:b}};c.startTransition=function(a,b){b=J.transition;J.tra
 b)};c.useId=function(){return g.current.useId()};c.useImperativeHandle=function(a,b,c){return g.current.useImperativeHandle(a,b,c)};c.useInsertionEffect=function(a,b){return g.current.useInsertionEffect(a,b)};c.useLayoutEffect=function(a,b){return g.current.useLayoutEffect(a,b)};c.useMemo=function(a,b){return g.current.useMemo(a,b)};c.useReducer=function(a,b,c){return g.current.useReducer(a,b,c)};c.useRef=function(a){return g.current.useRef(a)};c.useState=function(a){return g.current.useState(a)};
 c.useSyncExternalStore=function(a,b,c){return g.current.useSyncExternalStore(a,b,c)};c.useTransition=function(){return g.current.useTransition()};c.version="18.2.0"});
 })();
-
 </script>
-<script>
-/**
+<script>/**
  * @license React
  * react-dom.production.min.js
  *
@@ -231,5 +233,4 @@ else{var e=b.elementType===b.type?c.memoizedProps:xa(b.type,c.memoizedProps);d.c
 c.focus();break;case "img":k.src&&(c.src=k.src)}}break;case 6:break;case 4:break;case 12:break;case 13:if(null===b.memoizedState){var m=b.alternate;if(null!==m){var t=m.memoizedState;if(null!==t){var p=t.dehydrated;null!==p&&nc(p)}}}break;case 19:case 17:case 21:case 22:case 23:case 25:break;default:throw Error(n(163));}X||b.flags&512&&Lf(b)}catch(r){H(b,b.return,r)}}if(b===a){l=null;break}c=b.sibling;if(null!==c){c.return=b.return;l=c;break}l=b.return}}function Hi(a){for(;null!==l;){var b=l;if(b===
 a){l=null;break}var c=b.sibling;if(null!==c){c.return=b.return;l=c;break}l=b.return}}function Ji(a){for(;null!==l;){var b=l;try{switch(b.tag){case 0:case 11:case 15:var c=b.return;try{Id(4,b)}catch(k){H(b,c,k)}break;case 1:var d=b.stateNode;if("function"===typeof d.componentDidMount){var e=b.return;try{d.componentDidMount()}catch(k){H(b,e,k)}}var f=b.return;try{Lf(b)}catch(k){H(b,f,k)}break;case 5:var g=b.return;try{Lf(b)}catch(k){H(b,g,k)}}}catch(k){H(b,b.return,k)}if(b===a){l=null;break}var h=b.sibling;
 if(null!==h){h.return=b.return;l=h;break}l=b.return}}function Hc(){Hf=P()+500}function Z(){return 0!==(p&6)?P():-1!==Kd?Kd:Kd=P()}function hb(a){if(0===(a.mode&1))return 1;if(0!==(p&2)&&0!==U)return U&-U;if(null!==Jk.transition)return 0===Ld&&(Ld=Dg()),Ld;a=z;if(0!==a)return a;a=window.event;a=void 0===a?16:Lg(a.type);return a}function ya(a,b,c,d){if(50<Ic)throw Ic=0,Pf=null,Error(n(185));ic(a,c,d);if(0===(p&2)||a!==O)a===O&&(0===(p&2)&&(Md|=c),4===L&&kb(a,U)),ia(a,d),1===c&&0===p&&0===(b.mode&1)&&
-(Hc(),md&&db())}function ia(a,b){var c=a.callbackNode;uj(a,b);var d=Vc(a,a===O?U:0);if(0===d)null!==c&&Li(c),a.callbackNode=null,a.callbackPriority=0;else if(b=d&-d,a.callbackPriority!==b){null!=c&&Li(c);if(1===b)0===a.tag?kk(Mi.bind(null,a)):wh(Mi.bind(null,a)),Kk(function(){0===(p&6)&&db()}),c=null;else{switch(Eg(d)){case 1:c=De;break;case 4:c=Mg;break;case 16:c=ad;break;case 536870912:c=Ng;break;default:c=ad}c=Ni(c,Oi.bind(null,a))}a.callbackPriority=b;a.callbackNode=c}}function Oi(a,b){Kd=-1;
-Ld=0;if(0!==(p&6))throw Error(
+(Hc(),md&&db())}function ia(a,b){var c=a.callbackNode;uj(a,b);var d=Vc(a,a===O?U:0);if(0===d)null!==c&&Li(c),a.callbackNode=null,a.callbackPriority=0;else if(b=d&-d,a.callbackPriority!==b){null!=c&&Li(c);if(1===b)0===a.tag?kk(Mi.bind(null,a)):wh(Mi.bind(null,a)),Kk(function(){0===(p&6)&&db()}),c=null;else{switch(Eg(d)){case 
