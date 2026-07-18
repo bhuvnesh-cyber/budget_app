@@ -102,7 +102,7 @@ const genId=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
 function defaultMonth(){return{income:{salary:0,other:0,extras:[]},uncategorized:0,transactions:[]}}
 function defaultData(){
   const budgets={};ALL_SUBS.forEach(s=>budgets[s.id]=0);
-  return{budgets,budgetNotes:{},cardLimits:{sbi:0,yes:0},balances:null,months:{}};
+  return{budgets,budgetNotes:{},cardLimits:{sbi:0,yes:0},balances:null,cardInputMode:'remaining',lastCalc:null,months:{}};
 }
 function getMonth(data,ym){return data.months[ym]||defaultMonth()}
 function monthIncome(md){return (+md.income.salary||0)+(+md.income.other||0)+md.income.extras.reduce((s,e)=>s+(+e.amount||0),0)}
@@ -252,69 +252,104 @@ function Dashboard({data,month,setMonth,setPage}){
 }
 
 /* ══════════════════════════ BALANCES PAGE ══════════════════════════ */
-function BalancesPage({data,onSave}){
+function BalancesPage({data,month,onSave,onModeChange}){
   const bal=data.balances;
-  const[debit,setDebit]=useState(bal?String(bal.debit):'');
-  const[sbi,setSbi]=useState(bal?String(bal.sbi):'');
-  const[yes,setYes]=useState(bal?String(bal.yes):'');
-  const[msg,setMsg]=useState(null);
+  const md=getMonth(data,month);
+  const incomeTotal=monthIncome(md);
+  const baseline=bal||{debit:incomeTotal,sbi:0,yes:0};
+  const mode=data.cardInputMode||'remaining'; // 'remaining' | 'outstanding'
+  const isRemaining=mode==='remaining';
 
-  function save(){
-    const nD=+debit||0,nS=+sbi||0,nY=+yes||0;
-    if(!bal){
-      onSave({debit:nD,sbi:nS,yes:nY},0);
-      setMsg({type:'info',text:'Baseline balances saved. Future updates will calculate new spending automatically.'});
-      return;
+  // Card fields are always edited in the CURRENT display mode. Convert stored
+  // outstanding -> remaining for display when needed.
+  const sbiLimit=+data.cardLimits.sbi||0, yesLimit=+data.cardLimits.yes||0;
+  const initSbiDisplay=bal?(isRemaining?(sbiLimit-bal.sbi):bal.sbi):'';
+  const initYesDisplay=bal?(isRemaining?(yesLimit-bal.yes):bal.yes):'';
+
+  const[debit,setDebit]=useState(bal?String(bal.debit):'');
+  const[sbiDisp,setSbiDisp]=useState(bal?String(initSbiDisplay):'');
+  const[yesDisp,setYesDisp]=useState(bal?String(initYesDisplay):'');
+
+  function switchMode(newMode){
+    if(newMode===mode)return;
+    // convert whatever is currently typed into the new mode so numbers don't jump
+    const curSbiOutstanding=isRemaining?(sbiLimit-(+sbiDisp||0)):(+sbiDisp||0);
+    const curYesOutstanding=isRemaining?(yesLimit-(+yesDisp||0)):(+yesDisp||0);
+    if(newMode==='remaining'){
+      setSbiDisp(sbiLimit?String(sbiLimit-curSbiOutstanding):'');
+      setYesDisp(yesLimit?String(yesLimit-curYesOutstanding):'');
+    }else{
+      setSbiDisp(String(curSbiOutstanding));
+      setYesDisp(String(curYesOutstanding));
     }
-    const debitSpend=bal.debit-nD;
-    const sbiSpend=nS-bal.sbi;
-    const yesSpend=nY-bal.yes;
-    const totalNew=debitSpend+sbiSpend+yesSpend;
-    onSave({debit:nD,sbi:nS,yes:nY},totalNew);
-    setMsg({type:'result',debitSpend,sbiSpend,yesSpend,totalNew});
+    onModeChange(newMode);
   }
 
-  const sbiPct=data.cardLimits.sbi?(+sbi||0)/data.cardLimits.sbi*100:0;
-  const yesPct=data.cardLimits.yes?(+yes||0)/data.cardLimits.yes*100:0;
+  function save(){
+    const nD=+debit||0;
+    const nS=isRemaining?(sbiLimit-(+sbiDisp||0)):(+sbiDisp||0);
+    const nY=isRemaining?(yesLimit-(+yesDisp||0)):(+yesDisp||0);
+    const debitSpend=baseline.debit-nD;
+    const sbiSpend=nS-baseline.sbi;
+    const yesSpend=nY-baseline.yes;
+    const totalNew=debitSpend+sbiSpend+yesSpend;
+    onSave({debit:nD,sbi:nS,yes:nY},totalNew,{debitSpend,sbiSpend,yesSpend,totalNew,usedIncomeBaseline:!bal,at:new Date().toISOString()});
+  }
+
+  const nSPreview=isRemaining?(sbiLimit-(+sbiDisp||0)):(+sbiDisp||0);
+  const nYPreview=isRemaining?(yesLimit-(+yesDisp||0)):(+yesDisp||0);
+  const sbiPct=sbiLimit?nSPreview/sbiLimit*100:0;
+  const yesPct=yesLimit?nYPreview/yesLimit*100:0;
+  const calc=data.lastCalc;
+
+  const modeBtn=(val,label)=>h('button',{onClick:()=>switchMode(val),
+    style:{flex:1,padding:'8px',borderRadius:9,border:`1.5px solid ${mode===val?C.purple:C.border}`,background:mode===val?C.purplelt:C.card2,color:mode===val?C.purple:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}},label);
 
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h('div',{style:{padding:'16px 16px 4px'}},
       h('div',{style:{fontSize:20,fontWeight:800,color:C.text}},'Update Balances'),
       h('div',{style:{fontSize:13,color:C.text2,marginTop:2}},'New spending is calculated automatically from the change since your last update.')
     ),
+    !bal&&h('div',{style:{margin:'12px 16px 0',padding:'12px 14px',borderRadius:12,background:C.orangelt,border:`1px solid ${C.orange}`,fontSize:12.5,color:C.orange,fontWeight:600}},
+      '\u26A0\uFE0F No previous balance saved yet. We\u2019ll assume your Debit account started this month at your total income ('+fmtC(incomeTotal)+') and both cards started at '+fmtC(0)+' outstanding, then calculate today\u2019s spend from that.'
+    ),
     bal&&h('div',{style:{margin:'12px 16px 0',padding:'10px 14px',borderRadius:12,background:C.card2,fontSize:12,color:C.text2}},
-      'Last saved: Debit '+fmtC(bal.debit)+' \u00B7 SBI '+fmtC(bal.sbi)+' \u00B7 YES '+fmtC(bal.yes)
+      'Last saved: Debit '+fmtC(bal.debit)+' \u00B7 SBI Outstanding '+fmtC(bal.sbi)+' \u00B7 YES Outstanding '+fmtC(bal.yes)
     ),
     h('div',{style:{padding:'16px'}},
-      [['Debit Account Balance',debit,setDebit,C.purple],
-       ['SBI Card Outstanding',sbi,setSbi,'#2563EB'],
-       ['YES Card Outstanding',yes,setYes,'#D97706']].map(([label,val,setter,col])=>
+      h('div',{style:{marginBottom:16}},
+        h('div',{style:{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}},'Debit Account Balance'),
+        h(NumField,{value:debit,onChange:setDebit})
+      ),
+      h('div',{style:{display:'flex',gap:8,marginBottom:14}},modeBtn('remaining','Enter Remaining Limit'),modeBtn('outstanding','Enter Outstanding')),
+      [['SBI Card',sbiDisp,setSbiDisp,sbiLimit],['YES Card',yesDisp,setYesDisp,yesLimit]].map(([label,val,setter,limit])=>
         h('div',{key:label,style:{marginBottom:16}},
-          h('div',{style:{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}},label),
+          h('div',{style:{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}},label+' \u2014 '+(isRemaining?'Remaining Available':'Outstanding Used')+(limit?'':' (set limit in Settings)')),
           h(NumField,{value:val,onChange:setter})
         )
       ),
-      data.cardLimits.sbi>0&&h('div',{style:{marginBottom:10}},
+      sbiLimit>0&&h('div',{style:{marginBottom:10}},
         h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,color:C.text2,marginBottom:4}},
-          h('span',null,'SBI Utilization'),h('span',null,Math.round(sbiPct)+'% of '+fmtC(data.cardLimits.sbi))),
+          h('span',null,'SBI Used'),h('span',null,Math.round(sbiPct)+'% of '+fmtC(sbiLimit)+' ('+fmtC(nSPreview)+' outstanding)')),
         h(Bar,{pct:sbiPct,color:sbiPct>90?C.red:sbiPct>70?C.orange:C.green})
       ),
-      data.cardLimits.yes>0&&h('div',{style:{marginBottom:16}},
+      yesLimit>0&&h('div',{style:{marginBottom:16}},
         h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,color:C.text2,marginBottom:4}},
-          h('span',null,'YES Utilization'),h('span',null,Math.round(yesPct)+'% of '+fmtC(data.cardLimits.yes))),
+          h('span',null,'YES Used'),h('span',null,Math.round(yesPct)+'% of '+fmtC(yesLimit)+' ('+fmtC(nYPreview)+' outstanding)')),
         h(Bar,{pct:yesPct,color:yesPct>90?C.red:yesPct>70?C.orange:C.green})
       ),
       h('button',{onClick:save,style:{width:'100%',padding:'15px',borderRadius:14,border:'none',background:C.purple,color:'#fff',fontWeight:800,fontSize:16,cursor:'pointer',fontFamily:'inherit'}},'Save Balances')
     ),
-    msg&&msg.type==='info'&&h('div',{style:{margin:'0 16px',padding:'14px',borderRadius:12,background:C.greenlt,color:C.green,fontSize:13,fontWeight:600}},msg.text),
-    msg&&msg.type==='result'&&h('div',{style:{margin:'0 16px 16px',padding:'14px',borderRadius:14,background:C.card,border:`1px solid ${C.border}`,boxShadow:C.shadow}},
-      h('div',{style:{fontWeight:800,color:C.text,marginBottom:8,fontSize:14}},'Spending Calculated'),
-      [['Debit Spend',msg.debitSpend],['SBI Spend',msg.sbiSpend],['YES Spend',msg.yesSpend]].map(([l,v])=>
+    calc&&h('div',{style:{margin:'0 16px 16px',padding:'14px',borderRadius:14,background:C.card,border:`1px solid ${C.border}`,boxShadow:C.shadow}},
+      h('div',{style:{fontWeight:800,color:C.text,marginBottom:8,fontSize:14}},'Last Calculation'),
+      calc.usedIncomeBaseline&&h('div',{style:{fontSize:11.5,color:C.text3,marginBottom:8}},'(Calculated using income as the starting Debit baseline)'),
+      [['Debit Spend',calc.debitSpend],['SBI Spend',calc.sbiSpend],['YES Spend',calc.yesSpend]].map(([l,v])=>
         h('div',{key:l,style:{display:'flex',justifyContent:'space-between',fontSize:13,color:C.text2,padding:'3px 0'}},h('span',null,l),h('span',{style:{fontFamily:'monospace',fontWeight:700,color:C.text}},fmtC(v)))
       ),
-      h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:14,fontWeight:800,color:C.orange,borderTop:`1px solid ${C.border}`,marginTop:6,paddingTop:8}},
-        h('span',null,'Added to Uncategorized'),h('span',{style:{fontFamily:'monospace'}},fmtC(msg.totalNew))
-      )
+      h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:14,fontWeight:800,color:calc.totalNew>0?C.orange:C.text2,borderTop:`1px solid ${C.border}`,marginTop:6,paddingTop:8}},
+        h('span',null,'Added to Uncategorized'),h('span',{style:{fontFamily:'monospace'}},fmtC(calc.totalNew))
+      ),
+      calc.totalNew===0&&h('div',{style:{fontSize:11.5,color:C.text3,marginTop:6}},'No change detected \u2014 balances matched your last save exactly.')
     )
   );
 }
@@ -466,7 +501,8 @@ function HistoryPage({data}){
 }
 
 /* ══════════════════════════ SETTINGS PAGE ══════════════════════════ */
-function SettingsPage({data,month,onUpdate}){
+function SettingsPage({data,onUpdate}){
+  const month=curYm();
   const md=getMonth(data,month);
   const[salary,setSalary]=useState(String(md.income.salary||''));
   const[other,setOther]=useState(String(md.income.other||''));
@@ -475,10 +511,6 @@ function SettingsPage({data,month,onUpdate}){
   const[yesLimit,setYesLimit]=useState(String(data.cardLimits.yes||''));
   const[budgets,setBudgets]=useState({...data.budgets});
   const[saved,setSaved]=useState(false);
-
-  useEffect(()=>{
-    setSalary(String(md.income.salary||''));setOther(String(md.income.other||''));setExtras(md.income.extras||[]);
-  },[month]);
 
   function addExtra(){setExtras(e=>[...e,{id:genId(),name:'',amount:''}])}
   function updExtra(id,field,val){setExtras(e=>e.map(x=>x.id===id?{...x,[field]:val}:x))}
@@ -544,15 +576,18 @@ function App(){
 
   useEffect(()=>{lsSave(SK,data)},[data]);
 
-  function saveBalances(newBal,spendDelta){
+  function saveBalances(newBal,spendDelta,calc){
     setData(d=>{
       const ym=curYm();
       const months={...d.months};
       const md={...getMonth(d,ym)};
       md.uncategorized=(md.uncategorized||0)+spendDelta;
       months[ym]=md;
-      return{...d,balances:newBal,months};
+      return{...d,balances:newBal,months,lastCalc:calc||null};
     });
+  }
+  function setCardInputMode(mode){
+    setData(d=>({...d,cardInputMode:mode}));
   }
   function addTxn(txn){
     setData(d=>{
@@ -567,10 +602,11 @@ function App(){
   }
   function updateSettings({cardLimits,budgets,monthIncome}){
     setData(d=>{
+      const ym=curYm();
       const months={...d.months};
-      const md={...getMonth(d,month)};
+      const md={...getMonth(d,ym)};
       md.income=monthIncome;
-      months[month]=md;
+      months[ym]=md;
       return{...d,cardLimits,budgets,months};
     });
   }
@@ -589,10 +625,10 @@ function App(){
   return h('div',{style:{height:'100dvh',display:'flex',flexDirection:'column',background:C.bg,color:C.text,fontFamily:"system-ui,-apple-system,sans-serif",overflow:'hidden'}},
     h('div',{style:{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}},
       page==='dash'       &&h(Dashboard,      {data,month,setMonth,setPage}),
-      page==='balances'   &&h(BalancesPage,   {data,onSave:saveBalances}),
+      page==='balances'   &&h(BalancesPage,   {data,month:curYm(),onSave:saveBalances,onModeChange:setCardInputMode}),
       page==='categorize' &&h(CategorizePage, {data,month:curYm(),onAddTxn:addTxn}),
       page==='history'    &&h(HistoryPage,    {data}),
-      page==='settings'   &&h(SettingsPage,   {data,month,onUpdate:updateSettings})
+      page==='settings'   &&h(SettingsPage,   {data,onUpdate:updateSettings})
     ),
     h('nav',{style:{display:'flex',background:C.nav,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom,0px)',flexShrink:0,boxShadow:'0 -2px 16px rgba(109,40,217,.08)'}},
       NAV.map(n=>{
