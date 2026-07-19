@@ -286,7 +286,17 @@ function Dashboard({data,month,setMonth,setPage}){
 }
 
 /* ══════════════════════════ BALANCES PAGE ══════════════════════════ */
-function BalancesPage({data,month,onSave,onModeChange,onDeleteLog}){
+function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBuckets}){
+  const curMd=getMonth(data,month);
+  const[showAdjust,setShowAdjust]=useState(false);
+  const[adjDebit,setAdjDebit]=useState(String(curMd.uncategorized.debit));
+  const[adjSbi,setAdjSbi]=useState(String(curMd.uncategorized.sbi));
+  const[adjYes,setAdjYes]=useState(String(curMd.uncategorized.yes));
+  const[adjSaved,setAdjSaved]=useState(false);
+  function saveAdjust(){
+    onAdjustBuckets({debit:adjDebit,sbi:adjSbi,yes:adjYes});
+    setAdjSaved(true);setTimeout(()=>setAdjSaved(false),1500);
+  }
   const bal=data.balances;
   const md=getMonth(data,month);
   const incomeTotal=monthIncome(md);
@@ -384,6 +394,21 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog}){
         h('span',null,'Added to Uncategorized'),h('span',{style:{fontFamily:'monospace'}},fmtC(calc.totalNew))
       ),
       calc.totalNew===0&&h('div',{style:{fontSize:11.5,color:C.text3,marginTop:6}},'No change detected \u2014 balances matched your last save exactly.')
+    ),
+    h('div',{style:{margin:'0 16px 16px'}},
+      h('button',{onClick:()=>setShowAdjust(v=>!v),style:{width:'100%',padding:'12px',borderRadius:12,border:`1.5px dashed ${C.border2}`,background:'transparent',color:C.text2,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',textAlign:'left'}},
+        (showAdjust?'\u25BE ':'\u25B8 ')+'Manually Adjust Uncategorized Buckets'
+      ),
+      showAdjust&&h('div',{style:{marginTop:8,padding:'14px',borderRadius:14,background:C.card,border:`1px solid ${C.border}`,boxShadow:C.shadow}},
+        h('div',{style:{fontSize:12,color:C.text2,marginBottom:12}},'Use this to correct '+monthLabel(month)+'\u2019s Debit / SBI / YES uncategorized totals directly \u2014 handy after moving to per-card tracking, or to match your real statements.'),
+        [['Debit',adjDebit,setAdjDebit],['SBI',adjSbi,setAdjSbi],['YES',adjYes,setAdjYes]].map(([label,val,setter])=>
+          h('div',{key:label,style:{display:'flex',alignItems:'center',gap:10,marginBottom:10}},
+            h('span',{style:{fontSize:13,fontWeight:700,color:C.text,width:50}},label),
+            h('div',{style:{flex:1}},h(NumField,{value:val,onChange:setter}))
+          )
+        ),
+        h('button',{onClick:saveAdjust,style:{width:'100%',padding:'12px',borderRadius:12,border:'none',background:adjSaved?C.green:C.purple,color:'#fff',fontWeight:800,fontSize:14,cursor:'pointer',fontFamily:'inherit'}},adjSaved?'\u2713 Adjusted':'Save Adjustment')
+      )
     ),
     h(SectionTitle,null,'Balance Update History'),
     h('div',{style:{padding:'0 16px'}},
@@ -765,9 +790,9 @@ function App(){
         const entry=log[idx];
         months={...d.months};
         const md=cloneMonthEntry(d,months,entry.ym);
-        md.uncategorized.debit=(md.uncategorized.debit||0)-(entry.debitSpend||0);
-        md.uncategorized.sbi=(md.uncategorized.sbi||0)-(entry.sbiSpend||0);
-        md.uncategorized.yes=(md.uncategorized.yes||0)-(entry.yesSpend||0);
+        md.uncategorized.debit=Math.max(0,(md.uncategorized.debit||0)-(entry.debitSpend||0));
+        md.uncategorized.sbi=Math.max(0,(md.uncategorized.sbi||0)-(entry.sbiSpend||0));
+        md.uncategorized.yes=Math.max(0,(md.uncategorized.yes||0)-(entry.yesSpend||0));
         const prev=log[idx-1];
         balances=prev?{debit:prev.debit,sbi:prev.sbi,yes:prev.yes}:null;
         lastCalc=prev?{debitSpend:prev.debitSpend,sbiSpend:prev.sbiSpend,yesSpend:prev.yesSpend,totalNew:prev.totalNew,usedIncomeBaseline:prev.usedIncomeBaseline}:null;
@@ -837,6 +862,19 @@ function App(){
       return{...d,cardLimits,budgets,months};
     });
   }
+  // Directly overwrites the current month's uncategorized buckets. Used to
+  // manually correct totals — e.g. after the one-time migration that lumps
+  // old pre-split spending entirely into Debit, or to fix any other mismatch
+  // against your real account/card statements.
+  function adjustBuckets(newBuckets){
+    setData(d=>{
+      const ym=curYm();
+      const months={...d.months};
+      const md=cloneMonthEntry(d,months,ym);
+      md.uncategorized={debit:+newBuckets.debit||0,sbi:+newBuckets.sbi||0,yes:+newBuckets.yes||0};
+      return{...d,months};
+    });
+  }
 
   const md=getMonth(data,month);
   const uncategorized=uncategorizedTotal(md);
@@ -852,7 +890,7 @@ function App(){
   return h('div',{style:{height:'100dvh',display:'flex',flexDirection:'column',background:C.bg,color:C.text,fontFamily:"system-ui,-apple-system,sans-serif",overflow:'hidden'}},
     h('div',{style:{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}},
       page==='dash'       &&h(Dashboard,      {data,month,setMonth,setPage}),
-      page==='balances'   &&h(BalancesPage,   {data,month:curYm(),onSave:saveBalances,onModeChange:setCardInputMode,onDeleteLog:deleteLogEntry}),
+      page==='balances'   &&h(BalancesPage,   {data,month:curYm(),onSave:saveBalances,onModeChange:setCardInputMode,onDeleteLog:deleteLogEntry,onAdjustBuckets:adjustBuckets}),
       page==='categorize' &&h(CategorizePage, {data,month:curYm(),onAddTxn:addTxn}),
       page==='history'    &&h(HistoryPage,    {data,onEditTxn:editTxn,onDeleteTxn:deleteTxn}),
       page==='settings'   &&h(SettingsPage,   {data,onUpdate:updateSettings})
