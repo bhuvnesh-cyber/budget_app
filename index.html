@@ -102,7 +102,7 @@ const genId=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
 function defaultMonth(){return{income:{salary:0,other:0,extras:[]},uncategorized:0,transactions:[]}}
 function defaultData(){
   const budgets={};ALL_SUBS.forEach(s=>budgets[s.id]=0);
-  return{budgets,budgetNotes:{},cardLimits:{sbi:0,yes:0},balances:null,cardInputMode:'remaining',lastCalc:null,months:{}};
+  return{budgets,budgetNotes:{},cardLimits:{sbi:0,yes:0},balances:null,cardInputMode:'remaining',lastCalc:null,balanceLog:[],months:{}};
 }
 function getMonth(data,ym){return data.months[ym]||defaultMonth()}
 function monthIncome(md){return (+md.income.salary||0)+(+md.income.other||0)+md.income.extras.reduce((s,e)=>s+(+e.amount||0),0)}
@@ -252,7 +252,7 @@ function Dashboard({data,month,setMonth,setPage}){
 }
 
 /* ══════════════════════════ BALANCES PAGE ══════════════════════════ */
-function BalancesPage({data,month,onSave,onModeChange}){
+function BalancesPage({data,month,onSave,onModeChange,onDeleteLog}){
   const bal=data.balances;
   const md=getMonth(data,month);
   const incomeTotal=monthIncome(md);
@@ -350,6 +350,37 @@ function BalancesPage({data,month,onSave,onModeChange}){
         h('span',null,'Added to Uncategorized'),h('span',{style:{fontFamily:'monospace'}},fmtC(calc.totalNew))
       ),
       calc.totalNew===0&&h('div',{style:{fontSize:11.5,color:C.text3,marginTop:6}},'No change detected \u2014 balances matched your last save exactly.')
+    ),
+    h(SectionTitle,null,'Balance Update History'),
+    h('div',{style:{padding:'0 16px'}},
+      (!data.balanceLog||data.balanceLog.length===0)&&h('div',{style:{fontSize:12.5,color:C.text3,padding:'4px 0 12px'}},'No balance updates logged yet.'),
+      data.balanceLog&&data.balanceLog.length>0&&h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
+        data.balanceLog.slice().reverse().map((e,i,arr)=>{
+          const isLatest=i===0;
+          const dt=new Date(e.at);
+          const dtLabel=isNaN(dt)?e.ym:dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+' '+dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+          return h('div',{key:e.id,style:{padding:'12px 14px',borderBottom:i<arr.length-1?`1px solid ${C.border}`:'none'}},
+            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}},
+              h('div',{style:{flex:1,minWidth:0}},
+                h('div',{style:{fontSize:12.5,fontWeight:700,color:C.text,display:'flex',alignItems:'center',gap:6}},
+                  dtLabel,
+                  isLatest&&h('span',{style:{fontSize:10,fontWeight:800,color:C.purple,background:C.purplelt,padding:'2px 6px',borderRadius:6}},'CURRENT'),
+                  e.imported&&h('span',{style:{fontSize:10,fontWeight:800,color:C.text3,background:C.card2,padding:'2px 6px',borderRadius:6}},'IMPORTED')
+                ),
+                h('div',{style:{fontSize:11.5,color:C.text3,marginTop:2}},'Debit '+fmtC(e.debit)+' \u00B7 SBI '+fmtC(e.sbi)+' \u00B7 YES '+fmtC(e.yes)),
+                h('div',{style:{fontSize:11.5,color:e.totalNew>0?C.orange:C.text2,marginTop:2,fontWeight:700}},'Spend added: '+fmtC(e.totalNew))
+              ),
+              h('button',{onClick:()=>{
+                  const msg=isLatest
+                    ?'Delete this update? This will UNDO it \u2014 it subtracts '+fmtC(e.totalNew)+' back out of '+monthLabel(e.ym)+'\u2019s uncategorized total and restores your previous balances.'
+                    :'Delete this log entry? It\u2019s an older record, so removing it only tidies up your history \u2014 it won\u2019t change any current totals.';
+                  if(confirm(msg))onDeleteLog(e.id);
+                },
+                style:{border:'none',background:C.redlt,color:C.red,borderRadius:9,width:32,height:32,fontSize:15,cursor:'pointer',fontWeight:700,flexShrink:0}},'\uD83D\uDDD1\uFE0F')
+            )
+          );
+        })
+      )
     )
   );
 }
@@ -570,7 +601,17 @@ function SettingsPage({data,onUpdate}){
 
 /* ══════════════════════════ APP ══════════════════════════ */
 function App(){
-  const[data,setData]=useState(()=>{const d=lsGet(SK,null);return d?{...defaultData(),...d,budgets:{...defaultData().budgets,...(d.budgets||{})}}:defaultData()});
+  const[data,setData]=useState(()=>{
+    const d=lsGet(SK,null);
+    if(!d)return defaultData();
+    const merged={...defaultData(),...d,budgets:{...defaultData().budgets,...(d.budgets||{})}};
+    if(!merged.balanceLog||!merged.balanceLog.length){
+      merged.balanceLog=merged.balances?[{id:genId(),at:new Date().toISOString(),ym:curYm(),
+        debit:merged.balances.debit,sbi:merged.balances.sbi,yes:merged.balances.yes,
+        debitSpend:0,sbiSpend:0,yesSpend:0,totalNew:0,imported:true}]:[];
+    }
+    return merged;
+  });
   const[page,setPage]=useState('dash');
   const[month,setMonth]=useState(curYm());
 
@@ -583,20 +624,53 @@ function App(){
       const md={...getMonth(d,ym)};
       md.uncategorized=(md.uncategorized||0)+spendDelta;
       months[ym]=md;
-      return{...d,balances:newBal,months,lastCalc:calc||null};
+      const logEntry={id:genId(),at:new Date().toISOString(),ym,
+        debit:newBal.debit,sbi:newBal.sbi,yes:newBal.yes,
+        debitSpend:calc?calc.debitSpend:0,sbiSpend:calc?calc.sbiSpend:0,yesSpend:calc?calc.yesSpend:0,
+        totalNew:spendDelta,usedIncomeBaseline:calc?!!calc.usedIncomeBaseline:false};
+      const balanceLog=[...(d.balanceLog||[]),logEntry];
+      return{...d,balances:newBal,months,lastCalc:calc||null,balanceLog};
     });
   }
   function setCardInputMode(mode){
     setData(d=>({...d,cardInputMode:mode}));
   }
+  function deleteLogEntry(id){
+    setData(d=>{
+      const log=d.balanceLog||[];
+      const idx=log.findIndex(e=>e.id===id);
+      if(idx===-1)return d;
+      const isLatest=idx===log.length-1;
+      let months=d.months,balances=d.balances,lastCalc=d.lastCalc;
+      if(isLatest){
+        const entry=log[idx];
+        months={...d.months};
+        const md={...getMonth(d,entry.ym)};
+        md.uncategorized=(md.uncategorized||0)-entry.totalNew;
+        months[entry.ym]=md;
+        const prev=log[idx-1];
+        balances=prev?{debit:prev.debit,sbi:prev.sbi,yes:prev.yes}:null;
+        lastCalc=prev?{debitSpend:prev.debitSpend,sbiSpend:prev.sbiSpend,yesSpend:prev.yesSpend,totalNew:prev.totalNew,usedIncomeBaseline:prev.usedIncomeBaseline}:null;
+      }
+      const balanceLog=log.filter(e=>e.id!==id);
+      return{...d,months,balances,lastCalc,balanceLog};
+    });
+  }
   function addTxn(txn){
     setData(d=>{
-      const ym=txn.date.slice(0,7);
       const months={...d.months};
-      const md={...getMonth(d,ym)};
-      md.uncategorized=Math.max(0,(md.uncategorized||0)-txn.amount);
-      md.transactions=[...md.transactions,txn];
-      months[ym]=md;
+      const curYmNow=curYm();
+      const dateYm=txn.date.slice(0,7);
+      // The uncategorized pool being drawn down is always the CURRENT month's pool
+      // (that's the number shown on the Categorize screen), regardless of what
+      // date the user backdates the expense to.
+      const curMd={...getMonth(d,curYmNow)};
+      curMd.uncategorized=Math.max(0,(curMd.uncategorized||0)-txn.amount);
+      months[curYmNow]=curMd;
+      // The transaction itself is filed under its own date's month, so History
+      // and per-month budget analytics stay accurate.
+      const txnMd=dateYm===curYmNow?curMd:{...getMonth(d,dateYm)};
+      months[dateYm]={...txnMd,transactions:[...txnMd.transactions,txn]};
       return{...d,months};
     });
   }
@@ -625,7 +699,7 @@ function App(){
   return h('div',{style:{height:'100dvh',display:'flex',flexDirection:'column',background:C.bg,color:C.text,fontFamily:"system-ui,-apple-system,sans-serif",overflow:'hidden'}},
     h('div',{style:{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}},
       page==='dash'       &&h(Dashboard,      {data,month,setMonth,setPage}),
-      page==='balances'   &&h(BalancesPage,   {data,month:curYm(),onSave:saveBalances,onModeChange:setCardInputMode}),
+      page==='balances'   &&h(BalancesPage,   {data,month:curYm(),onSave:saveBalances,onModeChange:setCardInputMode,onDeleteLog:deleteLogEntry}),
       page==='categorize' &&h(CategorizePage, {data,month:curYm(),onAddTxn:addTxn}),
       page==='history'    &&h(HistoryPage,    {data}),
       page==='settings'   &&h(SettingsPage,   {data,onUpdate:updateSettings})
