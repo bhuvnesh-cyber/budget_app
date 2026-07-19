@@ -372,12 +372,12 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
           h(NumField,{value:val,onChange:setter})
         )
       ),
-      sbiLimit>0&&h('div',{style:{marginBottom:10}},
+      sbiLimit>0&&sbiDisp!==''&&h('div',{style:{marginBottom:10}},
         h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,color:C.text2,marginBottom:4}},
           h('span',null,'SBI Used'),h('span',null,Math.round(sbiPct)+'% of '+fmtC(sbiLimit)+' ('+fmtC(nSPreview)+' outstanding)')),
         h(Bar,{pct:sbiPct,color:sbiPct>90?C.red:sbiPct>70?C.orange:C.green})
       ),
-      yesLimit>0&&h('div',{style:{marginBottom:16}},
+      yesLimit>0&&yesDisp!==''&&h('div',{style:{marginBottom:16}},
         h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,color:C.text2,marginBottom:4}},
           h('span',null,'YES Used'),h('span',null,Math.round(yesPct)+'% of '+fmtC(yesLimit)+' ('+fmtC(nYPreview)+' outstanding)')),
         h(Bar,{pct:yesPct,color:yesPct>90?C.red:yesPct>70?C.orange:C.green})
