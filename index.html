@@ -104,20 +104,23 @@ const nextM=m=>{const d=new Date(m+'-01T00:00:00');d.setMonth(d.getMonth()+1);re
 const monthLabel=m=>{const[y,mo]=m.split('-');const N=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return N[+mo-1]+' '+y};
 const genId=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
 
-function defaultMonth(){return{income:{salary:0,other:0,extras:[]},uncategorized:{debit:0,sbi:0,yes:0},transactions:[]}}
+function zeroBudgets(){const b={};ALL_SUBS.forEach(s=>b[s.id]=0);return b}
+function defaultMonth(){return{income:{salary:0,other:0,extras:[]},uncategorized:{debit:0,sbi:0,yes:0},budgets:{},transactions:[]}}
 function defaultData(){
-  const budgets={};ALL_SUBS.forEach(s=>budgets[s.id]=0);
-  return{budgets,budgetNotes:{},cardLimits:{sbi:0,yes:0},balances:null,cardInputMode:'remaining',lastCalc:null,balanceLog:[],months:{}};
+  return{budgetNotes:{},cardLimits:{sbi:0,yes:0},balances:null,cardInputMode:'remaining',lastCalc:null,balanceLog:[],months:{}};
 }
 // Reads a month's data, normalizing legacy shapes (uncategorized used to be a
-// single number; it's now split per payment source).
+// single number; it's now split per payment source; budgets used to be one
+// global object shared by every month — now each month has its own, and any
+// month without explicit data (past or future) simply starts at ₹0 for
+// everything: income, every category, every subcategory).
 function getMonth(data,ym){
   const md=data.months[ym];
   if(!md)return defaultMonth();
   let unc=md.uncategorized;
   if(typeof unc==='number')unc={debit:unc,sbi:0,yes:0};
   if(!unc)unc={debit:0,sbi:0,yes:0};
-  return{...md,uncategorized:{debit:+unc.debit||0,sbi:+unc.sbi||0,yes:+unc.yes||0}};
+  return{...md,uncategorized:{debit:+unc.debit||0,sbi:+unc.sbi||0,yes:+unc.yes||0},budgets:md.budgets||{}};
 }
 // Returns a working clone of months[ym] (creating it from data if it doesn't
 // exist yet in the working copy), inserts it into `months`, and returns the
@@ -125,15 +128,15 @@ function getMonth(data,ym){
 // that reflected in `months` without re-assigning.
 function cloneMonthEntry(data,months,ym){
   const existing=months[ym]||getMonth(data,ym);
-  const clone={income:existing.income,uncategorized:{...existing.uncategorized},transactions:[...existing.transactions]};
+  const clone={income:existing.income,uncategorized:{...existing.uncategorized},budgets:{...existing.budgets},transactions:[...existing.transactions]};
   months[ym]=clone;
   return clone;
 }
 function uncategorizedTotal(md){return(+md.uncategorized.debit||0)+(+md.uncategorized.sbi||0)+(+md.uncategorized.yes||0)}
 function monthIncome(md){return (+md.income.salary||0)+(+md.income.other||0)+md.income.extras.reduce((s,e)=>s+(+e.amount||0),0)}
-function subBudget(data,subId){return +data.budgets[subId]||0}
-function catBudgetSum(data,catId){const cat=categoriesFor(data).find(c=>c.id===catId);return cat?cat.subs.reduce((s,sub)=>s+subBudget(data,sub.id),0):0}
-function totalBudget(data){return allSubsFor(data).reduce((s,sub)=>s+subBudget(data,sub.id),0)}
+function subBudget(md,subId){return +md.budgets[subId]||0}
+function catBudgetSum(md,catId){const cat=categoriesFor().find(c=>c.id===catId);return cat?cat.subs.reduce((s,sub)=>s+subBudget(md,sub.id),0):0}
+function totalBudget(md){return allSubsFor().reduce((s,sub)=>s+subBudget(md,sub.id),0)}
 function subSpent(md,subId){return md.transactions.filter(t=>t.subId===subId).reduce((s,t)=>s+t.amount,0)}
 function catSpent(md,catId){return md.transactions.filter(t=>t.catId===catId).reduce((s,t)=>s+t.amount,0)}
 function totalSpent(md){return md.transactions.reduce((s,t)=>s+t.amount,0)}
@@ -187,7 +190,7 @@ function Dashboard({data,month,setMonth,setPage}){
   const savings=catSpent(md,'savings');
   const remaining=income-totalReal;
   const overspent=totalReal>income?totalReal-income:0;
-  const budgetTot=totalBudget(data);
+  const budgetTot=totalBudget(md);
   const[watchFilter,setWatchFilter]=useState('all'); // all | over | near | under
 
   const catSegs=categoriesFor(data).map(c=>({v:catSpent(md,c.id),color:c.color,name:c.name,icon:c.icon})).filter(s=>s.v>0);
@@ -196,7 +199,7 @@ function Dashboard({data,month,setMonth,setPage}){
 
   // Every subcategory with a budget or spend, with full status info
   const allRows=allSubsFor(data).map(s=>{
-    const b=subBudget(data,s.id),sp=subSpent(md,s.id);
+    const b=subBudget(md,s.id),sp=subSpent(md,s.id);
     return{...s,budget:b,spent:sp,status:statusFor(sp,b),pct:b?sp/b*100:(sp>0?101:0)};
   }).filter(r=>r.budget>0||r.spent>0)
     .sort((a,b)=>b.pct-a.pct);
@@ -738,7 +741,7 @@ function SettingsPage({data,onUpdate,onResetIncomeAndBudgets,onResetEverything})
   const[extras,setExtras]=useState(md.income.extras||[]);
   const[sbiLimit,setSbiLimit]=useState(String(data.cardLimits.sbi||''));
   const[yesLimit,setYesLimit]=useState(String(data.cardLimits.yes||''));
-  const[budgets,setBudgets]=useState({...data.budgets});
+  const[budgets,setBudgets]=useState({...md.budgets});
   const[saved,setSaved]=useState(false);
 
   function addExtra(){setExtras(e=>[...e,{id:genId(),name:'',amount:''}])}
@@ -825,7 +828,24 @@ function App(){
   const[data,setData]=useState(()=>{
     const d=lsGet(SK,null);
     if(!d)return defaultData();
-    const merged={...defaultData(),...d,budgets:{...defaultData().budgets,...(d.budgets||{})}};
+    const merged={...defaultData(),...d};
+    delete merged.budgets; // legacy global budgets — migrated into per-month below
+    const legacyBudgets=d.budgets||null;
+    merged.months={...merged.months};
+    if(legacyBudgets){
+      // Old versions had one shared budget for every month. Carry that
+      // forward into each month that already has data (so historical Budget
+      // Watch stays accurate) and into the current month, so nothing
+      // resets to zero the moment this update lands. Any OTHER month
+      // (past or future) you haven't touched still starts blank at ₹0.
+      Object.keys(merged.months).forEach(ym=>{
+        merged.months[ym]={...merged.months[ym],budgets:merged.months[ym].budgets||{...legacyBudgets}};
+      });
+      const curYmNow=curYm();
+      if(!merged.months[curYmNow]){
+        merged.months[curYmNow]={...defaultMonth(),budgets:{...legacyBudgets}};
+      }
+    }
     if(!merged.balanceLog||!merged.balanceLog.length){
       merged.balanceLog=merged.balances?[{id:genId(),at:new Date().toISOString(),ym:curYm(),
         debit:merged.balances.debit,sbi:merged.balances.sbi,yes:merged.balances.yes,
@@ -937,7 +957,8 @@ function App(){
       const months={...d.months};
       const md=cloneMonthEntry(d,months,ym);
       md.income=monthIncome;
-      return{...d,cardLimits,budgets,months};
+      md.budgets=budgets;
+      return{...d,cardLimits,months};
     });
   }
   // Directly overwrites the current month's uncategorized buckets. Used to
@@ -960,8 +981,8 @@ function App(){
       const months={...d.months};
       const md=cloneMonthEntry(d,months,ym);
       md.income={salary:0,other:0,extras:[]};
-      const budgets={};allSubsFor(d).forEach(s=>budgets[s.id]=0);
-      return{...d,budgets,months};
+      md.budgets=zeroBudgets();
+      return{...d,months};
     });
   }
   // Clears the saved balances baseline so the next Balances save starts fresh
