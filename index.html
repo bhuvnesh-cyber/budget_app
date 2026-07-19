@@ -192,12 +192,12 @@ function NumField({value,onChange,placeholder}){
 function Dashboard({data,month,setMonth,setPage}){
   const md=getMonth(data,month);
   const income=monthIncome(md);
-  const catSpentOnly=totalSpent(md);
-  const uncatTotal=uncategorizedTotal(md);
-  const spent=catSpentOnly+uncatTotal; // true total spend, incl. not-yet-sorted money
+  const catSpentOnly=totalSpent(md); // what you've actually categorized as an expense
+  const uncatTotal=uncategorizedTotal(md); // money spent but not yet sorted into a category
+  const totalReal=catSpentOnly+uncatTotal; // true total that's left your accounts this month
   const savings=catSpent(md,'savings');
-  const remaining=income-spent;
-  const overspent=spent>income?spent-income:0;
+  const remaining=income-totalReal;
+  const overspent=totalReal>income?totalReal-income:0;
   const budgetTot=totalBudget(data);
 
   const catSegs=CATEGORIES.map(c=>({v:catSpent(md,c.id),color:c.color,name:c.name})).filter(s=>s.v>0);
@@ -231,13 +231,14 @@ function Dashboard({data,month,setMonth,setPage}){
     ),
     /* Summary cards */
     h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,padding:'14px 16px 4px'}},
-      [['Income',income,C.green,'\uD83D\uDCB0'],['Expenses',spent,C.red,'\uD83D\uDCB8'],
+      [['Income',income,C.green,'\uD83D\uDCB0'],['Expenses',catSpentOnly,C.red,'\uD83D\uDCB8'],
        ['Savings',savings,C.purple,'\uD83D\uDCC8'],['Remaining',remaining,remaining>=0?C.green:C.red,'\uD83E\uDE99']].map(([l,v,col,ic])=>
         h('div',{key:l,style:{background:C.card,borderRadius:16,padding:'14px',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
           h('div',{style:{fontSize:18,marginBottom:4}},ic),
           h('div',{style:{fontSize:11,color:C.text3,fontWeight:600,marginBottom:2}},l),
           h('div',{style:{fontFamily:'monospace',fontWeight:800,color:col,fontSize:16}},fmtC(v)),
-          l==='Expenses'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.orange,fontWeight:700,marginTop:2}},'incl. '+fmtC(uncatTotal)+' uncategorized')
+          l==='Expenses'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.orange,fontWeight:700,marginTop:2}},'+ '+fmtC(uncatTotal)+' uncategorized'),
+          l==='Remaining'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.text3,fontWeight:600,marginTop:2}},'accounts for uncategorized too')
         )
       )
     ),
@@ -245,9 +246,9 @@ function Dashboard({data,month,setMonth,setPage}){
     h('div',{style:{margin:'10px 16px',padding:'14px 16px',background:C.card,borderRadius:16,boxShadow:C.shadow,border:`1px solid ${C.border}`}},
       h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
         h('span',{style:{fontSize:13,fontWeight:700,color:C.text}},'Total Budget Used'),
-        h('span',{style:{fontSize:13,fontWeight:700,color:C.text2,fontFamily:'monospace'}},fmtC(spent)+' / '+fmtC(budgetTot))
+        h('span',{style:{fontSize:13,fontWeight:700,color:C.text2,fontFamily:'monospace'}},fmtC(catSpentOnly)+' / '+fmtC(budgetTot))
       ),
-      h(Bar,{pct:budgetTot?spent/budgetTot*100:0,color:statusFor(spent,budgetTot).color})
+      h(Bar,{pct:budgetTot?catSpentOnly/budgetTot*100:0,color:statusFor(catSpentOnly,budgetTot).color})
     ),
     /* Category pie */
     h(SectionTitle,null,'Spending by Category'),
@@ -264,7 +265,7 @@ function Dashboard({data,month,setMonth,setPage}){
           h('span',{style:{fontSize:13,color:C.text2,fontWeight:600}},s.name),
           h('span',{style:{fontSize:13,color:C.text,fontWeight:700,fontFamily:'monospace'}},fmtC(s.v))
         ),
-        h(Bar,{pct:spent?s.v/spent*100:0,color:s.color})
+        h(Bar,{pct:catSpentOnly?s.v/catSpentOnly*100:0,color:s.color})
       ))
     ),
     /* Budget alerts */
