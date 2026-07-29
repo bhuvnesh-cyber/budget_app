@@ -108,9 +108,9 @@ const monthFromIndex=idx=>{const y=Math.floor(idx/12),mo=(idx%12+12)%12+1;return
 const genId=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
 
 function zeroBudgets(){const b={};ALL_SUBS.forEach(s=>b[s.id]=0);return b}
-function defaultMonth(){return{income:{salary:0,other:0,extras:[]},uncategorized:{debit:0,sbi:0,yes:0},budgets:{},transactions:[]}}
+function defaultMonth(){return{income:{salary:0,other:0,extras:[]},uncategorized:{debit:0,sbi:0,yes:0},budgets:{},transactions:[],balances:null,lastCalc:null,balanceLog:[]}}
 function defaultData(){
-  return{budgetNotes:{},cardLimits:{sbi:0,yes:0},balances:null,cardInputMode:'remaining',lastCalc:null,balanceLog:[],months:{}};
+  return{budgetNotes:{},cardLimits:{sbi:0,yes:0},cardInputMode:'remaining',months:{}};
 }
 // Reads a month's data, normalizing legacy shapes (uncategorized used to be a
 // single number; it's now split per payment source; budgets used to be one
@@ -123,7 +123,8 @@ function getMonth(data,ym){
   let unc=md.uncategorized;
   if(typeof unc==='number')unc={debit:unc,sbi:0,yes:0};
   if(!unc)unc={debit:0,sbi:0,yes:0};
-  return{...md,uncategorized:{debit:+unc.debit||0,sbi:+unc.sbi||0,yes:+unc.yes||0},budgets:md.budgets||{}};
+  return{...md,uncategorized:{debit:+unc.debit||0,sbi:+unc.sbi||0,yes:+unc.yes||0},budgets:md.budgets||{},
+    balances:md.balances||null,lastCalc:md.lastCalc||null,balanceLog:md.balanceLog||[]};
 }
 // Returns a working clone of months[ym] (creating it from data if it doesn't
 // exist yet in the working copy), inserts it into `months`, and returns the
@@ -131,7 +132,8 @@ function getMonth(data,ym){
 // that reflected in `months` without re-assigning.
 function cloneMonthEntry(data,months,ym){
   const existing=months[ym]||getMonth(data,ym);
-  const clone={income:existing.income,uncategorized:{...existing.uncategorized},budgets:{...existing.budgets},transactions:[...existing.transactions]};
+  const clone={income:existing.income,uncategorized:{...existing.uncategorized},budgets:{...existing.budgets},transactions:[...existing.transactions],
+    balances:existing.balances?{...existing.balances}:null,lastCalc:existing.lastCalc?{...existing.lastCalc}:null,balanceLog:[...(existing.balanceLog||[])]};
   months[ym]=clone;
   return clone;
 }
@@ -350,14 +352,6 @@ function Dashboard({data,month,setMonth,setPage}){
 function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBuckets,onResetBalances}){
   const curMd=getMonth(data,month);
   const[showAdjust,setShowAdjust]=useState(false);
-  const[showAllHistory,setShowAllHistory]=useState(false);
-  // reversedFull = every log entry, most-recent-first, across ALL months —
-  // used only to determine which single entry is the true global "CURRENT"
-  // one (since the underlying account balance is a running total, not
-  // per-month). visibleLog is what's actually shown: just this month's
-  // entries by default, or everything if the user taps "Show All Months".
-  const reversedFull=(data.balanceLog||[]).slice().reverse();
-  const visibleLog=showAllHistory?reversedFull:reversedFull.filter(e=>e.ym===month);
   const[adjDebit,setAdjDebit]=useState(String(curMd.uncategorized.debit));
   const[adjSbi,setAdjSbi]=useState(String(curMd.uncategorized.sbi));
   const[adjYes,setAdjYes]=useState(String(curMd.uncategorized.yes));
@@ -366,8 +360,10 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
     onAdjustBuckets({debit:adjDebit,sbi:adjSbi,yes:adjYes});
     setAdjSaved(true);setTimeout(()=>setAdjSaved(false),1500);
   }
-  const bal=data.balances;
-  const md=getMonth(data,month);
+  // Balances, calculations, and the update log all live on THIS month only —
+  // switching to another month never reads or writes another month's balance.
+  const bal=curMd.balances;
+  const md=curMd;
   const incomeTotal=monthIncome(md);
   const baseline=bal||{debit:incomeTotal,sbi:0,yes:0};
   const mode=data.cardInputMode||'remaining'; // 'remaining' | 'outstanding'
@@ -382,6 +378,24 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
   const[debit,setDebit]=useState(bal?String(bal.debit):'');
   const[sbiDisp,setSbiDisp]=useState(bal?String(initSbiDisplay):'');
   const[yesDisp,setYesDisp]=useState(bal?String(initYesDisplay):'');
+
+  // Reload the input fields (and the adjust-buckets fields) whenever the
+  // browsed month changes, so August never shows leftover text typed while
+  // looking at July.
+  useEffect(()=>{
+    const m=getMonth(data,month);
+    const b=m.balances;
+    const inc=monthIncome(m);
+    const bl=b||{debit:inc,sbi:0,yes:0};
+    const curMode=data.cardInputMode||'remaining';
+    const isRem=curMode==='remaining';
+    setDebit(b?String(b.debit):'');
+    setSbiDisp(b?String(isRem?(sbiLimit-b.sbi):b.sbi):'');
+    setYesDisp(b?String(isRem?(yesLimit-b.yes):b.yes):'');
+    setAdjDebit(String(m.uncategorized.debit));
+    setAdjSbi(String(m.uncategorized.sbi));
+    setAdjYes(String(m.uncategorized.yes));
+  },[month]);
 
   function switchMode(newMode){
     if(newMode===mode)return;
@@ -420,7 +434,7 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
   const nYPreview=resolveYes();
   const sbiPct=sbiLimit?nSPreview/sbiLimit*100:0;
   const yesPct=yesLimit?nYPreview/yesLimit*100:0;
-  const calc=data.lastCalc;
+  const calc=curMd.lastCalc;
 
   const modeBtn=(val,label)=>h('button',{onClick:()=>switchMode(val),
     style:{flex:1,padding:'8px',borderRadius:9,border:`1.5px solid ${mode===val?C.indigo:C.border}`,background:mode===val?C.indigolt:C.card2,color:mode===val?C.indigo:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}},label);
@@ -494,15 +508,12 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
       h('button',{onClick:()=>{if(confirm('Reset your saved Debit/SBI/YES balances? Your next Balances save will start fresh (using income as the baseline again). This month\u2019s uncategorized totals and transaction history are NOT affected.'))onResetBalances()},
         style:{width:'100%',padding:'12px',borderRadius:12,border:`1.5px solid ${C.orange}`,background:C.orangelt,color:C.orange,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}},'Reset Saved Balances / Start Fresh')
     ),
-    h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',margin:'18px 16px 8px'}},
-      h('div',{style:{fontSize:11,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:C.text3}},'Balance Update History'),
-      h('button',{onClick:()=>setShowAllHistory(v=>!v),style:{border:'none',background:'none',color:C.indigo,fontSize:11.5,fontWeight:700,cursor:'pointer',padding:0}},showAllHistory?'Show '+monthLabel(month)+' Only':'Show All Months')
-    ),
+    h(SectionTitle,null,'Balance Update History \u2014 '+monthLabel(month)),
     h('div',{style:{padding:'0 16px'}},
-      visibleLog.length===0&&h('div',{style:{fontSize:12.5,color:C.text3,padding:'4px 0 12px'}},showAllHistory?'No balance updates logged yet.':'No balance updates logged for '+monthLabel(month)+' yet.'),
-      visibleLog.length>0&&h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-        visibleLog.map((e,i,arr)=>{
-          const isLatest=reversedFull[0]&&e.id===reversedFull[0].id;
+      (curMd.balanceLog.length===0)&&h('div',{style:{fontSize:12.5,color:C.text3,padding:'4px 0 12px'}},'No balance updates logged for '+monthLabel(month)+' yet.'),
+      curMd.balanceLog.length>0&&h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
+        curMd.balanceLog.slice().reverse().map((e,i,arr)=>{
+          const isLatest=i===0;
           const dt=new Date(e.at);
           const dtLabel=isNaN(dt)?e.ym:dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+' '+dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
           return h('div',{key:e.id,style:{padding:'12px 14px',borderBottom:i<arr.length-1?`1px solid ${C.border}`:'none'}},
@@ -518,7 +529,7 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
               ),
               h('button',{onClick:()=>{
                   const msg=isLatest
-                    ?'Delete this update? This will UNDO it \u2014 it subtracts '+fmtC(e.totalNew)+' back out of '+monthLabel(e.ym)+'\u2019s uncategorized total and restores your previous balances.'
+                    ?'Delete this update? This will UNDO it \u2014 it subtracts '+fmtC(e.totalNew)+' back out of '+monthLabel(month)+'\u2019s uncategorized total and restores '+monthLabel(month)+'\u2019s previous balances.'
                     :'Delete this log entry? It\u2019s an older record, so removing it only tidies up your history \u2014 it won\u2019t change any current totals.';
                   if(confirm(msg))onDeleteLog(e.id);
                 },
@@ -700,24 +711,16 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
 }
 
 function HistoryPage({data,month,onEditTxn,onDeleteTxn}){
-  const allMonths=Object.keys(data.months).sort().reverse();
-  const[filterMonth,setFilterMonth]=useState(month);
   const[filterCat,setFilterCat]=useState('all');
   const[filterSrc,setFilterSrc]=useState('all');
   const[search,setSearch]=useState('');
   const[editing,setEditing]=useState(null); // {ym,txn}
 
-  // Whenever the person switches which month they're browsing (on Home),
-  // History should default to showing that month too, rather than staying
-  // stuck on whatever was previously selected or showing everything.
-  useEffect(()=>{setFilterMonth(month)},[month]);
-
-  let txns=[];
-  Object.keys(data.months).forEach(ym=>{
-    data.months[ym].transactions.forEach(t=>txns.push({...t,ym}));
-  });
+  // History is locked to the month you're browsing on Home — it only ever
+  // shows that month's transactions, so switching months never leaks another
+  // month's history in. Change the month from Home to see a different one.
+  let txns=(data.months[month]?data.months[month].transactions:[]).map(t=>({...t,ym:month}));
   txns=txns.filter(t=>
-    (filterMonth==='all'||t.ym===filterMonth)&&
     (filterCat==='all'||t.catId===filterCat)&&
     (filterSrc==='all'||t.source===filterSrc)&&
     (!search||((getSubFor(t.subId,data).name+' '+(t.desc||'')).toLowerCase().includes(search.toLowerCase())))
@@ -729,14 +732,11 @@ function HistoryPage({data,month,onEditTxn,onDeleteTxn}){
 
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h('div',{style:{padding:'16px 16px 8px'}},
-      h('div',{style:{fontSize:20,fontWeight:800,color:C.text,marginBottom:10}},'Transaction History'),
+      h('div',{style:{fontSize:20,fontWeight:800,color:C.text,marginBottom:2}},'Transaction History'),
+      h('div',{style:{fontSize:12.5,color:C.text3,marginBottom:10}},monthLabel(month)+' \u2014 switch months from Home to see a different one'),
       h('input',{value:search,onChange:e=>setSearch(e.target.value),placeholder:'\uD83D\uDD0D Search description or category',
         style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none',marginBottom:10}}),
       h('div',{style:{display:'flex',gap:8,overflowX:'auto'}},
-        h('select',{value:filterMonth,onChange:e=>setFilterMonth(e.target.value),style:selStyle},
-          h('option',{value:'all'},'All Months'),
-          allMonths.map(m=>h('option',{key:m,value:m},monthLabel(m)))
-        ),
         h('select',{value:filterCat,onChange:e=>setFilterCat(e.target.value),style:selStyle},
           h('option',{value:'all'},'All Categories'),
           CATEGORIES.map(c=>h('option',{key:c.id,value:c.id},c.name))
@@ -901,11 +901,31 @@ function App(){
         merged.months[curYmNow]={...defaultMonth(),budgets:{...legacyBudgets}};
       }
     }
-    if(!merged.balanceLog||!merged.balanceLog.length){
-      merged.balanceLog=merged.balances?[{id:genId(),at:new Date().toISOString(),ym:curYm(),
-        debit:merged.balances.debit,sbi:merged.balances.sbi,yes:merged.balances.yes,
-        debitSpend:0,sbiSpend:0,yesSpend:0,totalNew:0,imported:true}]:[];
+    // Legacy versions kept ONE global running balance + a single shared
+    // balanceLog (with each entry tagged by ym) instead of per-month data.
+    // Fold that history into each month it actually belongs to, then drop
+    // the old global fields so balances become fully month-independent.
+    const oldLog=d.balanceLog||[];
+    if(oldLog.length){
+      const grouped={};
+      oldLog.forEach(e=>{(grouped[e.ym]=grouped[e.ym]||[]).push(e)});
+      Object.keys(grouped).forEach(ym=>{
+        if(!merged.months[ym])merged.months[ym]={...defaultMonth(),budgets:legacyBudgets?{...legacyBudgets}:{}};
+        const entries=grouped[ym];
+        const last=entries[entries.length-1];
+        merged.months[ym]={...merged.months[ym],
+          balanceLog:entries,
+          balances:{debit:last.debit,sbi:last.sbi,yes:last.yes},
+          lastCalc:{debitSpend:last.debitSpend,sbiSpend:last.sbiSpend,yesSpend:last.yesSpend,totalNew:last.totalNew,usedIncomeBaseline:last.usedIncomeBaseline}};
+      });
+    }else if(d.balances){
+      // Even older versions may have a saved balance with no log at all.
+      if(!merged.months[curYm()])merged.months[curYm()]={...defaultMonth(),budgets:legacyBudgets?{...legacyBudgets}:{}};
+      merged.months[curYm()]={...merged.months[curYm()],balances:d.balances,lastCalc:d.lastCalc||null};
     }
+    delete merged.balances;
+    delete merged.lastCalc;
+    delete merged.balanceLog;
     return merged;
   });
   const[page,setPage]=useState('dash');
@@ -929,33 +949,34 @@ function App(){
         debit:newBal.debit,sbi:newBal.sbi,yes:newBal.yes,
         debitSpend:calc?calc.debitSpend:0,sbiSpend:calc?calc.sbiSpend:0,yesSpend:calc?calc.yesSpend:0,
         totalNew:spendDelta,usedIncomeBaseline:calc?!!calc.usedIncomeBaseline:false};
-      const balanceLog=[...(d.balanceLog||[]),logEntry];
-      return{...d,balances:newBal,months,lastCalc:calc||null,balanceLog};
+      md.balances=newBal;
+      md.lastCalc=calc||null;
+      md.balanceLog=[...md.balanceLog,logEntry];
+      return{...d,months};
     });
   }
   function setCardInputMode(mode){
     setData(d=>({...d,cardInputMode:mode}));
   }
-  function deleteLogEntry(id){
+  function deleteLogEntry(id,ym){
     setData(d=>{
-      const log=d.balanceLog||[];
+      const months={...d.months};
+      const md=cloneMonthEntry(d,months,ym);
+      const log=md.balanceLog||[];
       const idx=log.findIndex(e=>e.id===id);
       if(idx===-1)return d;
       const isLatest=idx===log.length-1;
-      let months=d.months,balances=d.balances,lastCalc=d.lastCalc;
       if(isLatest){
         const entry=log[idx];
-        months={...d.months};
-        const md=cloneMonthEntry(d,months,entry.ym);
         md.uncategorized.debit=Math.max(0,(md.uncategorized.debit||0)-(entry.debitSpend||0));
         md.uncategorized.sbi=Math.max(0,(md.uncategorized.sbi||0)-(entry.sbiSpend||0));
         md.uncategorized.yes=Math.max(0,(md.uncategorized.yes||0)-(entry.yesSpend||0));
         const prev=log[idx-1];
-        balances=prev?{debit:prev.debit,sbi:prev.sbi,yes:prev.yes}:null;
-        lastCalc=prev?{debitSpend:prev.debitSpend,sbiSpend:prev.sbiSpend,yesSpend:prev.yesSpend,totalNew:prev.totalNew,usedIncomeBaseline:prev.usedIncomeBaseline}:null;
+        md.balances=prev?{debit:prev.debit,sbi:prev.sbi,yes:prev.yes}:null;
+        md.lastCalc=prev?{debitSpend:prev.debitSpend,sbiSpend:prev.sbiSpend,yesSpend:prev.yesSpend,totalNew:prev.totalNew,usedIncomeBaseline:prev.usedIncomeBaseline}:null;
       }
-      const balanceLog=log.filter(e=>e.id!==id);
-      return{...d,months,balances,lastCalc,balanceLog};
+      md.balanceLog=log.filter(e=>e.id!==id);
+      return{...d,months};
     });
   }
   function addTxn(txn,ym){
@@ -1040,10 +1061,17 @@ function App(){
       return{...d,months};
     });
   }
-  // Clears the saved balances baseline so the next Balances save starts fresh
-  // (using the income-baseline logic again). Balance history log is kept.
-  function resetBalances(){
-    setData(d=>({...d,balances:null,lastCalc:null}));
+  // Clears this month's saved balances baseline so its next Balances save
+  // starts fresh (using the income-baseline logic again). This month's
+  // balance history log is kept. Other months are untouched.
+  function resetBalances(ym){
+    setData(d=>{
+      const months={...d.months};
+      const md=cloneMonthEntry(d,months,ym);
+      md.balances=null;
+      md.lastCalc=null;
+      return{...d,months};
+    });
   }
   // Zeroes the browsed month's uncategorized buckets directly (shortcut for
   // the manual adjustment tool). Doesn't touch already-categorized transactions.
@@ -1074,7 +1102,7 @@ function App(){
   return h('div',{style:{height:'100dvh',display:'flex',flexDirection:'column',background:C.bg,color:C.text,fontFamily:"system-ui,-apple-system,sans-serif",overflow:'hidden'}},
     h('div',{style:{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}},
       page==='dash'       &&h(Dashboard,      {data,month,setMonth,setPage}),
-      page==='balances'   &&h(BalancesPage,   {data,month,onSave:(newBal,spendDelta,calc)=>saveBalances(month,newBal,spendDelta,calc),onModeChange:setCardInputMode,onDeleteLog:deleteLogEntry,onAdjustBuckets:newBuckets=>adjustBuckets(month,newBuckets),onResetBalances:resetBalances}),
+      page==='balances'   &&h(BalancesPage,   {data,month,onSave:(newBal,spendDelta,calc)=>saveBalances(month,newBal,spendDelta,calc),onModeChange:setCardInputMode,onDeleteLog:id=>deleteLogEntry(id,month),onAdjustBuckets:newBuckets=>adjustBuckets(month,newBuckets),onResetBalances:()=>resetBalances(month)}),
       page==='categorize' &&h(CategorizePage, {data,month,onAddTxn:txn=>addTxn(txn,month),onEditTxn:editTxn,onDeleteTxn:deleteTxn,onResetUncategorized:()=>resetUncategorized(month)}),
       page==='history'    &&h(HistoryPage,    {data,month,onEditTxn:editTxn,onDeleteTxn:deleteTxn}),
       page==='settings'   &&h(SettingsPage,   {data,month,onUpdate:settings=>updateSettings(month,settings),onResetIncomeAndBudgets:()=>resetIncomeAndBudgets(month),onResetEverything:resetEverything})
