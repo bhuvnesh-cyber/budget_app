@@ -350,6 +350,14 @@ function Dashboard({data,month,setMonth,setPage}){
 function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBuckets,onResetBalances}){
   const curMd=getMonth(data,month);
   const[showAdjust,setShowAdjust]=useState(false);
+  const[showAllHistory,setShowAllHistory]=useState(false);
+  // reversedFull = every log entry, most-recent-first, across ALL months —
+  // used only to determine which single entry is the true global "CURRENT"
+  // one (since the underlying account balance is a running total, not
+  // per-month). visibleLog is what's actually shown: just this month's
+  // entries by default, or everything if the user taps "Show All Months".
+  const reversedFull=(data.balanceLog||[]).slice().reverse();
+  const visibleLog=showAllHistory?reversedFull:reversedFull.filter(e=>e.ym===month);
   const[adjDebit,setAdjDebit]=useState(String(curMd.uncategorized.debit));
   const[adjSbi,setAdjSbi]=useState(String(curMd.uncategorized.sbi));
   const[adjYes,setAdjYes]=useState(String(curMd.uncategorized.yes));
@@ -486,12 +494,15 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
       h('button',{onClick:()=>{if(confirm('Reset your saved Debit/SBI/YES balances? Your next Balances save will start fresh (using income as the baseline again). This month\u2019s uncategorized totals and transaction history are NOT affected.'))onResetBalances()},
         style:{width:'100%',padding:'12px',borderRadius:12,border:`1.5px solid ${C.orange}`,background:C.orangelt,color:C.orange,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}},'Reset Saved Balances / Start Fresh')
     ),
-    h(SectionTitle,null,'Balance Update History'),
+    h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',margin:'18px 16px 8px'}},
+      h('div',{style:{fontSize:11,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:C.text3}},'Balance Update History'),
+      h('button',{onClick:()=>setShowAllHistory(v=>!v),style:{border:'none',background:'none',color:C.indigo,fontSize:11.5,fontWeight:700,cursor:'pointer',padding:0}},showAllHistory?'Show '+monthLabel(month)+' Only':'Show All Months')
+    ),
     h('div',{style:{padding:'0 16px'}},
-      (!data.balanceLog||data.balanceLog.length===0)&&h('div',{style:{fontSize:12.5,color:C.text3,padding:'4px 0 12px'}},'No balance updates logged yet.'),
-      data.balanceLog&&data.balanceLog.length>0&&h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-        data.balanceLog.slice().reverse().map((e,i,arr)=>{
-          const isLatest=i===0;
+      visibleLog.length===0&&h('div',{style:{fontSize:12.5,color:C.text3,padding:'4px 0 12px'}},showAllHistory?'No balance updates logged yet.':'No balance updates logged for '+monthLabel(month)+' yet.'),
+      visibleLog.length>0&&h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
+        visibleLog.map((e,i,arr)=>{
+          const isLatest=reversedFull[0]&&e.id===reversedFull[0].id;
           const dt=new Date(e.at);
           const dtLabel=isNaN(dt)?e.ym:dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+' '+dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
           return h('div',{key:e.id,style:{padding:'12px 14px',borderBottom:i<arr.length-1?`1px solid ${C.border}`:'none'}},
@@ -688,13 +699,18 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
   );
 }
 
-function HistoryPage({data,onEditTxn,onDeleteTxn}){
+function HistoryPage({data,month,onEditTxn,onDeleteTxn}){
   const allMonths=Object.keys(data.months).sort().reverse();
-  const[filterMonth,setFilterMonth]=useState('all');
+  const[filterMonth,setFilterMonth]=useState(month);
   const[filterCat,setFilterCat]=useState('all');
   const[filterSrc,setFilterSrc]=useState('all');
   const[search,setSearch]=useState('');
   const[editing,setEditing]=useState(null); // {ym,txn}
+
+  // Whenever the person switches which month they're browsing (on Home),
+  // History should default to showing that month too, rather than staying
+  // stuck on whatever was previously selected or showing everything.
+  useEffect(()=>{setFilterMonth(month)},[month]);
 
   let txns=[];
   Object.keys(data.months).forEach(ym=>{
@@ -1060,7 +1076,7 @@ function App(){
       page==='dash'       &&h(Dashboard,      {data,month,setMonth,setPage}),
       page==='balances'   &&h(BalancesPage,   {data,month,onSave:(newBal,spendDelta,calc)=>saveBalances(month,newBal,spendDelta,calc),onModeChange:setCardInputMode,onDeleteLog:deleteLogEntry,onAdjustBuckets:newBuckets=>adjustBuckets(month,newBuckets),onResetBalances:resetBalances}),
       page==='categorize' &&h(CategorizePage, {data,month,onAddTxn:txn=>addTxn(txn,month),onEditTxn:editTxn,onDeleteTxn:deleteTxn,onResetUncategorized:()=>resetUncategorized(month)}),
-      page==='history'    &&h(HistoryPage,    {data,onEditTxn:editTxn,onDeleteTxn:deleteTxn}),
+      page==='history'    &&h(HistoryPage,    {data,month,onEditTxn:editTxn,onDeleteTxn:deleteTxn}),
       page==='settings'   &&h(SettingsPage,   {data,month,onUpdate:settings=>updateSettings(month,settings),onResetIncomeAndBudgets:()=>resetIncomeAndBudgets(month),onResetEverything:resetEverything})
     ),
     h('nav',{style:{display:'flex',background:C.nav,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom,0px)',flexShrink:0,boxShadow:'0 -2px 16px rgba(109,40,217,.08)'}},
