@@ -419,8 +419,8 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
 
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h('div',{style:{padding:'16px 16px 4px'}},
-      h('div',{style:{fontSize:20,fontWeight:800,color:C.text}},'Update Balances'),
-      h('div',{style:{fontSize:13,color:C.text2,marginTop:2}},'New spending is calculated automatically from the change since your last update.')
+      h('div',{style:{fontSize:20,fontWeight:800,color:C.text}},'Update Balances \u2014 '+monthLabel(month)),
+      h('div',{style:{fontSize:13,color:C.text2,marginTop:2}},'New spending is calculated automatically from the change since your last update, and is added to '+monthLabel(month)+'\u2019s uncategorized pool.')
     ),
     !bal&&h('div',{style:{margin:'12px 16px 0',padding:'12px 14px',borderRadius:12,background:C.orangelt,border:`1px solid ${C.orange}`,fontSize:12.5,color:C.orange,fontWeight:600}},
       '\u26A0\uFE0F No previous balance saved yet. We\u2019ll assume your Debit account started this month at your total income ('+fmtC(incomeTotal)+') and both cards started at '+fmtC(0)+' outstanding, then calculate today\u2019s spend from that.'
@@ -530,7 +530,7 @@ function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncate
   const[subId,setSubId]=useState('');
   const[source,setSource]=useState('debit');
   const[desc,setDesc]=useState('');
-  const[date,setDate]=useState(today());
+  const[date,setDate]=useState(month===curYm()?today():month+'-01');
   const[err,setErr]=useState('');
   const[editing,setEditing]=useState(null); // {ym,txn}
 
@@ -550,6 +550,7 @@ function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncate
 
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h('div',{style:{padding:'16px 16px 0'}},
+      h('div',{style:{fontSize:12,fontWeight:700,color:C.text3,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em'}},'Categorizing for '+monthLabel(month)),
       h('div',{style:{padding:'16px 18px',borderRadius:18,background:total>0.5?C.orangelt:C.greenlt,border:`1.5px solid ${total>0.5?C.orange:C.green}`,textAlign:'center'}},
         h('div',{style:{fontSize:12,fontWeight:700,color:total>0.5?C.orange:C.green,textTransform:'uppercase',letterSpacing:'.06em'}},'Uncategorized Remaining'),
         h('div',{style:{fontSize:32,fontWeight:900,color:total>0.5?C.orange:C.green,fontFamily:'monospace',marginTop:4}},fmtC(total)),
@@ -761,8 +762,7 @@ function HistoryPage({data,onEditTxn,onDeleteTxn}){
 }
 
 /* ══════════════════════════ SETTINGS PAGE ══════════════════════════ */
-function SettingsPage({data,onUpdate,onResetIncomeAndBudgets,onResetEverything}){
-  const month=curYm();
+function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEverything}){
   const md=getMonth(data,month);
   const[salary,setSalary]=useState(String(md.income.salary||''));
   const[other,setOther]=useState(String(md.income.other||''));
@@ -771,6 +771,16 @@ function SettingsPage({data,onUpdate,onResetIncomeAndBudgets,onResetEverything})
   const[yesLimit,setYesLimit]=useState(String(data.cardLimits.yes||''));
   const[budgets,setBudgets]=useState({...md.budgets});
   const[saved,setSaved]=useState(false);
+
+  // Whenever the selected month changes, reload the fields from that month's
+  // own data instead of continuing to show the previous month's values.
+  useEffect(()=>{
+    const m=getMonth(data,month);
+    setSalary(String(m.income.salary||''));
+    setOther(String(m.income.other||''));
+    setExtras(m.income.extras||[]);
+    setBudgets({...m.budgets});
+  },[month]);
 
   function addExtra(){setExtras(e=>[...e,{id:genId(),name:'',amount:''}])}
   function updExtra(id,field,val){setExtras(e=>e.map(x=>x.id===id?{...x,[field]:val}:x))}
@@ -803,7 +813,8 @@ function SettingsPage({data,onUpdate,onResetIncomeAndBudgets,onResetEverything})
 
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h('div',{style:{padding:'16px 16px 0'}},
-      h('div',{style:{fontSize:20,fontWeight:800,color:C.text}},'Settings')
+      h('div',{style:{fontSize:20,fontWeight:800,color:C.text}},'Settings'),
+      h('div',{style:{fontSize:12.5,color:C.text3,marginTop:2}},'Editing income &amp; budgets for '+monthLabel(month)+'. Switch months from Home to edit a different month.')
     ),
     h(SectionTitle,null,'Income \u2014 '+monthLabel(month)),
     h('div',{style:{padding:'0 16px'}},
@@ -821,7 +832,7 @@ function SettingsPage({data,onUpdate,onResetIncomeAndBudgets,onResetEverything})
       h('div',null,h('div',{style:{fontSize:12,color:C.text2,fontWeight:600,marginBottom:4}},'SBI Limit'),h(NumField,{value:sbiLimit,onChange:setSbiLimit})),
       h('div',null,h('div',{style:{fontSize:12,color:C.text2,fontWeight:600,marginBottom:4}},'YES Limit'),h(NumField,{value:yesLimit,onChange:setYesLimit}))
     ),
-    h(SectionTitle,null,'Category Budgets'),
+    h(SectionTitle,null,'Category Budgets \u2014 '+monthLabel(month)),
     h('div',{style:{padding:'0 16px'}},
       categoriesFor(data).map(cat=>{
         const catSum=cat.subs.reduce((s,sub)=>s+(+budgets[sub.id]||0),0);
@@ -886,9 +897,13 @@ function App(){
 
   useEffect(()=>{lsSave(SK,data)},[data]);
 
-  function saveBalances(newBal,spendDelta,calc){
+  // All of the handlers below operate on `ym` (the currently BROWSED month,
+  // passed in explicitly from whichever page called them) rather than
+  // hardcoding curYm() (today's real month). That's what keeps each month's
+  // income, budgets, balances, and uncategorized pools fully independent —
+  // editing settings while viewing August only ever touches August's data.
+  function saveBalances(ym,newBal,spendDelta,calc){
     setData(d=>{
-      const ym=curYm();
       const months={...d.months};
       const md=cloneMonthEntry(d,months,ym);
       md.uncategorized.debit=(md.uncategorized.debit||0)+(calc?calc.debitSpend:0);
@@ -927,20 +942,19 @@ function App(){
       return{...d,months,balances,lastCalc,balanceLog};
     });
   }
-  function addTxn(txn){
+  function addTxn(txn,ym){
     setData(d=>{
       const months={...d.months};
-      const curYmNow=curYm();
       const dateYm=txn.date.slice(0,7);
-      // The uncategorized pool being drawn down is always the CURRENT month's
-      // pool for the chosen payment source (that's what's shown on the
+      // The uncategorized pool being drawn down is the BROWSED month's pool
+      // for the chosen payment source (that's what's shown on the
       // Categorize screen), regardless of what date the expense is filed under.
-      const curMd=cloneMonthEntry(d,months,curYmNow);
+      const curMd=cloneMonthEntry(d,months,ym);
       curMd.uncategorized[txn.source]=Math.max(0,(curMd.uncategorized[txn.source]||0)-txn.amount);
-      const finalTxn={...txn,originYm:curYmNow};
+      const finalTxn={...txn,originYm:ym};
       // The transaction record itself is filed under its own date's month, so
       // History and per-month budget analytics stay accurate.
-      const txnMd=dateYm===curYmNow?curMd:cloneMonthEntry(d,months,dateYm);
+      const txnMd=dateYm===ym?curMd:cloneMonthEntry(d,months,dateYm);
       txnMd.transactions=[...txnMd.transactions,finalTxn];
       return{...d,months};
     });
@@ -979,9 +993,8 @@ function App(){
       return{...d,months};
     });
   }
-  function updateSettings({cardLimits,budgets,monthIncome}){
+  function updateSettings(ym,{cardLimits,budgets,monthIncome}){
     setData(d=>{
-      const ym=curYm();
       const months={...d.months};
       const md=cloneMonthEntry(d,months,ym);
       md.income=monthIncome;
@@ -989,23 +1002,21 @@ function App(){
       return{...d,cardLimits,months};
     });
   }
-  // Directly overwrites the current month's uncategorized buckets. Used to
+  // Directly overwrites the browsed month's uncategorized buckets. Used to
   // manually correct totals — e.g. after the one-time migration that lumps
   // old pre-split spending entirely into Debit, or to fix any other mismatch
   // against your real account/card statements.
-  function adjustBuckets(newBuckets){
+  function adjustBuckets(ym,newBuckets){
     setData(d=>{
-      const ym=curYm();
       const months={...d.months};
       const md=cloneMonthEntry(d,months,ym);
       md.uncategorized={debit:+newBuckets.debit||0,sbi:+newBuckets.sbi||0,yes:+newBuckets.yes||0};
       return{...d,months};
     });
   }
-  // Zeroes out this month's income and every category/subcategory budget.
-  function resetIncomeAndBudgets(){
+  // Zeroes out the browsed month's income and every category/subcategory budget.
+  function resetIncomeAndBudgets(ym){
     setData(d=>{
-      const ym=curYm();
       const months={...d.months};
       const md=cloneMonthEntry(d,months,ym);
       md.income={salary:0,other:0,extras:[]};
@@ -1018,11 +1029,10 @@ function App(){
   function resetBalances(){
     setData(d=>({...d,balances:null,lastCalc:null}));
   }
-  // Zeroes this month's uncategorized buckets directly (shortcut for the
-  // manual adjustment tool). Doesn't touch already-categorized transactions.
-  function resetUncategorized(){
+  // Zeroes the browsed month's uncategorized buckets directly (shortcut for
+  // the manual adjustment tool). Doesn't touch already-categorized transactions.
+  function resetUncategorized(ym){
     setData(d=>{
-      const ym=curYm();
       const months={...d.months};
       const md=cloneMonthEntry(d,months,ym);
       md.uncategorized={debit:0,sbi:0,yes:0};
@@ -1048,10 +1058,10 @@ function App(){
   return h('div',{style:{height:'100dvh',display:'flex',flexDirection:'column',background:C.bg,color:C.text,fontFamily:"system-ui,-apple-system,sans-serif",overflow:'hidden'}},
     h('div',{style:{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}},
       page==='dash'       &&h(Dashboard,      {data,month,setMonth,setPage}),
-      page==='balances'   &&h(BalancesPage,   {data,month:curYm(),onSave:saveBalances,onModeChange:setCardInputMode,onDeleteLog:deleteLogEntry,onAdjustBuckets:adjustBuckets,onResetBalances:resetBalances}),
-      page==='categorize' &&h(CategorizePage, {data,month:curYm(),onAddTxn:addTxn,onEditTxn:editTxn,onDeleteTxn:deleteTxn,onResetUncategorized:resetUncategorized}),
+      page==='balances'   &&h(BalancesPage,   {data,month,onSave:(newBal,spendDelta,calc)=>saveBalances(month,newBal,spendDelta,calc),onModeChange:setCardInputMode,onDeleteLog:deleteLogEntry,onAdjustBuckets:newBuckets=>adjustBuckets(month,newBuckets),onResetBalances:resetBalances}),
+      page==='categorize' &&h(CategorizePage, {data,month,onAddTxn:txn=>addTxn(txn,month),onEditTxn:editTxn,onDeleteTxn:deleteTxn,onResetUncategorized:()=>resetUncategorized(month)}),
       page==='history'    &&h(HistoryPage,    {data,onEditTxn:editTxn,onDeleteTxn:deleteTxn}),
-      page==='settings'   &&h(SettingsPage,   {data,onUpdate:updateSettings,onResetIncomeAndBudgets:resetIncomeAndBudgets,onResetEverything:resetEverything})
+      page==='settings'   &&h(SettingsPage,   {data,month,onUpdate:settings=>updateSettings(month,settings),onResetIncomeAndBudgets:()=>resetIncomeAndBudgets(month),onResetEverything:resetEverything})
     ),
     h('nav',{style:{display:'flex',background:C.nav,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom,0px)',flexShrink:0,boxShadow:'0 -2px 16px rgba(109,40,217,.08)'}},
       NAV.map(n=>{
