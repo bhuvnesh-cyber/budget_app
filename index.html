@@ -99,8 +99,8 @@ const fmt2=n=>{const v=parseFloat(n)||0;return '\u20B9'+v.toLocaleString('en-IN'
 const fmtC=n=>{const v=Math.round(parseFloat(n)||0);return (v<0?'\u2212':'')+'\u20B9'+Math.abs(v).toLocaleString('en-IN')};
 const today=()=>new Date().toISOString().slice(0,10);
 const curYm=()=>today().slice(0,7);
-const prevM=m=>{const d=new Date(m+'-01T00:00:00');d.setMonth(d.getMonth()-1);return d.toISOString().slice(0,7)};
-const nextM=m=>{const d=new Date(m+'-01T00:00:00');d.setMonth(d.getMonth()+1);return d.toISOString().slice(0,7)};
+const prevM=m=>monthFromIndex(monthIndex(m)-1);
+const nextM=m=>monthFromIndex(monthIndex(m)+1);
 const monthLabel=m=>{const[y,mo]=m.split('-');const N=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return N[+mo-1]+' '+y};
 const monthLabelShort=m=>{const[y,mo]=m.split('-');const N=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return N[+mo-1]+"'"+y.slice(2)};
 const monthIndex=m=>{const[y,mo]=m.split('-').map(Number);return y*12+(mo-1)};
