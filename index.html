@@ -160,6 +160,16 @@ function statusFor(spent,budget){
 // each category, and each subcategory all read the same way.
 function leftLabel(left){return left>=0?fmtC(left)+' left':fmtC(-left)+' over'}
 function leftColor(left){return left>=0?C.green:C.red}
+// How many days of the month are still ahead of you: the whole month for a
+// future month, none for a month that's already finished, and today through
+// month-end (today included) for the month you're actually living in.
+const daysInMonth=ym=>{const[y,mo]=ym.split('-').map(Number);return new Date(y,mo,0).getDate()};
+function daysLeftIn(ym){
+  const total=daysInMonth(ym);
+  if(ym>curYm())return total;
+  if(ym<curYm())return 0;
+  return Math.max(0,total-Number(today().slice(8,10))+1);
+}
 
 /* ══════════════════════════ SMALL UI ══════════════════════════ */
 function MonthBar({month,setMonth}){
@@ -236,6 +246,19 @@ function Dashboard({data,month,setMonth,setPage}){
     return{id:c.id,name:c.name,icon:c.icon,color:c.color,v:sp,budget:bd,left:bd-sp};
   }).filter(r=>r.v>0||r.budget>0).sort((a,b)=>b.v-a.v);
   const catTotal=catRows.reduce((s,c)=>s+c.v,0);
+
+  // Pace the Variable Expenses budget across the rest of the month: what's
+  // left, spread over the days that are actually still ahead of you.
+  const varBudget=catBudgetSum(md,'variable');
+  const varSpent=catSpent(md,'variable');
+  const varLeft=varBudget-varSpent;
+  const daysLeft=daysLeftIn(month);
+  const weeksLeft=daysLeft/7;
+  const safeDay=daysLeft>0?Math.max(0,varLeft)/daysLeft:0;
+  // With under a week to go, a full week's pace would overstate what's there,
+  // so the weekly figure never promises more than the money that remains.
+  const safeWeek=Math.min(Math.max(0,varLeft),safeDay*7);
+
   const srcSegs=SOURCES.map(s=>({v:md.transactions.filter(t=>t.source===s.id).reduce((a,t)=>a+t.amount,0),color:s.color,name:s.short}));
 
   // Every subcategory with a budget or spend, with full status info
@@ -297,6 +320,35 @@ function Dashboard({data,month,setMonth,setPage}){
         budgetTot>0&&h('span',{style:{fontSize:13.5,fontWeight:800,fontFamily:'monospace',color:leftColor(budgetLeft)}},
           budgetLeft>=0?fmtC(budgetLeft)+' left to spend':fmtC(-budgetLeft)+' over budget')
       )
+    ),
+    /* Safe to spend — paces what's left of Variable Expenses over the days ahead */
+    h('div',{style:{margin:'10px 16px',padding:'14px 16px',background:C.card,borderRadius:16,boxShadow:C.shadow,border:`1px solid ${C.border}`,borderLeft:`4px solid ${varBudget>0?leftColor(varLeft):C.border2}`}},
+      h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:8}},
+        h('span',{style:{fontSize:16}},'\uD83D\uDED2'),
+        h('span',{style:{fontSize:13,fontWeight:700,color:C.text,flex:1}},'Safe to Spend'),
+        h('span',{style:{fontSize:10,fontWeight:700,color:C.text3,letterSpacing:'.05em'}},'VARIABLE EXPENSES')
+      ),
+      varBudget<=0&&h('div',{style:{fontSize:12.5,color:C.text2}},'Set a Variable Expenses budget in Settings and this will pace it across the days left in the month.'),
+      varBudget>0&&h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:6}},
+        h('span',{style:{color:C.text2,fontFamily:'monospace',fontWeight:600}},fmtC(varSpent)+' of '+fmtC(varBudget)),
+        h('span',{style:{fontFamily:'monospace',fontWeight:800,color:leftColor(varLeft)}},leftLabel(varLeft))
+      ),
+      varBudget>0&&h(Bar,{pct:varSpent/varBudget*100,color:statusFor(varSpent,varBudget).color}),
+      varBudget>0&&varLeft>0&&daysLeft>0&&h('div',{style:{display:'flex',gap:10,marginTop:11}},
+        [[daysLeft>=7?'PER WEEK':'LEFT THIS WEEK',safeWeek],['PER DAY',safeDay]].map(([l,v])=>
+          h('div',{key:l,style:{flex:1,textAlign:'center',padding:'9px 6px',borderRadius:14,background:C.greenlt}},
+            h('div',{style:{fontSize:10,color:C.green,fontWeight:700,letterSpacing:'.06em'}},l),
+            h('div',{style:{fontSize:19,fontWeight:800,color:C.green,fontFamily:'monospace'}},fmtC(v))
+          ))
+      ),
+      varBudget>0&&varLeft>0&&daysLeft>0&&h('div',{style:{fontSize:11.5,color:C.text3,fontWeight:600,marginTop:7,textAlign:'center'}},
+        daysLeft+(daysLeft===1?' day':' days')+' left'+(daysLeft>=7?' \u00B7 about '+(Math.round(weeksLeft*10)/10)+' weeks to cover':' in '+monthLabel(month))),
+      varBudget>0&&varLeft>0&&daysLeft>0&&uncatTotal>0.5&&h('div',{style:{fontSize:11,color:C.orange,fontWeight:600,marginTop:5,textAlign:'center'}},
+        'Categorize the '+fmtC(uncatTotal)+' pending first \u2014 some of it may be variable spending.'),
+      varBudget>0&&varLeft<=0&&h('div',{style:{marginTop:10,padding:'10px 12px',borderRadius:12,background:C.redlt,fontSize:12.5,color:C.red,fontWeight:700}},
+        varLeft===0?'Budget fully used \u2014 nothing left for the rest of the month.':fmtC(-varLeft)+' past the variable budget with '+daysLeft+(daysLeft===1?' day':' days')+' to go.'),
+      varBudget>0&&varLeft>0&&daysLeft===0&&h('div',{style:{marginTop:10,padding:'10px 12px',borderRadius:12,background:C.card2,fontSize:12.5,color:C.text2,fontWeight:600}},
+        monthLabel(month)+' is finished \u2014 '+fmtC(varLeft)+' of this budget went unspent.')
     ),
     /* Category breakdown — horizontal bars + remaining budget per category */
     h(SectionTitle,null,'Spending by Category'),
