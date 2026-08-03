@@ -156,6 +156,10 @@ function statusFor(spent,budget){
   if(pct>=80)return{label:'Near Budget',color:C.orange,bg:C.orangelt};
   return{label:'Under Budget',color:C.green,bg:C.greenlt};
 }
+// One place that decides how "money still available" is worded, so the total,
+// each category, and each subcategory all read the same way.
+function leftLabel(left){return left>=0?fmtC(left)+' left':fmtC(-left)+' over'}
+function leftColor(left){return left>=0?C.green:C.red}
 
 /* ══════════════════════════ SMALL UI ══════════════════════════ */
 function MonthBar({month,setMonth}){
@@ -221,16 +225,23 @@ function Dashboard({data,month,setMonth,setPage}){
   const remaining=income-totalReal;
   const overspent=totalReal>income?totalReal-income:0;
   const budgetTot=totalBudget(md);
+  const budgetLeft=budgetTot-catSpentOnly; // budget still available across all categories
+  const budgetPct=budgetTot?catSpentOnly/budgetTot*100:0;
   const[watchFilter,setWatchFilter]=useState('all'); // all | over | near | under
 
-  const catSegs=categoriesFor(data).map(c=>({v:catSpent(md,c.id),color:c.color,name:c.name,icon:c.icon})).filter(s=>s.v>0);
-  const catTotal=catSegs.reduce((s,c)=>s+c.v,0);
+  // Every category that has a budget or some spending, with its own budget,
+  // spend, and what's left of it.
+  const catRows=categoriesFor(data).map(c=>{
+    const sp=catSpent(md,c.id),bd=catBudgetSum(md,c.id);
+    return{id:c.id,name:c.name,icon:c.icon,color:c.color,v:sp,budget:bd,left:bd-sp};
+  }).filter(r=>r.v>0||r.budget>0).sort((a,b)=>b.v-a.v);
+  const catTotal=catRows.reduce((s,c)=>s+c.v,0);
   const srcSegs=SOURCES.map(s=>({v:md.transactions.filter(t=>t.source===s.id).reduce((a,t)=>a+t.amount,0),color:s.color,name:s.short}));
 
   // Every subcategory with a budget or spend, with full status info
   const allRows=allSubsFor(data).map(s=>{
     const b=subBudget(md,s.id),sp=subSpent(md,s.id);
-    return{...s,budget:b,spent:sp,status:statusFor(sp,b),pct:b?sp/b*100:(sp>0?101:0)};
+    return{...s,budget:b,spent:sp,left:b-sp,status:statusFor(sp,b),pct:b?sp/b*100:(sp>0?101:0)};
   }).filter(r=>r.budget>0||r.spent>0)
     .sort((a,b)=>b.pct-a.pct);
   const overCount=allRows.filter(r=>r.status.label==='Over Budget').length;
@@ -274,30 +285,46 @@ function Dashboard({data,month,setMonth,setPage}){
         )
       )
     ),
-    /* Budget overview bar */
+    /* Budget overview bar — now also shows what's left of the total budget */
     h('div',{style:{margin:'10px 16px',padding:'14px 16px',background:C.card,borderRadius:16,boxShadow:C.shadow,border:`1px solid ${C.border}`}},
       h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
         h('span',{style:{fontSize:13,fontWeight:700,color:C.text}},'Total Budget Used'),
         h('span',{style:{fontSize:13,fontWeight:700,color:C.text2,fontFamily:'monospace'}},fmtC(catSpentOnly)+' / '+fmtC(budgetTot))
       ),
-      h(Bar,{pct:budgetTot?catSpentOnly/budgetTot*100:0,color:statusFor(catSpentOnly,budgetTot).color})
+      h(Bar,{pct:budgetPct,color:statusFor(catSpentOnly,budgetTot).color}),
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8}},
+        h('span',{style:{fontSize:11.5,fontWeight:700,color:C.text3}},budgetTot>0?Math.round(budgetPct)+'% used':'No budget set yet'),
+        budgetTot>0&&h('span',{style:{fontSize:13.5,fontWeight:800,fontFamily:'monospace',color:leftColor(budgetLeft)}},
+          budgetLeft>=0?fmtC(budgetLeft)+' left to spend':fmtC(-budgetLeft)+' over budget')
+      )
     ),
-    /* Category breakdown — horizontal bars */
+    /* Category breakdown — horizontal bars + remaining budget per category */
     h(SectionTitle,null,'Spending by Category'),
-    catTotal>0&&h('div',{style:{padding:'0 16px 10px',textAlign:'center'}},
-      h('div',{style:{fontSize:11,color:C.text3,fontWeight:700}},'TOTAL'),
-      h('div',{style:{fontSize:20,fontWeight:800,color:C.text,fontFamily:'monospace'}},fmtC(catTotal))
+    catRows.length>0&&h('div',{style:{display:'flex',justifyContent:'center',gap:14,padding:'0 16px 12px'}},
+      h('div',{style:{flex:1,textAlign:'center',padding:'8px 6px',borderRadius:14,background:C.card2}},
+        h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:700,letterSpacing:'.06em'}},'SPENT'),
+        h('div',{style:{fontSize:19,fontWeight:800,color:C.text,fontFamily:'monospace'}},fmtC(catTotal))
+      ),
+      h('div',{style:{flex:1,textAlign:'center',padding:'8px 6px',borderRadius:14,background:budgetLeft>=0?C.greenlt:C.redlt}},
+        h('div',{style:{fontSize:10.5,color:leftColor(budgetLeft),fontWeight:700,letterSpacing:'.06em'}},budgetLeft>=0?'BUDGET LEFT':'OVER BUDGET'),
+        h('div',{style:{fontSize:19,fontWeight:800,color:leftColor(budgetLeft),fontFamily:'monospace'}},fmtC(Math.abs(budgetLeft)))
+      )
     ),
-    catSegs.length===0&&h('div',{style:{textAlign:'center',padding:'20px 0',color:C.text3,fontSize:13,fontWeight:600}},'No categorized spending yet'),
-    catSegs.length>0&&h('div',{style:{padding:'0 16px'}},
-      catSegs.slice().sort((a,b)=>b.v-a.v).map(s=>h('div',{key:s.name,style:{marginBottom:12}},
+    catRows.length===0&&h('div',{style:{textAlign:'center',padding:'20px 0',color:C.text3,fontSize:13,fontWeight:600}},'No categorized spending yet'),
+    catRows.length>0&&h('div',{style:{padding:'0 16px'}},
+      catRows.map(s=>h('div',{key:s.id,style:{marginBottom:14}},
         h('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:5}},
           h('span',{style:{fontSize:14}},s.icon),
           h('span',{style:{fontSize:13,color:C.text,fontWeight:600,flex:1}},s.name),
-          h('span',{style:{fontSize:12,color:C.text3,fontWeight:700,marginRight:8}},Math.round(s.v/catTotal*100)+'%'),
+          h('span',{style:{fontSize:12,color:C.text3,fontWeight:700,marginRight:8}},(catTotal?Math.round(s.v/catTotal*100):0)+'%'),
           h('span',{style:{fontSize:13,color:C.text,fontWeight:800,fontFamily:'monospace'}},fmtC(s.v))
         ),
-        h(Bar,{pct:catTotal?s.v/catTotal*100:0,color:s.color})
+        h(Bar,{pct:catTotal?s.v/catTotal*100:0,color:s.color}),
+        h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:5}},
+          h('span',{style:{fontSize:11.5,color:C.text3,fontWeight:600,fontFamily:'monospace'}},
+            s.budget>0?fmtC(s.v)+' of '+fmtC(s.budget)+' budget':'No budget set'),
+          s.budget>0&&h('span',{style:{fontSize:12,fontWeight:800,fontFamily:'monospace',color:leftColor(s.left)}},leftLabel(s.left))
+        )
       ))
     ),
     /* Payment source split */
@@ -341,7 +368,9 @@ function Dashboard({data,month,setMonth,setPage}){
           h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:6}},
             h('span',{style:{fontSize:12,color:C.text2,fontFamily:'monospace',fontWeight:600}},fmtC(r.spent)+' of '+(r.budget?fmtC(r.budget):'no budget set')),
             h('span',{style:{fontSize:12,fontWeight:800,color:r.status.color}},pctLabel)
-          )
+          ),
+          r.budget>0&&h('div',{style:{marginTop:5,fontSize:12,fontWeight:800,fontFamily:'monospace',color:leftColor(r.left)}},
+            r.left>=0?fmtC(r.left)+' left':fmtC(-r.left)+' over budget')
         );
       })
     )
@@ -558,6 +587,9 @@ function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncate
 
   const cat=categoriesFor(data).find(c=>c.id===catId);
   const availForSource=buckets[source]||0;
+  // What's left of the chosen subcategory's budget, so you can see the impact
+  // of this expense before you file it.
+  const subLeft=subId?subBudget(md,subId)-subSpent(md,subId):null;
 
   function save(){
     const amt=+amount;
@@ -603,6 +635,11 @@ function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncate
           h('span',{style:{fontSize:'1.15rem'}},s.icon),
           h('span',{style:{fontSize:10,fontWeight:700,color:subId===s.id?cat.color:C.text2,textAlign:'center',lineHeight:1.2}},s.name)
         ))
+      ),
+      subId&&h('div',{style:{fontSize:11.5,fontWeight:700,fontFamily:'monospace',color:subLeft>=0?C.green:C.red,marginBottom:12,marginTop:-2}},
+        subBudget(md,subId)>0
+          ?getSubFor(subId,data).name+': '+(subLeft>=0?fmtC(subLeft)+' of budget left':fmtC(-subLeft)+' over budget')
+          :getSubFor(subId,data).name+': no budget set'
       ),
       h('div',{style:{display:'flex',gap:8,marginBottom:12}},
         SOURCES.map(s=>h('button',{key:s.id,onClick:()=>setSource(s.id),
@@ -827,10 +864,16 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
     setBudgets(zeroed);
   }
 
+  // Live totals while you type, so you can see how much of your income the
+  // budget you're setting actually uses.
+  const budgetTotalTyped=allSubsFor(data).reduce((s,sub)=>s+(+budgets[sub.id]||0),0);
+  const incomeTyped=(+salary||0)+(+other||0)+extras.reduce((s,e)=>s+(+e.amount||0),0);
+  const unbudgeted=incomeTyped-budgetTotalTyped;
+
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h('div',{style:{padding:'16px 16px 0'}},
       h('div',{style:{fontSize:20,fontWeight:800,color:C.text}},'Settings'),
-      h('div',{style:{fontSize:12.5,color:C.text3,marginTop:2}},'Editing income &amp; budgets for '+monthLabel(month)+'. Switch months from Home to edit a different month.')
+      h('div',{style:{fontSize:12.5,color:C.text3,marginTop:2}},'Editing income & budgets for '+monthLabel(month)+'. Switch months from Home to edit a different month.')
     ),
     h(SectionTitle,null,'Income \u2014 '+monthLabel(month)),
     h('div',{style:{padding:'0 16px'}},
@@ -849,6 +892,17 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
       h('div',null,h('div',{style:{fontSize:12,color:C.text2,fontWeight:600,marginBottom:4}},'YES Limit'),h(NumField,{value:yesLimit,onChange:setYesLimit}))
     ),
     h(SectionTitle,null,'Category Budgets \u2014 '+monthLabel(month)),
+    h('div',{style:{padding:'0 16px 12px'}},
+      h('div',{style:{padding:'12px 14px',borderRadius:14,background:C.card,boxShadow:C.shadow,border:`1px solid ${C.border}`}},
+        h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:4}},
+          h('span',{style:{color:C.text2,fontWeight:700}},'Budgeted'),
+          h('span',{style:{color:C.text,fontWeight:800,fontFamily:'monospace'}},fmtC(budgetTotalTyped)+' of '+fmtC(incomeTyped))
+        ),
+        h(Bar,{pct:incomeTyped?budgetTotalTyped/incomeTyped*100:0,color:unbudgeted>=0?C.indigo:C.red}),
+        h('div',{style:{fontSize:11.5,fontWeight:800,fontFamily:'monospace',color:leftColor(unbudgeted),marginTop:6}},
+          unbudgeted>=0?fmtC(unbudgeted)+' of income not budgeted yet':fmtC(-unbudgeted)+' budgeted beyond income')
+      )
+    ),
     h('div',{style:{padding:'0 16px'}},
       categoriesFor(data).map(cat=>{
         const catSum=cat.subs.reduce((s,sub)=>s+(+budgets[sub.id]||0),0);
