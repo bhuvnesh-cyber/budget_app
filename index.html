@@ -224,1011 +224,163 @@ function NumField({value,onChange,placeholder}){
     style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,fontSize:15,fontFamily:'monospace',fontWeight:700,color:C.text,background:C.card2,outline:'none'}});
 }
 
-/* ══════════════════════════ DASHBOARD ══════════════════════════ */
-function Dashboard({data,month,setMonth,setPage}){
-  const md=getMonth(data,month);
-  const income=monthIncome(md);
-  const catSpentOnly=totalSpent(md); // what you've actually categorized as an expense
-  const uncatTotal=uncategorizedTotal(md); // money spent but not yet sorted into a category
-  const totalReal=catSpentOnly+uncatTotal; // true total that's left your accounts this month
-  const savings=catSpent(md,'savings');
-  const remaining=income-totalReal;
-  const overspent=totalReal>income?totalReal-income:0;
-  const budgetTot=totalBudget(md);
-  const budgetLeft=budgetTot-catSpentOnly; // budget still available across all categories
-  const budgetPct=budgetTot?catSpentOnly/budgetTot*100:0;
-  const[watchFilter,setWatchFilter]=useState('all'); // all | over | near | under
+/* ══════════════════════════ SAVE & BACKUP ══════════════════════════ */
+// Everything still saves to browser storage instantly, exactly as before —
+// that's the working copy. This section adds a real FILE you own: the bar at
+// the top says whether that file matches your data, Save writes a fresh one
+// to Downloads, and Import reads one back in after a wipe or a new phone.
+const SAVE_HASH_KEY='bt_v1_saved_hash';
+const SAVE_COUNT_KEY='bt_v1_edit_count';
+const BACKUP_VERSION=1;
 
-  // Every category that has a budget or some spending, with its own budget,
-  // spend, and what's left of it.
-  const catRows=categoriesFor(data).map(c=>{
-    const sp=catSpent(md,c.id),bd=catBudgetSum(md,c.id);
-    return{id:c.id,name:c.name,icon:c.icon,color:c.color,v:sp,budget:bd,left:bd-sp};
-  }).filter(r=>r.v>0||r.budget>0).sort((a,b)=>b.v-a.v);
-  const catTotal=catRows.reduce((s,c)=>s+c.v,0);
+// Short fingerprint of the data, so "matches your last saved file" can be
+// checked without keeping a second full copy of everything in storage.
+function hashStr(s){let x=5381;for(let i=0;i<s.length;i++)x=((x<<5)+x+s.charCodeAt(i))|0;return String(x)}
 
-  // Pace the Variable Expenses budget across the rest of the month: what's
-  // left, spread over the days that are actually still ahead of you.
-  const varBudget=catBudgetSum(md,'variable');
-  const varSpent=catSpent(md,'variable');
-  const varLeft=varBudget-varSpent;
-  const daysLeft=daysLeftIn(month);
-  const weeksLeft=daysLeft/7;
-  const safeDay=daysLeft>0?Math.max(0,varLeft)/daysLeft:0;
-  // With under a week to go, a full week's pace would overstate what's there,
-  // so the weekly figure never promises more than the money that remains.
-  const safeWeek=Math.min(Math.max(0,varLeft),safeDay*7);
-
-  const srcSegs=SOURCES.map(s=>({v:md.transactions.filter(t=>t.source===s.id).reduce((a,t)=>a+t.amount,0),color:s.color,name:s.short}));
-
-  // Every subcategory with a budget or spend, with full status info
-  const allRows=allSubsFor(data).map(s=>{
-    const b=subBudget(md,s.id),sp=subSpent(md,s.id);
-    return{...s,budget:b,spent:sp,left:b-sp,status:statusFor(sp,b),pct:b?sp/b*100:(sp>0?101:0)};
-  }).filter(r=>r.budget>0||r.spent>0)
-    .sort((a,b)=>b.pct-a.pct);
-  const overCount=allRows.filter(r=>r.status.label==='Over Budget').length;
-  const nearCount=allRows.filter(r=>r.status.label==='Near Budget').length;
-  const underCount=allRows.filter(r=>r.status.label==='Under Budget').length;
-  const watchRows=allRows.filter(r=>
-    watchFilter==='all'?true:
-    watchFilter==='over'?r.status.label==='Over Budget':
-    watchFilter==='near'?r.status.label==='Near Budget':
-    r.status.label==='Under Budget'
-  );
-
-  return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
-    h(MonthBar,{month,setMonth}),
-    overspent>0.5 && h('div',{style:{margin:'12px 16px 0',padding:'14px 16px',borderRadius:16,background:C.redlt,border:`1.5px solid ${C.red}`,display:'flex',alignItems:'center',gap:12}},
-      h('span',{style:{fontSize:'1.6rem'}},'\uD83D\uDD3A'),
-      h('div',{style:{flex:1}},
-        h('div',{style:{fontWeight:800,color:C.red,fontSize:14}},'Over Income This Month'),
-        h('div',{style:{fontSize:12,color:C.text2}},'You\u2019ve spent more than you\u2019ve earned')
-      ),
-      h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.red,fontSize:16}},'+'+fmtC(overspent))
-    ),
-    uncatTotal>0.5 && h('div',{onClick:()=>setPage('categorize'),style:{margin:'12px 16px 0',padding:'14px 16px',borderRadius:16,background:C.orangelt,border:`1.5px solid ${C.orange}`,display:'flex',alignItems:'center',gap:12,cursor:'pointer'}},
-      h('span',{style:{fontSize:'1.6rem'}},'\u26A0\uFE0F'),
-      h('div',{style:{flex:1}},
-        h('div',{style:{fontWeight:800,color:C.orange,fontSize:14}},'Uncategorized Spending'),
-        h('div',{style:{fontSize:12,color:C.text2}},'Tap to categorize '+fmtC(uncatTotal))
-      ),
-      h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.orange,fontSize:16}},fmtC(uncatTotal))
-    ),
-    /* Summary cards */
-    h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,padding:'14px 16px 4px'}},
-      [['Income',income,C.green,'\uD83D\uDCB0'],['Expenses',catSpentOnly,C.red,'\uD83D\uDCB8'],
-       ['Savings',savings,C.purple,'\uD83D\uDCC8'],['Remaining',remaining,remaining>=0?C.green:C.red,'\uD83E\uDE99']].map(([l,v,col,ic])=>
-        h('div',{key:l,style:{background:C.card,borderRadius:16,padding:'14px',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-          h('div',{style:{fontSize:18,marginBottom:4}},ic),
-          h('div',{style:{fontSize:11,color:C.text3,fontWeight:600,marginBottom:2}},l),
-          h('div',{style:{fontFamily:'monospace',fontWeight:800,color:col,fontSize:16}},fmtC(v)),
-          l==='Expenses'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.orange,fontWeight:700,marginTop:2}},'+ '+fmtC(uncatTotal)+' uncategorized'),
-          l==='Remaining'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.text3,fontWeight:600,marginTop:2}},'accounts for uncategorized too')
-        )
-      )
-    ),
-    /* Budget overview bar — now also shows what's left of the total budget */
-    h('div',{style:{margin:'10px 16px',padding:'14px 16px',background:C.card,borderRadius:16,boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-      h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
-        h('span',{style:{fontSize:13,fontWeight:700,color:C.text}},'Total Budget Used'),
-        h('span',{style:{fontSize:13,fontWeight:700,color:C.text2,fontFamily:'monospace'}},fmtC(catSpentOnly)+' / '+fmtC(budgetTot))
-      ),
-      h(Bar,{pct:budgetPct,color:statusFor(catSpentOnly,budgetTot).color}),
-      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8}},
-        h('span',{style:{fontSize:11.5,fontWeight:700,color:C.text3}},budgetTot>0?Math.round(budgetPct)+'% used':'No budget set yet'),
-        budgetTot>0&&h('span',{style:{fontSize:13.5,fontWeight:800,fontFamily:'monospace',color:leftColor(budgetLeft)}},
-          budgetLeft>=0?fmtC(budgetLeft)+' left to spend':fmtC(-budgetLeft)+' over budget')
-      )
-    ),
-    /* Safe to spend — paces what's left of Variable Expenses over the days ahead */
-    h('div',{style:{margin:'10px 16px',padding:'14px 16px',background:C.card,borderRadius:16,boxShadow:C.shadow,border:`1px solid ${C.border}`,borderLeft:`4px solid ${varBudget>0?leftColor(varLeft):C.border2}`}},
-      h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:8}},
-        h('span',{style:{fontSize:16}},'\uD83D\uDED2'),
-        h('span',{style:{fontSize:13,fontWeight:700,color:C.text,flex:1}},'Safe to Spend'),
-        h('span',{style:{fontSize:10,fontWeight:700,color:C.text3,letterSpacing:'.05em'}},'VARIABLE EXPENSES')
-      ),
-      varBudget<=0&&h('div',{style:{fontSize:12.5,color:C.text2}},'Set a Variable Expenses budget in Settings and this will pace it across the days left in the month.'),
-      varBudget>0&&h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:6}},
-        h('span',{style:{color:C.text2,fontFamily:'monospace',fontWeight:600}},fmtC(varSpent)+' of '+fmtC(varBudget)),
-        h('span',{style:{fontFamily:'monospace',fontWeight:800,color:leftColor(varLeft)}},leftLabel(varLeft))
-      ),
-      varBudget>0&&h(Bar,{pct:varSpent/varBudget*100,color:statusFor(varSpent,varBudget).color}),
-      varBudget>0&&varLeft>0&&daysLeft>0&&h('div',{style:{display:'flex',gap:10,marginTop:11}},
-        [[daysLeft>=7?'PER WEEK':'LEFT THIS WEEK',safeWeek],['PER DAY',safeDay]].map(([l,v])=>
-          h('div',{key:l,style:{flex:1,textAlign:'center',padding:'9px 6px',borderRadius:14,background:C.greenlt}},
-            h('div',{style:{fontSize:10,color:C.green,fontWeight:700,letterSpacing:'.06em'}},l),
-            h('div',{style:{fontSize:19,fontWeight:800,color:C.green,fontFamily:'monospace'}},fmtC(v))
-          ))
-      ),
-      varBudget>0&&varLeft>0&&daysLeft>0&&h('div',{style:{fontSize:11.5,color:C.text3,fontWeight:600,marginTop:7,textAlign:'center'}},
-        daysLeft+(daysLeft===1?' day':' days')+' left'+(daysLeft>=7?' \u00B7 about '+(Math.round(weeksLeft*10)/10)+' weeks to cover':' in '+monthLabel(month))),
-      varBudget>0&&varLeft>0&&daysLeft>0&&uncatTotal>0.5&&h('div',{style:{fontSize:11,color:C.orange,fontWeight:600,marginTop:5,textAlign:'center'}},
-        'Categorize the '+fmtC(uncatTotal)+' pending first \u2014 some of it may be variable spending.'),
-      varBudget>0&&varLeft<=0&&h('div',{style:{marginTop:10,padding:'10px 12px',borderRadius:12,background:C.redlt,fontSize:12.5,color:C.red,fontWeight:700}},
-        varLeft===0?'Budget fully used \u2014 nothing left for the rest of the month.':fmtC(-varLeft)+' past the variable budget with '+daysLeft+(daysLeft===1?' day':' days')+' to go.'),
-      varBudget>0&&varLeft>0&&daysLeft===0&&h('div',{style:{marginTop:10,padding:'10px 12px',borderRadius:12,background:C.card2,fontSize:12.5,color:C.text2,fontWeight:600}},
-        monthLabel(month)+' is finished \u2014 '+fmtC(varLeft)+' of this budget went unspent.')
-    ),
-    /* Category breakdown — horizontal bars + remaining budget per category */
-    h(SectionTitle,null,'Spending by Category'),
-    catRows.length>0&&h('div',{style:{display:'flex',justifyContent:'center',gap:14,padding:'0 16px 12px'}},
-      h('div',{style:{flex:1,textAlign:'center',padding:'8px 6px',borderRadius:14,background:C.card2}},
-        h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:700,letterSpacing:'.06em'}},'SPENT'),
-        h('div',{style:{fontSize:19,fontWeight:800,color:C.text,fontFamily:'monospace'}},fmtC(catTotal))
-      ),
-      h('div',{style:{flex:1,textAlign:'center',padding:'8px 6px',borderRadius:14,background:budgetLeft>=0?C.greenlt:C.redlt}},
-        h('div',{style:{fontSize:10.5,color:leftColor(budgetLeft),fontWeight:700,letterSpacing:'.06em'}},budgetLeft>=0?'BUDGET LEFT':'OVER BUDGET'),
-        h('div',{style:{fontSize:19,fontWeight:800,color:leftColor(budgetLeft),fontFamily:'monospace'}},fmtC(Math.abs(budgetLeft)))
-      )
-    ),
-    catRows.length===0&&h('div',{style:{textAlign:'center',padding:'20px 0',color:C.text3,fontSize:13,fontWeight:600}},'No categorized spending yet'),
-    catRows.length>0&&h('div',{style:{padding:'0 16px'}},
-      catRows.map(s=>h('div',{key:s.id,style:{marginBottom:14}},
-        h('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:5}},
-          h('span',{style:{fontSize:14}},s.icon),
-          h('span',{style:{fontSize:13,color:C.text,fontWeight:600,flex:1}},s.name),
-          h('span',{style:{fontSize:12,color:C.text3,fontWeight:700,marginRight:8}},(catTotal?Math.round(s.v/catTotal*100):0)+'%'),
-          h('span',{style:{fontSize:13,color:C.text,fontWeight:800,fontFamily:'monospace'}},fmtC(s.v))
-        ),
-        h(Bar,{pct:catTotal?s.v/catTotal*100:0,color:s.color}),
-        h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:5}},
-          h('span',{style:{fontSize:11.5,color:C.text3,fontWeight:600,fontFamily:'monospace'}},
-            s.budget>0?fmtC(s.v)+' of '+fmtC(s.budget)+' budget':'No budget set'),
-          s.budget>0&&h('span',{style:{fontSize:12,fontWeight:800,fontFamily:'monospace',color:leftColor(s.left)}},leftLabel(s.left))
-        )
-      ))
-    ),
-    /* Payment source split */
-    h(SectionTitle,null,'Payment Source Split'),
-    h('div',{style:{padding:'0 16px'}},
-      srcSegs.map(s=>h('div',{key:s.name,style:{marginBottom:10}},
-        h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
-          h('span',{style:{fontSize:13,color:C.text2,fontWeight:600}},s.name),
-          h('span',{style:{fontSize:13,color:C.text,fontWeight:700,fontFamily:'monospace'}},fmtC(s.v))
-        ),
-        h(Bar,{pct:catSpentOnly?s.v/catSpentOnly*100:0,color:s.color})
-      ))
-    ),
-    /* Budget Watch — cooler, filterable, shows everything */
-    allRows.length>0&&h(SectionTitle,null,'Budget Watch'),
-    allRows.length>0&&h('div',{style:{padding:'0 16px 10px'}},
-      h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:2}},
-        [['all','All',allRows.length,C.indigo],['over','\uD83D\uDD34 Over',overCount,C.red],['near','\uD83D\uDFE0 Near',nearCount,C.orange],['under','\uD83D\uDFE2 Under',underCount,C.green]].map(([key,label,count,col])=>
-          h('button',{key,onClick:()=>setWatchFilter(key),
-            style:{flexShrink:0,padding:'7px 13px',borderRadius:99,border:`1.5px solid ${watchFilter===key?col:C.border}`,background:watchFilter===key?col+'18':C.card2,color:watchFilter===key?col:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},
-            label+' ('+count+')')
-        )
-      )
-    ),
-    allRows.length>0&&h('div',{style:{padding:'0 16px'}},
-      watchRows.length===0&&h('div',{style:{textAlign:'center',padding:'24px 0',color:C.text3,fontSize:13,fontWeight:600}},'Nothing in this bucket \uD83C\uDF89'),
-      watchRows.map(r=>{
-        const pctLabel=r.budget?Math.round(r.pct)+'%':(r.spent>0?'\u2014':'0%');
-        return h('div',{key:r.id,style:{background:C.card,borderRadius:14,padding:'12px 14px',marginBottom:10,boxShadow:C.shadow,border:`1px solid ${C.border}`,borderLeft:`4px solid ${r.status.color}`}},
-          h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:8}},
-            h('span',{style:{fontSize:'1.2rem'}},r.icon),
-            h('div',{style:{flex:1,minWidth:0}},
-              h('div',{style:{fontSize:13.5,fontWeight:700,color:C.text}},r.name),
-              h('div',{style:{fontSize:10.5,color:C.text3}},r.catName)
-            ),
-            h('div',{style:{textAlign:'right'}},
-              h('div',{style:{fontSize:10.5,fontWeight:800,color:r.status.color,padding:'2px 8px',borderRadius:99,background:r.status.bg,display:'inline-block'}},r.status.label),
-            )
-          ),
-          h(Bar,{pct:r.budget?r.pct:100,color:r.status.color}),
-          h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:6}},
-            h('span',{style:{fontSize:12,color:C.text2,fontFamily:'monospace',fontWeight:600}},fmtC(r.spent)+' of '+(r.budget?fmtC(r.budget):'no budget set')),
-            h('span',{style:{fontSize:12,fontWeight:800,color:r.status.color}},pctLabel)
-          ),
-          r.budget>0&&h('div',{style:{marginTop:5,fontSize:12,fontWeight:800,fontFamily:'monospace',color:leftColor(r.left)}},
-            r.left>=0?fmtC(r.left)+' left':fmtC(-r.left)+' over budget')
-        );
-      })
-    )
-  );
+function downloadJSON(filename,obj){
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url)},1000);
 }
 
-/* ══════════════════════════ BALANCES PAGE ══════════════════════════ */
-function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBuckets,onResetBalances}){
-  const curMd=getMonth(data,month);
-  const[showAdjust,setShowAdjust]=useState(false);
-  const[adjDebit,setAdjDebit]=useState(String(curMd.uncategorized.debit));
-  const[adjSbi,setAdjSbi]=useState(String(curMd.uncategorized.sbi));
-  const[adjYes,setAdjYes]=useState(String(curMd.uncategorized.yes));
-  const[adjSaved,setAdjSaved]=useState(false);
-  function saveAdjust(){
-    onAdjustBuckets({debit:adjDebit,sbi:adjSbi,yes:adjYes});
-    setAdjSaved(true);setTimeout(()=>setAdjSaved(false),1500);
-  }
-  // Balances, calculations, and the update log all live on THIS month only —
-  // switching to another month never reads or writes another month's balance.
-  const bal=curMd.balances;
-  const md=curMd;
-  const incomeTotal=monthIncome(md);
-  const baseline=bal||{debit:incomeTotal,sbi:0,yes:0};
-  const mode=data.cardInputMode||'remaining'; // 'remaining' | 'outstanding'
-  const isRemaining=mode==='remaining';
+// ym omitted = every month in one file; ym given = that single month.
+function makeBackup(data,ym){
+  const payload=ym?{...data,months:{[ym]:getMonth(data,ym)}}:data;
+  return{app:'budget-tracker',version:BACKUP_VERSION,exportedAt:new Date().toISOString(),scope:ym||'all',data:payload};
+}
 
-  // Card fields are always edited in the CURRENT display mode. Convert stored
-  // outstanding -> remaining for display when needed.
-  const sbiLimit=+data.cardLimits.sbi||0, yesLimit=+data.cardLimits.yes||0;
-  const initSbiDisplay=bal?(isRemaining?(sbiLimit-bal.sbi):bal.sbi):'';
-  const initYesDisplay=bal?(isRemaining?(yesLimit-bal.yes):bal.yes):'';
+// Accepts a wrapped backup or a bare data object, so an older hand-saved file
+// still imports. Months present in the file replace what's here; months absent
+// from the file are left exactly as they are.
+function mergeBackup(parsed,cur){
+  const inc=parsed&&parsed.data&&parsed.data.months?parsed.data:(parsed&&parsed.months?parsed:null);
+  if(!inc)throw new Error('This file is not a Budget Tracker backup.');
+  const months={...cur.months};
+  Object.keys(inc.months||{}).forEach(k=>{months[k]=inc.months[k]});
+  return{
+    merged:{
+      budgetNotes:{...(cur.budgetNotes||{}),...(inc.budgetNotes||{})},
+      cardLimits:{...(cur.cardLimits||{}),...(inc.cardLimits||{})},
+      cardInputMode:inc.cardInputMode||cur.cardInputMode||'remaining',
+      months
+    },
+    count:Object.keys(inc.months||{}).length
+  };
+}
 
-  const[debit,setDebit]=useState(bal?String(bal.debit):'');
-  const[sbiDisp,setSbiDisp]=useState(bal?String(initSbiDisplay):'');
-  const[yesDisp,setYesDisp]=useState(bal?String(initYesDisplay):'');
+function SaveBar({data,setData,month}){
+  const json=useMemo(()=>JSON.stringify(data),[data]);
+  const hash=useMemo(()=>hashStr(json),[json]);
+  const[savedHash,setSavedHash]=useState(()=>lsGet(SAVE_HASH_KEY,null));
+  const[edits,setEdits]=useState(()=>lsGet(SAVE_COUNT_KEY,0));
+  const[open,setOpen]=useState(false);
+  const[nudge,setNudge]=useState(false);
+  const[toast,setToast]=useState(null);
 
-  // Reload the input fields (and the adjust-buckets fields) whenever the
-  // browsed month changes, so August never shows leftover text typed while
-  // looking at July.
+  const dirty=savedHash!==hash;
+  const fileRef=useRef(null);
+  const prevHash=useRef(hash);
+  const prevMonth=useRef(month);
+
+  // Count each distinct change to the data, and keep the count across reloads
+  // so "3 edits since your last save" survives closing the app.
   useEffect(()=>{
-    const m=getMonth(data,month);
-    const b=m.balances;
-    const inc=monthIncome(m);
-    const bl=b||{debit:inc,sbi:0,yes:0};
-    const curMode=data.cardInputMode||'remaining';
-    const isRem=curMode==='remaining';
-    setDebit(b?String(b.debit):'');
-    setSbiDisp(b?String(isRem?(sbiLimit-b.sbi):b.sbi):'');
-    setYesDisp(b?String(isRem?(yesLimit-b.yes):b.yes):'');
-    setAdjDebit(String(m.uncategorized.debit));
-    setAdjSbi(String(m.uncategorized.sbi));
-    setAdjYes(String(m.uncategorized.yes));
-  },[month]);
+    if(prevHash.current===hash)return;
+    prevHash.current=hash;
+    setEdits(e=>{const n=e+1;lsSave(SAVE_COUNT_KEY,n);return n});
+  },[hash]);
 
-  function switchMode(newMode){
-    if(newMode===mode)return;
-    // convert whatever is currently typed into the new mode so numbers don't jump
-    const curSbiOutstanding=isRemaining?(sbiLimit-(+sbiDisp||0)):(+sbiDisp||0);
-    const curYesOutstanding=isRemaining?(yesLimit-(+yesDisp||0)):(+yesDisp||0);
-    if(newMode==='remaining'){
-      setSbiDisp(sbiLimit?String(sbiLimit-curSbiOutstanding):'');
-      setYesDisp(yesLimit?String(yesLimit-curYesOutstanding):'');
-    }else{
-      setSbiDisp(String(curSbiOutstanding));
-      setYesDisp(String(curYesOutstanding));
-    }
-    onModeChange(newMode);
-  }
-
-  // Resolve what each field actually means: if the user left it blank, that
-  // means "no change" (keep the last known value) — NOT "zero remaining /
-  // fully maxed out". These are used for both the save and the live preview.
-  function resolveDebit(){return debit===''?baseline.debit:(+debit||0)}
-  function resolveSbi(){return sbiDisp===''?baseline.sbi:(isRemaining?(sbiLimit-(+sbiDisp||0)):(+sbiDisp||0))}
-  function resolveYes(){return yesDisp===''?baseline.yes:(isRemaining?(yesLimit-(+yesDisp||0)):(+yesDisp||0))}
-
-  function save(){
-    const nD=resolveDebit();
-    const nS=resolveSbi();
-    const nY=resolveYes();
-    const debitSpend=baseline.debit-nD;
-    const sbiSpend=nS-baseline.sbi;
-    const yesSpend=nY-baseline.yes;
-    const totalNew=debitSpend+sbiSpend+yesSpend;
-    onSave({debit:nD,sbi:nS,yes:nY},totalNew,{debitSpend,sbiSpend,yesSpend,totalNew,usedIncomeBaseline:!bal,at:new Date().toISOString()});
-  }
-
-  const nSPreview=resolveSbi();
-  const nYPreview=resolveYes();
-  const sbiPct=sbiLimit?nSPreview/sbiLimit*100:0;
-  const yesPct=yesLimit?nYPreview/yesLimit*100:0;
-  const calc=curMd.lastCalc;
-
-  const modeBtn=(val,label)=>h('button',{onClick:()=>switchMode(val),
-    style:{flex:1,padding:'8px',borderRadius:9,border:`1.5px solid ${mode===val?C.indigo:C.border}`,background:mode===val?C.indigolt:C.card2,color:mode===val?C.indigo:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}},label);
-
-  return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
-    h('div',{style:{padding:'16px 16px 4px'}},
-      h('div',{style:{fontSize:20,fontWeight:800,color:C.text}},'Update Balances \u2014 '+monthLabel(month)),
-      h('div',{style:{fontSize:13,color:C.text2,marginTop:2}},'New spending is calculated automatically from the change since your last update, and is added to '+monthLabel(month)+'\u2019s uncategorized pool.')
-    ),
-    !bal&&h('div',{style:{margin:'12px 16px 0',padding:'12px 14px',borderRadius:12,background:C.orangelt,border:`1px solid ${C.orange}`,fontSize:12.5,color:C.orange,fontWeight:600}},
-      '\u26A0\uFE0F No previous balance saved yet. We\u2019ll assume your Debit account started this month at your total income ('+fmtC(incomeTotal)+') and both cards started at '+fmtC(0)+' outstanding, then calculate today\u2019s spend from that.'
-    ),
-    bal&&h('div',{style:{margin:'12px 16px 0',padding:'10px 14px',borderRadius:12,background:C.card2,fontSize:12,color:C.text2}},
-      'Last saved: Debit '+fmtC(bal.debit)+' \u00B7 SBI Outstanding '+fmtC(bal.sbi)+' \u00B7 YES Outstanding '+fmtC(bal.yes)
-    ),
-    h('div',{style:{margin:'8px 16px 0',fontSize:11.5,color:C.text3}},'\uD83D\uDCA1 Leave any field blank to keep it unchanged \u2014 blank does NOT mean zero.'),
-    h('div',{style:{padding:'16px'}},
-      h('div',{style:{marginBottom:16}},
-        h('div',{style:{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}},'Debit Account Balance'),
-        h(NumField,{value:debit,onChange:setDebit})
-      ),
-      h('div',{style:{display:'flex',gap:8,marginBottom:14}},modeBtn('remaining','Enter Remaining Limit'),modeBtn('outstanding','Enter Outstanding')),
-      [['SBI Card',sbiDisp,setSbiDisp,sbiLimit],['YES Card',yesDisp,setYesDisp,yesLimit]].map(([label,val,setter,limit])=>
-        h('div',{key:label,style:{marginBottom:16}},
-          h('div',{style:{fontSize:13,fontWeight:700,color:C.text,marginBottom:6}},label+' \u2014 '+(isRemaining?'Remaining Available':'Outstanding Used')+(limit?'':' (set limit in Settings)')),
-          h(NumField,{value:val,onChange:setter})
-        )
-      ),
-      sbiLimit>0&&h('div',{style:{marginBottom:10}},
-        h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,color:C.text2,marginBottom:4}},
-          h('span',null,'SBI Used'),h('span',null,Math.round(sbiPct)+'% of '+fmtC(sbiLimit)+' ('+fmtC(nSPreview)+' outstanding)')),
-        h(Bar,{pct:sbiPct,color:sbiPct>90?C.red:sbiPct>70?C.orange:C.green})
-      ),
-      yesLimit>0&&h('div',{style:{marginBottom:16}},
-        h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:12,color:C.text2,marginBottom:4}},
-          h('span',null,'YES Used'),h('span',null,Math.round(yesPct)+'% of '+fmtC(yesLimit)+' ('+fmtC(nYPreview)+' outstanding)')),
-        h(Bar,{pct:yesPct,color:yesPct>90?C.red:yesPct>70?C.orange:C.green})
-      ),
-      h('button',{onClick:save,style:{width:'100%',padding:'15px',borderRadius:14,border:'none',background:C.grad,color:'#fff',fontWeight:800,fontSize:16,cursor:'pointer',fontFamily:'inherit'}},'Save Balances')
-    ),
-    calc&&h('div',{style:{margin:'0 16px 16px',padding:'14px',borderRadius:14,background:C.card,border:`1px solid ${C.border}`,boxShadow:C.shadow}},
-      h('div',{style:{fontWeight:800,color:C.text,marginBottom:8,fontSize:14}},'Last Calculation'),
-      calc.usedIncomeBaseline&&h('div',{style:{fontSize:11.5,color:C.text3,marginBottom:8}},'(Calculated using income as the starting Debit baseline)'),
-      [['Debit Spend',calc.debitSpend],['SBI Spend',calc.sbiSpend],['YES Spend',calc.yesSpend]].map(([l,v])=>
-        h('div',{key:l,style:{display:'flex',justifyContent:'space-between',fontSize:13,color:C.text2,padding:'3px 0'}},h('span',null,l),h('span',{style:{fontFamily:'monospace',fontWeight:700,color:C.text}},fmtC(v)))
-      ),
-      h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:14,fontWeight:800,color:calc.totalNew>0?C.orange:C.text2,borderTop:`1px solid ${C.border}`,marginTop:6,paddingTop:8}},
-        h('span',null,'Added to Uncategorized'),h('span',{style:{fontFamily:'monospace'}},fmtC(calc.totalNew))
-      ),
-      calc.totalNew===0&&h('div',{style:{fontSize:11.5,color:C.text3,marginTop:6}},'No change detected \u2014 balances matched your last save exactly.')
-    ),
-    h('div',{style:{margin:'0 16px 16px'}},
-      h('button',{onClick:()=>setShowAdjust(v=>!v),style:{width:'100%',padding:'12px',borderRadius:12,border:`1.5px dashed ${C.border2}`,background:'transparent',color:C.text2,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',textAlign:'left'}},
-        (showAdjust?'\u25BE ':'\u25B8 ')+'Manually Adjust Uncategorized Buckets'
-      ),
-      showAdjust&&h('div',{style:{marginTop:8,padding:'14px',borderRadius:14,background:C.card,border:`1px solid ${C.border}`,boxShadow:C.shadow}},
-        h('div',{style:{fontSize:12,color:C.text2,marginBottom:12}},'Use this to correct '+monthLabel(month)+'\u2019s Debit / SBI / YES uncategorized totals directly \u2014 handy after moving to per-card tracking, or to match your real statements.'),
-        [['Debit',adjDebit,setAdjDebit],['SBI',adjSbi,setAdjSbi],['YES',adjYes,setAdjYes]].map(([label,val,setter])=>
-          h('div',{key:label,style:{display:'flex',alignItems:'center',gap:10,marginBottom:10}},
-            h('span',{style:{fontSize:13,fontWeight:700,color:C.text,width:50}},label),
-            h('div',{style:{flex:1}},h(NumField,{value:val,onChange:setter}))
-          )
-        ),
-        h('div',{style:{display:'flex',gap:8}},
-          h('button',{onClick:()=>{setAdjDebit('0');setAdjSbi('0');setAdjYes('0')},style:{padding:'12px 14px',borderRadius:12,border:`1.5px solid ${C.border2}`,background:C.card2,color:C.text2,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}},'Fill \u20B90'),
-          h('button',{onClick:saveAdjust,style:{flex:1,padding:'12px',borderRadius:12,border:'none',background:adjSaved?C.green:C.grad,color:'#fff',fontWeight:800,fontSize:14,cursor:'pointer',fontFamily:'inherit'}},adjSaved?'\u2713 Adjusted':'Save Adjustment')
-        )
-      )
-    ),
-    h('div',{style:{margin:'0 16px 16px'}},
-      h('button',{onClick:()=>{if(confirm('Reset your saved Debit/SBI/YES balances? Your next Balances save will start fresh (using income as the baseline again). This month\u2019s uncategorized totals and transaction history are NOT affected.'))onResetBalances()},
-        style:{width:'100%',padding:'12px',borderRadius:12,border:`1.5px solid ${C.orange}`,background:C.orangelt,color:C.orange,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}},'Reset Saved Balances / Start Fresh')
-    ),
-    h(SectionTitle,null,'Balance Update History \u2014 '+monthLabel(month)),
-    h('div',{style:{padding:'0 16px'}},
-      (curMd.balanceLog.length===0)&&h('div',{style:{fontSize:12.5,color:C.text3,padding:'4px 0 12px'}},'No balance updates logged for '+monthLabel(month)+' yet.'),
-      curMd.balanceLog.length>0&&h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-        curMd.balanceLog.slice().reverse().map((e,i,arr)=>{
-          const isLatest=i===0;
-          const dt=new Date(e.at);
-          const dtLabel=isNaN(dt)?e.ym:dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+' '+dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-          return h('div',{key:e.id,style:{padding:'12px 14px',borderBottom:i<arr.length-1?`1px solid ${C.border}`:'none'}},
-            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}},
-              h('div',{style:{flex:1,minWidth:0}},
-                h('div',{style:{fontSize:12.5,fontWeight:700,color:C.text,display:'flex',alignItems:'center',gap:6}},
-                  dtLabel,
-                  isLatest&&h('span',{style:{fontSize:10,fontWeight:800,color:C.indigo,background:C.indigolt,padding:'2px 6px',borderRadius:6}},'CURRENT'),
-                  e.imported&&h('span',{style:{fontSize:10,fontWeight:800,color:C.text3,background:C.card2,padding:'2px 6px',borderRadius:6}},'IMPORTED')
-                ),
-                h('div',{style:{fontSize:11.5,color:C.text3,marginTop:2}},'Debit '+fmtC(e.debit)+' \u00B7 SBI '+fmtC(e.sbi)+' \u00B7 YES '+fmtC(e.yes)),
-                h('div',{style:{fontSize:11.5,color:e.totalNew>0?C.orange:C.text2,marginTop:2,fontWeight:700}},'Spend added: '+fmtC(e.totalNew))
-              ),
-              h('button',{onClick:()=>{
-                  const msg=isLatest
-                    ?'Delete this update? This will UNDO it \u2014 it subtracts '+fmtC(e.totalNew)+' back out of '+monthLabel(month)+'\u2019s uncategorized total and restores '+monthLabel(month)+'\u2019s previous balances.'
-                    :'Delete this log entry? It\u2019s an older record, so removing it only tidies up your history \u2014 it won\u2019t change any current totals.';
-                  if(confirm(msg))onDeleteLog(e.id);
-                },
-                style:{border:'none',background:C.redlt,color:C.red,borderRadius:9,width:32,height:32,fontSize:15,cursor:'pointer',fontWeight:700,flexShrink:0}},'\uD83D\uDDD1\uFE0F')
-            )
-          );
-        })
-      )
-    )
-  );
-}
-
-/* ══════════════════════════ CATEGORIZE PAGE ══════════════════════════ */
-function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncategorized}){
-  const md=getMonth(data,month);
-  const buckets=md.uncategorized;
-  const total=uncategorizedTotal(md);
-  const[amount,setAmount]=useState('');
-  const[catId,setCatId]=useState('');
-  const[subId,setSubId]=useState('');
-  const[source,setSource]=useState('debit');
-  const[desc,setDesc]=useState('');
-  const[date,setDate]=useState(month===curYm()?today():month+'-01');
-  const[err,setErr]=useState('');
-  const[editing,setEditing]=useState(null); // {ym,txn}
-
-  const cat=categoriesFor(data).find(c=>c.id===catId);
-  const availForSource=buckets[source]||0;
-  // What's left of the chosen subcategory's budget, so you can see the impact
-  // of this expense before you file it.
-  const subLeft=subId?subBudget(md,subId)-subSpent(md,subId):null;
-
-  function save(){
-    const amt=+amount;
-    if(!amt||amt<=0){setErr('Enter a valid amount');return}
-    if(!subId){setErr('Pick a category & subcategory');return}
-    if(amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s uncategorized balance ('+fmtC(availForSource)+')');return}
-    onAddTxn({id:genId(),date,amount:amt,catId,subId,source,desc:desc.trim()});
-    setAmount('');setCatId('');setSubId('');setDesc('');setErr('');
-  }
-
-  const recent=md.transactions.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.id>a.id?1:-1)).slice(0,8);
-
-  return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
-    h('div',{style:{padding:'16px 16px 0'}},
-      h('div',{style:{fontSize:12,fontWeight:700,color:C.text3,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em'}},'Categorizing for '+monthLabel(month)),
-      h('div',{style:{padding:'16px 18px',borderRadius:18,background:total>0.5?C.orangelt:C.greenlt,border:`1.5px solid ${total>0.5?C.orange:C.green}`,textAlign:'center'}},
-        h('div',{style:{fontSize:12,fontWeight:700,color:total>0.5?C.orange:C.green,textTransform:'uppercase',letterSpacing:'.06em'}},'Uncategorized Remaining'),
-        h('div',{style:{fontSize:32,fontWeight:900,color:total>0.5?C.orange:C.green,fontFamily:'monospace',marginTop:4}},fmtC(total)),
-        h('div',{style:{display:'flex',justifyContent:'center',gap:14,marginTop:10}},
-          SOURCES.map(s=>h('div',{key:s.id,style:{textAlign:'center'}},
-            h('div',{style:{fontSize:10,fontWeight:700,color:C.text3,textTransform:'uppercase'}},s.short),
-            h('div',{style:{fontSize:14,fontWeight:800,color:s.color,fontFamily:'monospace'}},fmtC(buckets[s.id]||0))
-          ))
-        )
-      ),
-      total>0.5&&h('button',{onClick:()=>{if(confirm('Reset all uncategorized amounts (Debit/SBI/YES) to \u20B90 for '+monthLabel(month)+'? Already-categorized expenses are NOT affected \u2014 this just clears the pending pool.'))onResetUncategorized()},
-        style:{width:'100%',marginTop:10,padding:'9px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:'transparent',color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}},'Reset Uncategorized to \u20B90')
-    ),
-    h(SectionTitle,null,'Add Expense'),
-    h('div',{style:{padding:'0 16px'}},
-      h('div',{style:{marginBottom:6}},h(NumField,{value:amount,onChange:setAmount,placeholder:'Amount'})),
-      h('div',{style:{fontSize:11.5,color:C.text3,marginBottom:12}},'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
-      h('div',{style:{marginBottom:12}},
-        h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
-          CATEGORIES.map(c=>h('button',{key:c.id,onClick:()=>{setCatId(c.id);setSubId('')},
-            style:{flexShrink:0,padding:'8px 12px',borderRadius:10,border:`1.5px solid ${catId===c.id?c.color:C.border}`,background:catId===c.id?c.color+'18':C.card2,color:catId===c.id?c.color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},
-            c.icon+' '+c.name))
-        )
-      ),
-      cat&&h('div',{style:{marginBottom:12,display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}},
-        cat.subs.map(s=>h('button',{key:s.id,onClick:()=>setSubId(s.id),
-          style:{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'9px 4px',borderRadius:12,border:`1.5px solid ${subId===s.id?cat.color:C.border}`,background:subId===s.id?cat.color+'18':C.card2,cursor:'pointer',fontFamily:'inherit'}},
-          h('span',{style:{fontSize:'1.15rem'}},s.icon),
-          h('span',{style:{fontSize:10,fontWeight:700,color:subId===s.id?cat.color:C.text2,textAlign:'center',lineHeight:1.2}},s.name)
-        ))
-      ),
-      subId&&h('div',{style:{fontSize:11.5,fontWeight:700,fontFamily:'monospace',color:subLeft>=0?C.green:C.red,marginBottom:12,marginTop:-2}},
-        subBudget(md,subId)>0
-          ?getSubFor(subId,data).name+': '+(subLeft>=0?fmtC(subLeft)+' of budget left':fmtC(-subLeft)+' over budget')
-          :getSubFor(subId,data).name+': no budget set'
-      ),
-      h('div',{style:{display:'flex',gap:8,marginBottom:12}},
-        SOURCES.map(s=>h('button',{key:s.id,onClick:()=>setSource(s.id),
-          style:{flex:1,padding:'9px',borderRadius:10,border:`1.5px solid ${source===s.id?s.color:C.border}`,background:source===s.id?s.color+'18':C.card2,color:source===s.id?s.color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}},
-          h('div',null,s.short),
-          h('div',{style:{fontSize:9,fontWeight:600,opacity:.8,marginTop:1}},fmtC(buckets[s.id]||0)+' left')))
-      ),
-      h('div',{style:{display:'flex',gap:8,marginBottom:12}},
-        h('input',{type:'date',value:date,onChange:e=>setDate(e.target.value),style:{flex:1,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none'}}),
-      ),
-      h('input',{value:desc,onChange:e=>setDesc(e.target.value),placeholder:'\uD83D\uDCDD Description (optional)',
-        style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:14,color:C.text,fontFamily:'inherit',outline:'none',marginBottom:12}}),
-      err&&h('div',{style:{color:C.red,fontSize:12,fontWeight:600,marginBottom:10}},err),
-      h('button',{onClick:save,style:{width:'100%',padding:'15px',borderRadius:14,border:'none',background:C.grad,color:'#fff',fontWeight:800,fontSize:16,cursor:'pointer',fontFamily:'inherit'}},'Add Expense')
-    ),
-    recent.length>0&&h(SectionTitle,null,'Recently Categorized ('+monthLabel(month)+')'),
-    recent.length>0&&h('div',{style:{padding:'0 16px'}},
-      h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-        recent.map((t,i)=>{
-          const sub=getSubFor(t.subId,data),src=getSrc(t.source);
-          return h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:8,padding:'11px 14px',borderBottom:i<recent.length-1?`1px solid ${C.border}`:'none'}},
-            h('span',{style:{fontSize:'1.1rem'}},sub.icon),
-            h('div',{style:{flex:1,minWidth:0}},
-              h('div',{style:{fontSize:13,fontWeight:700,color:C.text}},sub.name),
-              h('div',{style:{fontSize:11,color:C.text3}},src.short+(t.desc?' \u00B7 '+t.desc:'')+' \u00B7 '+t.date)
-            ),
-            h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.red,fontSize:14,marginRight:2}},'\u2212'+fmt(t.amount)),
-            h('button',{onClick:()=>setEditing({ym:month,txn:t}),style:{border:'none',background:C.card2,color:C.text2,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\u270F\uFE0F'),
-            h('button',{onClick:()=>{if(confirm('Delete this expense? '+fmtC(t.amount)+' will be added back to '+src.short+'\u2019s uncategorized balance for '+monthLabel(t.originYm||month)+'.'))onDeleteTxn(month,t)},
-              style:{border:'none',background:C.redlt,color:C.red,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\uD83D\uDDD1\uFE0F')
-          );
-        })
-      )
-    ),
-    editing&&h(Sheet,{onClose:()=>setEditing(null)},
-      h(EditTxnSheet,{data,ym:editing.ym,txn:editing.txn,onClose:()=>setEditing(null),
-        onSave:updates=>onEditTxn(editing.ym,editing.txn,updates)})
-    )
-  );
-}
-
-/* ══════════════════════════ HISTORY PAGE ══════════════════════════ */
-function EditTxnSheet({data,ym,txn,onSave,onClose}){
-  const[amount,setAmount]=useState(String(txn.amount));
-  const[catId,setCatId]=useState(txn.catId);
-  const[subId,setSubId]=useState(txn.subId);
-  const[source,setSource]=useState(txn.source);
-  const[desc,setDesc]=useState(txn.desc||'');
-  const[date,setDate]=useState(txn.date);
-  const[err,setErr]=useState('');
-
-  const cat=categoriesFor(data).find(c=>c.id===catId);
-  const originYm=txn.originYm||ym;
-  const originMd=getMonth(data,originYm);
-  // Available for the currently-selected source, as if this transaction's old
-  // amount were already given back (since editing may keep or change source).
-  const availForSource=(originMd.uncategorized[source]||0)+(source===txn.source?txn.amount:0);
-
-  function save(){
-    const amt=+amount;
-    if(!amt||amt<=0){setErr('Enter a valid amount');return}
-    if(!subId){setErr('Pick a category & subcategory');return}
-    if(amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s available balance ('+fmtC(availForSource)+')');return}
-    onSave({amount:amt,catId,subId,source,desc:desc.trim(),date});
-    onClose();
-  }
-
-  return h('div',{style:{background:C.card,borderRadius:'24px 24px 0 0',maxHeight:'92dvh',overflowY:'auto'}},
-    h('div',{style:{display:'flex',justifyContent:'center',padding:'12px 0 0'}},
-      h('div',{style:{width:40,height:4,borderRadius:99,background:C.border2}})
-    ),
-    h('div',{style:{padding:'14px 20px 0',fontSize:17,fontWeight:800,color:C.text}},'Edit Expense'),
-    h('div',{style:{padding:'12px 20px 0'}},h(NumField,{value:amount,onChange:setAmount,placeholder:'Amount'})),
-    h('div',{style:{padding:'6px 20px 12px',fontSize:11.5,color:C.text3}},'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
-    h('div',{style:{padding:'0 20px 12px'}},
-      h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
-        CATEGORIES.map(c=>h('button',{key:c.id,onClick:()=>{setCatId(c.id);if(c.id!==catId)setSubId('')},
-          style:{flexShrink:0,padding:'8px 12px',borderRadius:10,border:`1.5px solid ${catId===c.id?c.color:C.border}`,background:catId===c.id?c.color+'18':C.card2,color:catId===c.id?c.color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},
-          c.icon+' '+c.name))
-      )
-    ),
-    cat&&h('div',{style:{padding:'0 20px 12px',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}},
-      cat.subs.map(s=>h('button',{key:s.id,onClick:()=>setSubId(s.id),
-        style:{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'9px 4px',borderRadius:12,border:`1.5px solid ${subId===s.id?cat.color:C.border}`,background:subId===s.id?cat.color+'18':C.card2,cursor:'pointer',fontFamily:'inherit'}},
-        h('span',{style:{fontSize:'1.15rem'}},s.icon),
-        h('span',{style:{fontSize:10,fontWeight:700,color:subId===s.id?cat.color:C.text2,textAlign:'center',lineHeight:1.2}},s.name)
-      ))
-    ),
-    h('div',{style:{display:'flex',gap:8,padding:'0 20px 12px'}},
-      SOURCES.map(s=>h('button',{key:s.id,onClick:()=>setSource(s.id),
-        style:{flex:1,padding:'9px',borderRadius:10,border:`1.5px solid ${source===s.id?s.color:C.border}`,background:source===s.id?s.color+'18':C.card2,color:source===s.id?s.color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}},s.short))
-    ),
-    h('div',{style:{padding:'0 20px 12px'}},
-      h('input',{type:'date',value:date,onChange:e=>setDate(e.target.value),style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none'}})
-    ),
-    h('div',{style:{padding:'0 20px 12px'}},
-      h('input',{value:desc,onChange:e=>setDesc(e.target.value),placeholder:'\uD83D\uDCDD Description (optional)',
-        style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:14,color:C.text,fontFamily:'inherit',outline:'none'}})
-    ),
-    err&&h('div',{style:{color:C.red,fontSize:12,fontWeight:600,padding:'0 20px 10px'}},err),
-    h('div',{style:{display:'flex',gap:10,padding:'0 20px',paddingBottom:'calc(16px + env(safe-area-inset-bottom,0px))'}},
-      h('button',{onClick:onClose,style:{flex:1,padding:'14px',borderRadius:14,border:`1.5px solid ${C.border2}`,background:C.card2,color:C.text2,fontWeight:700,fontSize:15,cursor:'pointer',fontFamily:'inherit'}},'Cancel'),
-      h('button',{onClick:save,style:{flex:2,padding:'14px',borderRadius:14,border:'none',background:C.grad,color:'#fff',fontWeight:800,fontSize:15,cursor:'pointer',fontFamily:'inherit'}},'Save Changes')
-    )
-  );
-}
-
-function HistoryPage({data,month,onEditTxn,onDeleteTxn}){
-  const[filterCat,setFilterCat]=useState('all');
-  const[filterSrc,setFilterSrc]=useState('all');
-  const[search,setSearch]=useState('');
-  const[editing,setEditing]=useState(null); // {ym,txn}
-
-  // History is locked to the month you're browsing on Home — it only ever
-  // shows that month's transactions, so switching months never leaks another
-  // month's history in. Change the month from Home to see a different one.
-  let txns=(data.months[month]?data.months[month].transactions:[]).map(t=>({...t,ym:month}));
-  txns=txns.filter(t=>
-    (filterCat==='all'||t.catId===filterCat)&&
-    (filterSrc==='all'||t.source===filterSrc)&&
-    (!search||((getSubFor(t.subId,data).name+' '+(t.desc||'')).toLowerCase().includes(search.toLowerCase())))
-  ).sort((a,b)=>b.date.localeCompare(a.date)||(b.id>a.id?1:-1));
-
-  const total=txns.reduce((s,t)=>s+t.amount,0);
-
-  const selStyle={padding:'8px 10px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:12,color:C.text,fontFamily:'inherit',outline:'none'};
-
-  return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
-    h('div',{style:{padding:'16px 16px 8px'}},
-      h('div',{style:{fontSize:20,fontWeight:800,color:C.text,marginBottom:2}},'Transaction History'),
-      h('div',{style:{fontSize:12.5,color:C.text3,marginBottom:10}},monthLabel(month)+' \u2014 switch months from Home to see a different one'),
-      h('input',{value:search,onChange:e=>setSearch(e.target.value),placeholder:'\uD83D\uDD0D Search description or category',
-        style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none',marginBottom:10}}),
-      h('div',{style:{display:'flex',gap:8,overflowX:'auto'}},
-        h('select',{value:filterCat,onChange:e=>setFilterCat(e.target.value),style:selStyle},
-          h('option',{value:'all'},'All Categories'),
-          CATEGORIES.map(c=>h('option',{key:c.id,value:c.id},c.name))
-        ),
-        h('select',{value:filterSrc,onChange:e=>setFilterSrc(e.target.value),style:selStyle},
-          h('option',{value:'all'},'All Sources'),
-          SOURCES.map(s=>h('option',{key:s.id,value:s.id},s.short))
-        )
-      )
-    ),
-    h('div',{style:{padding:'0 16px 8px',fontSize:13,color:C.text2,fontWeight:600}},txns.length+' transactions \u00B7 Total '+fmtC(total)),
-    txns.length===0&&h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',padding:'60px 20px',color:C.text3}},
-      h('div',{style:{fontSize:'3rem',marginBottom:12}},'\uD83D\uDCCB'),
-      h('div',{style:{fontWeight:700,color:C.text2,fontSize:16}},'No transactions found')
-    ),
-    txns.length>0&&h('div',{style:{padding:'0 16px'}},
-      h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-        txns.map((t,i)=>{
-          const sub=getSubFor(t.subId,data),src=getSrc(t.source);
-          return h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:8,padding:'11px 14px',borderBottom:i<txns.length-1?`1px solid ${C.border}`:'none'}},
-            h('div',{style:{width:36,height:36,borderRadius:11,background:sub.catColor+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.05rem',flexShrink:0}},sub.icon),
-            h('div',{style:{flex:1,minWidth:0}},
-              h('div',{style:{fontSize:13,fontWeight:700,color:C.text}},sub.name),
-              h('div',{style:{fontSize:11,color:C.text3}},t.date+' \u00B7 '+src.short+(t.desc?' \u00B7 '+t.desc:''))
-            ),
-            h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.red,fontSize:13,marginRight:2}},'\u2212'+fmt(t.amount)),
-            h('button',{onClick:()=>setEditing({ym:t.ym,txn:t}),style:{border:'none',background:C.card2,color:C.text2,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\u270F\uFE0F'),
-            h('button',{onClick:()=>{if(confirm('Delete this expense? '+fmtC(t.amount)+' will be added back to '+getSrc(t.source).short+'\u2019s uncategorized balance for '+monthLabel(t.originYm||t.ym)+'.'))onDeleteTxn(t.ym,t)},
-              style:{border:'none',background:C.redlt,color:C.red,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\uD83D\uDDD1\uFE0F')
-          );
-        })
-      )
-    ),
-    editing&&h(Sheet,{onClose:()=>setEditing(null)},
-      h(EditTxnSheet,{data,ym:editing.ym,txn:editing.txn,onClose:()=>setEditing(null),
-        onSave:updates=>onEditTxn(editing.ym,editing.txn,updates)})
-    )
-  );
-}
-
-/* ══════════════════════════ SETTINGS PAGE ══════════════════════════ */
-function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEverything}){
-  const md=getMonth(data,month);
-  const[salary,setSalary]=useState(String(md.income.salary||''));
-  const[other,setOther]=useState(String(md.income.other||''));
-  const[extras,setExtras]=useState(md.income.extras||[]);
-  const[sbiLimit,setSbiLimit]=useState(String(data.cardLimits.sbi||''));
-  const[yesLimit,setYesLimit]=useState(String(data.cardLimits.yes||''));
-  const[budgets,setBudgets]=useState({...md.budgets});
-  const[saved,setSaved]=useState(false);
-
-  // Whenever the selected month changes, reload the fields from that month's
-  // own data instead of continuing to show the previous month's values.
+  // Switching months is where unsaved work tends to get forgotten, so the bar
+  // turns red for a few seconds instead of silently staying amber.
   useEffect(()=>{
-    const m=getMonth(data,month);
-    setSalary(String(m.income.salary||''));
-    setOther(String(m.income.other||''));
-    setExtras(m.income.extras||[]);
-    setBudgets({...m.budgets});
-  },[month]);
+    if(prevMonth.current===month)return;
+    prevMonth.current=month;
+    if(!dirty)return;
+    setNudge(true);
+    const t=setTimeout(()=>setNudge(false),3000);
+    return()=>clearTimeout(t);
+  },[month,dirty]);
 
-  function addExtra(){setExtras(e=>[...e,{id:genId(),name:'',amount:''}])}
-  function updExtra(id,field,val){setExtras(e=>e.map(x=>x.id===id?{...x,[field]:val}:x))}
-  function delExtra(id){setExtras(e=>e.filter(x=>x.id!==id))}
+  useEffect(()=>{
+    if(!dirty)return;
+    const warn=e=>{e.preventDefault();e.returnValue=''};
+    window.addEventListener('beforeunload',warn);
+    return()=>window.removeEventListener('beforeunload',warn);
+  },[dirty]);
 
-  function saveAll(){
-    onUpdate({
-      cardLimits:{sbi:+sbiLimit||0,yes:+yesLimit||0},
-      budgets:Object.fromEntries(Object.entries(budgets).map(([k,v])=>[k,+v||0])),
-      monthIncome:{salary:+salary||0,other:+other||0,extras:extras.map(e=>({...e,amount:+e.amount||0}))},
-    });
-    setSaved(true);setTimeout(()=>setSaved(false),1800);
+  const flash=msg=>{setToast(msg);setTimeout(()=>setToast(null),2600)};
+
+  function save(ym){
+    try{
+      const name=ym?'budget-'+ym+'.json':'budget-backup-'+today()+'.json';
+      downloadJSON(name,makeBackup(data,ym));
+      setOpen(false);
+      if(ym){
+        // A single-month file isn't a full backup, so it doesn't clear the
+        // unsaved marker — only "save all" does that.
+        flash('Saved '+monthLabel(ym)+' to Downloads');
+      }else{
+        lsSave(SAVE_HASH_KEY,hash);setSavedHash(hash);
+        setEdits(0);lsSave(SAVE_COUNT_KEY,0);
+        flash('Saved to Downloads');
+      }
+    }catch(err){
+      flash('Couldn\u2019t save \u2014 check your browser\u2019s download permission');
+    }
   }
 
-  function handleResetIncomeBudgets(){
-    if(!confirm('Reset '+monthLabel(month)+'\u2019s salary/income and ALL category budgets to \u20B90? This can\u2019t be undone.'))return;
-    onResetIncomeAndBudgets();
-    setSalary('');setOther('');setExtras([]);
-    const zeroed={};allSubsFor(data).forEach(s=>zeroed[s.id]=0);
-    setBudgets(zeroed);
-  }
-  function handleResetEverything(){
-    if(!confirm('This wipes EVERYTHING \u2014 income, budgets, card limits, balances, uncategorized amounts, and all transaction history \u2014 back to a blank app. This cannot be undone. Continue?'))return;
-    onResetEverything();
-    setSalary('');setOther('');setExtras([]);
-    setSbiLimit('');setYesLimit('');
-    const zeroed={};allSubsFor(data).forEach(s=>zeroed[s.id]=0);
-    setBudgets(zeroed);
+  function importFile(e){
+    const file=e.target.files&&e.target.files[0];
+    e.target.value='';
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const{merged,count}=mergeBackup(JSON.parse(reader.result),data);
+        const ok=confirm('Import '+count+' month'+(count===1?'':'s')+' from this file?\n\nMonths in the file replace what you have now. Other months stay as they are.');
+        if(!ok)return;
+        setData(merged);
+        setOpen(false);
+        flash('Imported '+count+' month'+(count===1?'':'s'));
+      }catch(err){
+        flash(err.message||'Couldn\u2019t read that file');
+      }
+    };
+    reader.onerror=()=>flash('Couldn\u2019t read that file');
+    reader.readAsText(file);
   }
 
-  // Live totals while you type, so you can see how much of your income the
-  // budget you're setting actually uses.
-  const budgetTotalTyped=allSubsFor(data).reduce((s,sub)=>s+(+budgets[sub.id]||0),0);
-  const incomeTyped=(+salary||0)+(+other||0)+extras.reduce((s,e)=>s+(+e.amount||0),0);
-  const unbudgeted=incomeTyped-budgetTotalTyped;
+  const tone=dirty?(nudge?C.red:C.orange):C.green;
+  const toneBg=dirty?(nudge?C.redlt:C.orangelt):C.greenlt;
+  const status=!dirty?'Saved':(edits===0?'Not saved yet':'Unsaved \u00B7 '+edits+' edit'+(edits===1?'':'s'));
 
-  return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
-    h('div',{style:{padding:'16px 16px 0'}},
-      h('div',{style:{fontSize:20,fontWeight:800,color:C.text}},'Settings'),
-      h('div',{style:{fontSize:12.5,color:C.text3,marginTop:2}},'Editing income & budgets for '+monthLabel(month)+'. Switch months from Home to edit a different month.')
+  const btn=(label,onClick,primary)=>h('button',{onClick,
+    style:{padding:'7px 14px',borderRadius:10,cursor:'pointer',fontFamily:'inherit',fontSize:12.5,fontWeight:800,whiteSpace:'nowrap',
+      border:primary?'none':`1.5px solid ${C.border2}`,background:primary?C.grad:C.card2,color:primary?'#fff':C.text2}},label);
+
+  return h('div',{style:{position:'relative',zIndex:60,flexShrink:0}},
+    h('div',{style:{display:'flex',alignItems:'center',gap:10,padding:'9px 16px',background:C.card,borderBottom:`1px solid ${C.border}`,boxShadow:C.shadow}},
+      h('span',{style:{width:9,height:9,borderRadius:99,background:tone,flexShrink:0,boxShadow:`0 0 0 4px ${toneBg}`}}),
+      h('div',{style:{flex:1,minWidth:0}},
+        h('div',{style:{fontSize:12.5,fontWeight:800,color:tone}},status),
+        h('div',{style:{fontSize:10.5,fontWeight:600,color:C.text3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
+          nudge?'Save before you move on':(dirty?'Your backup file is behind':'Backup file is up to date'))
+      ),
+      dirty&&btn('Save',()=>save(null),true),
+      btn(open?'\u00D7':'\u00B7\u00B7\u00B7',()=>setOpen(o=>!o),false)
     ),
-    h(SectionTitle,null,'Income \u2014 '+monthLabel(month)),
-    h('div',{style:{padding:'0 16px'}},
-      h('div',{style:{marginBottom:10}},h('div',{style:{fontSize:12,color:C.text2,fontWeight:600,marginBottom:4}},'Monthly Salary'),h(NumField,{value:salary,onChange:setSalary})),
-      h('div',{style:{marginBottom:10}},h('div',{style:{fontSize:12,color:C.text2,fontWeight:600,marginBottom:4}},'Other Income'),h(NumField,{value:other,onChange:setOther})),
-      extras.map(e=>h('div',{key:e.id,style:{display:'flex',gap:8,marginBottom:8,alignItems:'center'}},
-        h('input',{value:e.name,onChange:ev=>updExtra(e.id,'name',ev.target.value),placeholder:'Description',style:{flex:1.3,padding:'9px 10px',borderRadius:9,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none'}}),
-        h('input',{type:'number',value:e.amount,onChange:ev=>updExtra(e.id,'amount',ev.target.value),placeholder:'Amount',style:{flex:1,padding:'9px 10px',borderRadius:9,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'monospace',outline:'none'}}),
-        h('button',{onClick:()=>delExtra(e.id),style:{border:'none',background:C.redlt,color:C.red,borderRadius:9,width:32,height:32,fontSize:16,cursor:'pointer',fontWeight:700}},'\u00D7')
-      )),
-      h('button',{onClick:addExtra,style:{width:'100%',padding:'10px',borderRadius:10,border:`1.5px dashed ${C.border2}`,background:'transparent',color:C.indigo,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',marginBottom:6}},'+ Add Income Source')
+    open&&h('div',{style:{display:'flex',flexDirection:'column',gap:8,padding:'12px 16px',background:C.card2,borderBottom:`1px solid ${C.border}`}},
+      btn('Save '+monthLabel(month)+' only',()=>save(month),false),
+      !dirty&&btn('Save all months again',()=>save(null),false),
+      btn('Import a backup file\u2026',()=>fileRef.current&&fileRef.current.click(),false),
+      h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:600,lineHeight:1.5}},
+        'Files go to your Downloads folder. Keep them somewhere that backs up \u2014 Drive, Files, or your computer.')
     ),
-    h(SectionTitle,null,'Credit Card Limits'),
-    h('div',{style:{padding:'0 16px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}},
-      h('div',null,h('div',{style:{fontSize:12,color:C.text2,fontWeight:600,marginBottom:4}},'SBI Limit'),h(NumField,{value:sbiLimit,onChange:setSbiLimit})),
-      h('div',null,h('div',{style:{fontSize:12,color:C.text2,fontWeight:600,marginBottom:4}},'YES Limit'),h(NumField,{value:yesLimit,onChange:setYesLimit}))
-    ),
-    h(SectionTitle,null,'Category Budgets \u2014 '+monthLabel(month)),
-    h('div',{style:{padding:'0 16px 12px'}},
-      h('div',{style:{padding:'12px 14px',borderRadius:14,background:C.card,boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-        h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:4}},
-          h('span',{style:{color:C.text2,fontWeight:700}},'Budgeted'),
-          h('span',{style:{color:C.text,fontWeight:800,fontFamily:'monospace'}},fmtC(budgetTotalTyped)+' of '+fmtC(incomeTyped))
-        ),
-        h(Bar,{pct:incomeTyped?budgetTotalTyped/incomeTyped*100:0,color:unbudgeted>=0?C.indigo:C.red}),
-        h('div',{style:{fontSize:11.5,fontWeight:800,fontFamily:'monospace',color:leftColor(unbudgeted),marginTop:6}},
-          unbudgeted>=0?fmtC(unbudgeted)+' of income not budgeted yet':fmtC(-unbudgeted)+' budgeted beyond income')
-      )
-    ),
-    h('div',{style:{padding:'0 16px'}},
-      categoriesFor(data).map(cat=>{
-        const catSum=cat.subs.reduce((s,sub)=>s+(+budgets[sub.id]||0),0);
-        return h('div',{key:cat.id,style:{marginBottom:14,background:C.card,borderRadius:14,padding:'12px 14px',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-          h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
-            h('div',{style:{fontWeight:800,color:C.text,fontSize:14}},cat.icon+' '+cat.name),
-            h('div',{style:{fontFamily:'monospace',fontWeight:700,color:cat.color,fontSize:13}},fmtC(catSum))
-          ),
-          cat.subs.map(sub=>h('div',{key:sub.id,style:{display:'flex',alignItems:'center',gap:8,marginBottom:8}},
-            h('span',{style:{fontSize:13,color:C.text2,flex:1}},sub.icon+' '+sub.name),
-            h('input',{type:'number',value:budgets[sub.id]??0,onChange:e=>setBudgets(b=>({...b,[sub.id]:e.target.value})),
-              style:{width:100,padding:'7px 9px',borderRadius:9,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,fontFamily:'monospace',fontWeight:700,color:C.text,textAlign:'right',outline:'none'}})
-          ))
-        );
-      })
-    ),
-    h('div',{style:{padding:'8px 16px 20px'}},
-      h('button',{onClick:saveAll,style:{width:'100%',padding:'15px',borderRadius:14,border:'none',background:saved?C.green:C.grad,color:'#fff',fontWeight:800,fontSize:16,cursor:'pointer',fontFamily:'inherit',transition:'background .2s'}},saved?'\u2713 Saved':'Save Settings')
-    ),
-    h(SectionTitle,null,'Danger Zone'),
-    h('div',{style:{padding:'0 16px 24px'}},
-      h('button',{onClick:handleResetIncomeBudgets,style:{width:'100%',padding:'13px',borderRadius:12,border:`1.5px solid ${C.orange}`,background:C.orangelt,color:C.orange,fontWeight:700,fontSize:14,cursor:'pointer',fontFamily:'inherit',marginBottom:10}},'Reset Salary & Budgets to \u20B90'),
-      h('div',{style:{fontSize:11.5,color:C.text3,marginBottom:16}},'Zeroes out '+monthLabel(month)+'\u2019s income and every category/subcategory budget. Card limits, balances, and transaction history are untouched.'),
-      h('button',{onClick:handleResetEverything,style:{width:'100%',padding:'13px',borderRadius:12,border:`1.5px solid ${C.red}`,background:C.redlt,color:C.red,fontWeight:700,fontSize:14,cursor:'pointer',fontFamily:'inherit',marginBottom:10}},'Factory Reset \u2014 Wipe Everything'),
-      h('div',{style:{fontSize:11.5,color:C.text3}},'Clears income, budgets, card limits, balances, uncategorized amounts, and all transaction history. Use only if you want to start completely over.')
-    )
+    h('input',{ref:fileRef,type:'file',accept:'application/json,.json',onChange:importFile,style:{display:'none'}}),
+    toast&&h('div',{style:{position:'fixed',left:16,right:16,bottom:100,zIndex:300,padding:'12px 16px',borderRadius:14,
+      background:C.text,color:'#fff',fontSize:12.5,fontWeight:700,textAlign:'center',boxShadow:C.shadow2}},toast)
   );
 }
-
-/* ══════════════════════════ APP ══════════════════════════ */
-function App(){
-  const[data,setData]=useState(()=>{
-    const d=lsGet(SK,null);
-    if(!d)return defaultData();
-    const merged={...defaultData(),...d};
-    delete merged.budgets; // legacy global budgets — migrated into per-month below
-    const legacyBudgets=d.budgets||null;
-    merged.months={...merged.months};
-    if(legacyBudgets){
-      // Old versions had one shared budget for every month. Carry that
-      // forward into each month that already has data (so historical Budget
-      // Watch stays accurate) and into the current month, so nothing
-      // resets to zero the moment this update lands. Any OTHER month
-      // (past or future) you haven't touched still starts blank at ₹0.
-      Object.keys(merged.months).forEach(ym=>{
-        merged.months[ym]={...merged.months[ym],budgets:merged.months[ym].budgets||{...legacyBudgets}};
-      });
-      const curYmNow=curYm();
-      if(!merged.months[curYmNow]){
-        merged.months[curYmNow]={...defaultMonth(),budgets:{...legacyBudgets}};
-      }
-    }
-    // Legacy versions kept ONE global running balance + a single shared
-    // balanceLog (with each entry tagged by ym) instead of per-month data.
-    // Fold that history into each month it actually belongs to, then drop
-    // the old global fields so balances become fully month-independent.
-    const oldLog=d.balanceLog||[];
-    if(oldLog.length){
-      const grouped={};
-      oldLog.forEach(e=>{(grouped[e.ym]=grouped[e.ym]||[]).push(e)});
-      Object.keys(grouped).forEach(ym=>{
-        if(!merged.months[ym])merged.months[ym]={...defaultMonth(),budgets:legacyBudgets?{...legacyBudgets}:{}};
-        const entries=grouped[ym];
-        const last=entries[entries.length-1];
-        merged.months[ym]={...merged.months[ym],
-          balanceLog:entries,
-          balances:{debit:last.debit,sbi:last.sbi,yes:last.yes},
-          lastCalc:{debitSpend:last.debitSpend,sbiSpend:last.sbiSpend,yesSpend:last.yesSpend,totalNew:last.totalNew,usedIncomeBaseline:last.usedIncomeBaseline}};
-      });
-    }else if(d.balances){
-      // Even older versions may have a saved balance with no log at all.
-      if(!merged.months[curYm()])merged.months[curYm()]={...defaultMonth(),budgets:legacyBudgets?{...legacyBudgets}:{}};
-      merged.months[curYm()]={...merged.months[curYm()],balances:d.balances,lastCalc:d.lastCalc||null};
-    }
-    delete merged.balances;
-    delete merged.lastCalc;
-    delete merged.balanceLog;
-    return merged;
-  });
-  const[page,setPage]=useState('dash');
-  const[month,setMonth]=useState(curYm());
-
-  useEffect(()=>{lsSave(SK,data)},[data]);
-
-  // All of the handlers below operate on `ym` (the currently BROWSED month,
-  // passed in explicitly from whichever page called them) rather than
-  // hardcoding curYm() (today's real month). That's what keeps each month's
-  // income, budgets, balances, and uncategorized pools fully independent —
-  // editing settings while viewing August only ever touches August's data.
-  function saveBalances(ym,newBal,spendDelta,calc){
-    setData(d=>{
-      const months={...d.months};
-      const md=cloneMonthEntry(d,months,ym);
-      md.uncategorized.debit=(md.uncategorized.debit||0)+(calc?calc.debitSpend:0);
-      md.uncategorized.sbi=(md.uncategorized.sbi||0)+(calc?calc.sbiSpend:0);
-      md.uncategorized.yes=(md.uncategorized.yes||0)+(calc?calc.yesSpend:0);
-      const logEntry={id:genId(),at:new Date().toISOString(),ym,
-        debit:newBal.debit,sbi:newBal.sbi,yes:newBal.yes,
-        debitSpend:calc?calc.debitSpend:0,sbiSpend:calc?calc.sbiSpend:0,yesSpend:calc?calc.yesSpend:0,
-        totalNew:spendDelta,usedIncomeBaseline:calc?!!calc.usedIncomeBaseline:false};
-      md.balances=newBal;
-      md.lastCalc=calc||null;
-      md.balanceLog=[...md.balanceLog,logEntry];
-      return{...d,months};
-    });
-  }
-  function setCardInputMode(mode){
-    setData(d=>({...d,cardInputMode:mode}));
-  }
-  function deleteLogEntry(id,ym){
-    setData(d=>{
-      const months={...d.months};
-      const md=cloneMonthEntry(d,months,ym);
-      const log=md.balanceLog||[];
-      const idx=log.findIndex(e=>e.id===id);
-      if(idx===-1)return d;
-      const isLatest=idx===log.length-1;
-      if(isLatest){
-        const entry=log[idx];
-        md.uncategorized.debit=Math.max(0,(md.uncategorized.debit||0)-(entry.debitSpend||0));
-        md.uncategorized.sbi=Math.max(0,(md.uncategorized.sbi||0)-(entry.sbiSpend||0));
-        md.uncategorized.yes=Math.max(0,(md.uncategorized.yes||0)-(entry.yesSpend||0));
-        const prev=log[idx-1];
-        md.balances=prev?{debit:prev.debit,sbi:prev.sbi,yes:prev.yes}:null;
-        md.lastCalc=prev?{debitSpend:prev.debitSpend,sbiSpend:prev.sbiSpend,yesSpend:prev.yesSpend,totalNew:prev.totalNew,usedIncomeBaseline:prev.usedIncomeBaseline}:null;
-      }
-      md.balanceLog=log.filter(e=>e.id!==id);
-      return{...d,months};
-    });
-  }
-  function addTxn(txn,ym){
-    setData(d=>{
-      const months={...d.months};
-      const dateYm=txn.date.slice(0,7);
-      // The uncategorized pool being drawn down is the BROWSED month's pool
-      // for the chosen payment source (that's what's shown on the
-      // Categorize screen), regardless of what date the expense is filed under.
-      const curMd=cloneMonthEntry(d,months,ym);
-      curMd.uncategorized[txn.source]=Math.max(0,(curMd.uncategorized[txn.source]||0)-txn.amount);
-      const finalTxn={...txn,originYm:ym};
-      // The transaction record itself is filed under its own date's month, so
-      // History and per-month budget analytics stay accurate.
-      const txnMd=dateYm===ym?curMd:cloneMonthEntry(d,months,dateYm);
-      txnMd.transactions=[...txnMd.transactions,finalTxn];
-      return{...d,months};
-    });
-  }
-  function deleteTxn(ym,txn){
-    setData(d=>{
-      const months={...d.months};
-      // Remove the record from wherever it's filed...
-      const dateMd=cloneMonthEntry(d,months,ym);
-      dateMd.transactions=dateMd.transactions.filter(t=>t.id!==txn.id);
-      // ...and give the money back to the bucket it was originally drawn from.
-      const originYm=txn.originYm||ym;
-      const originMd=cloneMonthEntry(d,months,originYm);
-      originMd.uncategorized[txn.source]=(originMd.uncategorized[txn.source]||0)+txn.amount;
-      return{...d,months};
-    });
-  }
-  function editTxn(ym,oldTxn,updates){
-    setData(d=>{
-      const months={...d.months};
-      const originYm=oldTxn.originYm||ym;
-      // 1. give back the old amount to its original source bucket
-      const originMd=cloneMonthEntry(d,months,originYm);
-      originMd.uncategorized[oldTxn.source]=(originMd.uncategorized[oldTxn.source]||0)+oldTxn.amount;
-      // 2. remove the old record from wherever it was filed
-      const oldDateMd=cloneMonthEntry(d,months,ym);
-      oldDateMd.transactions=oldDateMd.transactions.filter(t=>t.id!==oldTxn.id);
-      // 3. draw the new amount from the (possibly new) source, same origin month
-      const originMd2=cloneMonthEntry(d,months,originYm);
-      originMd2.uncategorized[updates.source]=(originMd2.uncategorized[updates.source]||0)-updates.amount;
-      // 4. file the updated record under its (possibly new) date's month
-      const newDateYm=updates.date.slice(0,7);
-      const newTxn={...oldTxn,...updates,originYm};
-      const newDateMd=cloneMonthEntry(d,months,newDateYm);
-      newDateMd.transactions=[...newDateMd.transactions,newTxn];
-      return{...d,months};
-    });
-  }
-  function updateSettings(ym,{cardLimits,budgets,monthIncome}){
-    setData(d=>{
-      const months={...d.months};
-      const md=cloneMonthEntry(d,months,ym);
-      md.income=monthIncome;
-      md.budgets=budgets;
-      return{...d,cardLimits,months};
-    });
-  }
-  // Directly overwrites the browsed month's uncategorized buckets. Used to
-  // manually correct totals — e.g. after the one-time migration that lumps
-  // old pre-split spending entirely into Debit, or to fix any other mismatch
-  // against your real account/card statements.
-  function adjustBuckets(ym,newBuckets){
-    setData(d=>{
-      const months={...d.months};
-      const md=cloneMonthEntry(d,months,ym);
-      md.uncategorized={debit:+newBuckets.debit||0,sbi:+newBuckets.sbi||0,yes:+newBuckets.yes||0};
-      return{...d,months};
-    });
-  }
-  // Zeroes out the browsed month's income and every category/subcategory budget.
-  function resetIncomeAndBudgets(ym){
-    setData(d=>{
-      const months={...d.months};
-      const md=cloneMonthEntry(d,months,ym);
-      md.income={salary:0,other:0,extras:[]};
-      md.budgets=zeroBudgets();
-      return{...d,months};
-    });
-  }
-  // Clears this month's saved balances baseline so its next Balances save
-  // starts fresh (using the income-baseline logic again). This month's
-  // balance history log is kept. Other months are untouched.
-  function resetBalances(ym){
-    setData(d=>{
-      const months={...d.months};
-      const md=cloneMonthEntry(d,months,ym);
-      md.balances=null;
-      md.lastCalc=null;
-      return{...d,months};
-    });
-  }
-  // Zeroes the browsed month's uncategorized buckets directly (shortcut for
-  // the manual adjustment tool). Doesn't touch already-categorized transactions.
-  function resetUncategorized(ym){
-    setData(d=>{
-      const months={...d.months};
-      const md=cloneMonthEntry(d,months,ym);
-      md.uncategorized={debit:0,sbi:0,yes:0};
-      return{...d,months};
-    });
-  }
-  // Full factory reset — wipes everything back to a blank app.
-  function resetEverything(){
-    setData(()=>defaultData());
-  }
-
-  const md=getMonth(data,month);
-  const uncategorized=uncategorizedTotal(md);
-
-  const NAV=[
-    {id:'dash',label:'Home',em:'\uD83C\uDFE0'},
-    {id:'balances',label:'Balances',em:'\uD83D\uDCB3'},
-    {id:'categorize',label:'Categorize',em:'\uD83C\uDFF7\uFE0F',badge:uncategorized>0.5},
-    {id:'history',label:'History',em:'\uD83D\uDCDC'},
-    {id:'settings',label:'Settings',em:'\u2699\uFE0F'},
-  ];
-
-  return h('div',{style:{height:'100dvh',display:'flex',flexDirection:'column',background:C.bg,color:C.text,fontFamily:"system-ui,-apple-system,sans-serif",overflow:'hidden'}},
-    h('div',{style:{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}},
-      page==='dash'       &&h(Dashboard,      {data,month,setMonth,setPage}),
-      page==='balances'   &&h(BalancesPage,   {data,month,onSave:(newBal,spendDelta,calc)=>saveBalances(month,newBal,spendDelta,calc),onModeChange:setCardInputMode,onDeleteLog:id=>deleteLogEntry(id,month),onAdjustBuckets:newBuckets=>adjustBuckets(month,newBuckets),onResetBalances:()=>resetBalances(month)}),
-      page==='categorize' &&h(CategorizePage, {data,month,onAddTxn:txn=>addTxn(txn,month),onEditTxn:editTxn,onDeleteTxn:deleteTxn,onResetUncategorized:()=>resetUncategorized(month)}),
-      page==='history'    &&h(HistoryPage,    {data,month,onEditTxn:editTxn,onDeleteTxn:deleteTxn}),
-      page==='settings'   &&h(SettingsPage,   {data,month,onUpdate:settings=>updateSettings(month,settings),onResetIncomeAndBudgets:()=>resetIncomeAndBudgets(month),onResetEverything:resetEverything})
-    ),
-    h('nav',{style:{display:'flex',background:C.nav,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom,0px)',flexShrink:0,boxShadow:'0 -2px 16px rgba(109,40,217,.08)'}},
-      NAV.map(n=>{
-        const on=page===n.id;
-        return h('button',{key:n.id,onClick:()=>setPage(n.id),style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'9px 0 10px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:9.5,fontWeight:on?800:500,color:on?C.indigo:C.text3,position:'relative',transition:'color .15s'}},
-          on&&h('div',{style:{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:24,height:3,borderRadius:99,background:C.grad}}),
-          h('span',{style:{fontSize:'1.25rem',position:'relative'}},n.em,
-            n.badge&&h('span',{style:{position:'absolute',top:-2,right:-4,width:8,height:8,borderRadius:99,background:C.red,border:`1.5px solid ${C.nav}`}})
-          ),
-          n.label
-        );
-      })
-    )
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(h(App,null));
-</script>
-</body>
-</html>
