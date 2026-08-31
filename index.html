@@ -645,24 +645,20 @@ function Dashboard({data,month,setMonth,setPage}){
       watchRows.length===0&&h('div',{style:{textAlign:'center',padding:'24px 0',color:C.text3,fontSize:13,fontWeight:600}},'Nothing in this bucket \uD83C\uDF89'),
       watchRows.map(r=>{
         const pctLabel=r.budget?Math.round(r.pct)+'%':(r.spent>0?'\u2014':'0%');
-        return h('div',{key:r.id,style:{background:C.card,borderRadius:14,padding:'12px 14px',marginBottom:10,boxShadow:C.shadow,border:`1px solid ${C.border}`,borderLeft:`4px solid ${r.status.color}`}},
-          h('div',{style:{display:'flex',alignItems:'center',gap:10,marginBottom:8}},
-            h('span',{style:{fontSize:'1.2rem'}},r.icon),
-            h('div',{style:{flex:1,minWidth:0}},
-              h('div',{style:{fontSize:13.5,fontWeight:700,color:C.text}},r.name),
-              h('div',{style:{fontSize:10.5,color:C.text3}},r.catName)
+        return h('div',{key:r.id,style:{display:'flex',alignItems:'center',gap:9,background:C.card,borderRadius:12,padding:'8px 11px',marginBottom:6,boxShadow:C.shadow,border:`1px solid ${C.border}`,borderLeft:`3px solid ${r.status.color}`}},
+          h('span',{style:{fontSize:'1.05rem',flexShrink:0}},r.icon),
+          h('div',{style:{flex:1,minWidth:0}},
+            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,marginBottom:3}},
+              h('span',{style:{fontSize:12.5,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},r.name),
+              h('span',{style:{fontSize:11,fontWeight:800,color:r.status.color,flexShrink:0}},pctLabel)
             ),
-            h('div',{style:{textAlign:'right'}},
-              h('div',{style:{fontSize:10.5,fontWeight:800,color:r.status.color,padding:'2px 8px',borderRadius:99,background:r.status.bg,display:'inline-block'}},r.status.label),
-            )
+            h(Bar,{pct:r.budget?r.pct:100,color:r.status.color})
           ),
-          h(Bar,{pct:r.budget?r.pct:100,color:r.status.color}),
-          h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:6}},
-            h('span',{style:{fontSize:12,color:C.text2,fontFamily:'monospace',fontWeight:600}},fmtC(r.spent)+' of '+(r.budget?fmtC(r.budget):'no budget set')),
-            h('span',{style:{fontSize:12,fontWeight:800,color:r.status.color}},pctLabel)
-          ),
-          r.budget>0&&h('div',{style:{marginTop:5,fontSize:12,fontWeight:800,fontFamily:'monospace',color:leftColor(r.left)}},
-            r.left>=0?fmtC(r.left)+' left':fmtC(-r.left)+' over budget')
+          h('div',{style:{textAlign:'right',flexShrink:0,minWidth:58}},
+            h('div',{style:{fontSize:11,fontWeight:800,fontFamily:'monospace',color:C.text}},fmtC(r.spent)),
+            h('div',{style:{fontSize:9,fontWeight:700,fontFamily:'monospace',color:r.budget>0?leftColor(r.left):C.text3}},
+              r.budget>0?(r.left>=0?fmtC(r.left)+' left':fmtC(-r.left)+' over'):'no budget')
+          )
         );
       })
     )
