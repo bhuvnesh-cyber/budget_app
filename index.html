@@ -170,6 +170,30 @@ function daysLeftIn(ym){
   if(ym<curYm())return 0;
   return Math.max(0,total-Number(today().slice(8,10))+1);
 }
+// Sundays (day-of-month numbers) that fall in the given month — this count is
+// the number of weeks a variable-expense budget gets split across.
+function sundaysInMonth(ym){
+  const[y,mo]=ym.split('-').map(Number);
+  const total=daysInMonth(ym);
+  const out=[];
+  for(let d=1;d<=total;d++){if(new Date(y,mo-1,d).getDay()===0)out.push(d)}
+  return out;
+}
+// Splits the month into weeks that each END on a Sunday — Week 1 runs from
+// day 1 through the first Sunday, Week 2 from the day after through the next
+// Sunday, and so on. Any trailing days after the final Sunday are folded into
+// the last week, so every day of the month belongs to exactly one week and
+// the week count always matches the number of Sundays.
+function weekRangesForMonth(ym){
+  const total=daysInMonth(ym);
+  const sundays=sundaysInMonth(ym);
+  if(sundays.length===0)return[{week:1,start:1,end:total}];
+  const ranges=[];
+  let prevEnd=0;
+  sundays.forEach((s,i)=>{ranges.push({week:i+1,start:prevEnd+1,end:s});prevEnd=s});
+  if(prevEnd<total)ranges[ranges.length-1].end=total;
+  return ranges;
+}
 
 /* ══════════════════════════ SMALL UI ══════════════════════════ */
 function MonthBar({month,setMonth}){
@@ -385,6 +409,57 @@ function SaveBar({data,setData,month}){
   );
 }
 
+/* ══════════════════════════ WEEKLY INSIGHT (Variable Expenses only) ══════════════════════════ */
+// For each Variable Expenses subcategory that has a budget or spend, splits
+// its monthly budget evenly across the Sundays in the month (e.g. a ₹2800
+// budget over 4 Sundays = ₹700/week) and shows actual spend against that
+// per-week figure. Weeks run Sun-ending: W1 = day 1 through the first Sunday,
+// etc, with any trailing days folded into the last week.
+function WeeklyInsights({data,md,month}){
+  const cat=CATEGORIES.find(c=>c.id==='variable');
+  const weekRanges=weekRangesForMonth(month);
+  const numWeeks=weekRanges.length;
+
+  const rows=cat.subs.map(sub=>{
+    const budget=subBudget(md,sub.id);
+    const spent=subSpent(md,sub.id);
+    if(budget<=0&&spent<=0)return null;
+    const weeklyBudget=numWeeks?budget/numWeeks:0;
+    const weeks=weekRanges.map(r=>{
+      const wSpent=md.transactions
+        .filter(t=>t.subId===sub.id)
+        .filter(t=>{const day=+t.date.slice(8,10);return day>=r.start&&day<=r.end})
+        .reduce((s,t)=>s+t.amount,0);
+      return{...r,spent:wSpent,budget:weeklyBudget,status:statusFor(wSpent,weeklyBudget)};
+    });
+    return{sub,budget,spent,weeklyBudget,weeks};
+  }).filter(Boolean);
+
+  if(rows.length===0)return null;
+
+  return h(React.Fragment,null,
+    h(SectionTitle,null,'Weekly Insight \u2014 Variable Expenses'),
+    h('div',{style:{padding:'0 16px'}},
+      rows.map(r=>h('div',{key:r.sub.id,style:{marginBottom:14,background:C.card,borderRadius:14,padding:'12px 14px',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
+        h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:10}},
+          h('span',{style:{fontSize:'1.15rem'}},r.sub.icon),
+          h('span',{style:{fontSize:13.5,fontWeight:700,color:C.text,flex:1}},r.sub.name),
+          r.budget>0&&h('span',{style:{fontSize:11,color:C.text3,fontWeight:700,fontFamily:'monospace'}},fmtC(r.weeklyBudget)+'/wk')
+        ),
+        r.budget<=0&&h('div',{style:{fontSize:11.5,color:C.text3,fontWeight:600,marginBottom:8,marginTop:-4}},'No budget set \u2014 showing spend only'),
+        r.weeks.map(w=>h('div',{key:w.week,style:{marginBottom:8}},
+          h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:3}},
+            h('span',{style:{fontSize:11.5,color:C.text2,fontWeight:700}},'W'+w.week),
+            h('span',{style:{fontSize:11.5,fontFamily:'monospace',fontWeight:700,color:w.status.color}},
+              r.budget>0?fmtC(w.spent)+' of '+fmtC(w.budget):fmtC(w.spent))
+          ),
+          h(Bar,{pct:w.budget?w.spent/w.budget*100:(w.spent>0?101:0),color:w.status.color})
+        ))
+      ))
+    )
+  );
+}
+
 /* ══════════════════════════ DASHBOARD ══════════════════════════ */
 function Dashboard({data,month,setMonth,setPage}){
   const md=getMonth(data,month);
@@ -540,6 +615,8 @@ function Dashboard({data,month,setMonth,setPage}){
         )
       ))
     ),
+    /* Weekly Insight — Variable Expenses only */
+    h(WeeklyInsights,{data,md,month}),
     /* Payment source split */
     h(SectionTitle,null,'Payment Source Split'),
     h('div',{style:{padding:'0 16px'}},
