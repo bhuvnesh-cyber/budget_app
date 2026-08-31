@@ -35,15 +35,17 @@ const lsSave=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
 const C={
   bg:'#EEF0FC', card:'#FFFFFF', card2:'#F2F1FE',
   border:'#DDDBF7', border2:'#C0BCEE',
-  text:'#1D1B3A', text2:'#5F5B9C', text3:'#918DC4',
+  text:'#1D1B3A', text2:'#5F5B9C', text3:'#7B76AE',
   red:'#E11D48', redlt:'#FFF1F2',
   green:'#059669', greenlt:'#ECFDF5',
   orange:'#D97706', orangelt:'#FFFBEB',
   indigo:'#4F46E5', indigolt:'#E8E5FC', purple:'#7C3AED', purplelt:'#EEEAFE',
   grad:'linear-gradient(135deg, #4F46E5 0%, #9333EA 100%)',
+  chrome:'linear-gradient(180deg, #FFFFFF 0%, #FAF9FF 100%)',
   nav:'#FFFFFF',
   shadow:'0 2px 12px rgba(79,70,229,.12)',
   shadow2:'0 4px 20px rgba(147,51,234,.16)',
+  shadowSm:'0 1px 3px rgba(79,70,229,.06)',
 };
 
 /* ══════════════════════════ CATEGORY TREE ══════════════════════════ */
@@ -206,7 +208,7 @@ function MonthBar({month,setMonth}){
   const selRef=useRef(null);
   useEffect(()=>{selRef.current&&selRef.current.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'})},[month]);
 
-  return h('div',{style:{background:C.card,borderBottom:`1px solid ${C.border}`,boxShadow:C.shadow}},
+  return h('div',{style:{background:C.chrome,borderBottom:`1px solid ${C.border}`,boxShadow:C.shadow}},
     h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px 8px'}},
       h('button',{onClick:()=>setMonth(m=>prevM(m)),style:{background:C.card2,border:`1px solid ${C.border2}`,color:C.indigo,fontSize:20,cursor:'pointer',padding:'8px 18px',borderRadius:12,fontWeight:700}},'\u2039'),
       h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:2}},
@@ -241,7 +243,7 @@ function Sheet({onClose,children}){
   );
 }
 function SectionTitle({children}){
-  return h('div',{style:{fontSize:11,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:C.text3,margin:'18px 16px 8px'}},children);
+  return h('div',{style:{fontSize:11,fontWeight:600,letterSpacing:'.06em',textTransform:'uppercase',color:C.text3,margin:'20px 16px 9px',paddingTop:14,borderTop:`1px solid ${C.border}`}},children);
 }
 function NumField({value,onChange,placeholder}){
   return h('input',{type:'number',inputMode:'decimal',value,onChange:e=>onChange(e.target.value),placeholder:placeholder||'0',
@@ -386,7 +388,7 @@ function SaveBar({data,setData,month}){
       border:primary?'none':`1.5px solid ${C.border2}`,background:primary?C.grad:C.card2,color:primary?'#fff':C.text2}},label);
 
   return h('div',{style:{position:'relative',zIndex:60,flexShrink:0}},
-    h('div',{style:{display:'flex',alignItems:'center',gap:10,padding:'9px 16px',background:C.card,borderBottom:`1px solid ${C.border}`,boxShadow:C.shadow}},
+    h('div',{style:{display:'flex',alignItems:'center',gap:10,padding:'9px 16px',background:C.chrome,borderBottom:`1px solid ${C.border}`,boxShadow:C.shadow}},
       h('span',{style:{width:9,height:9,borderRadius:99,background:tone,flexShrink:0,boxShadow:`0 0 0 4px ${toneBg}`}}),
       h('div',{style:{flex:1,minWidth:0}},
         h('div',{style:{fontSize:12.5,fontWeight:800,color:tone}},status),
@@ -441,9 +443,9 @@ function WeeklyInsights({data,md,month}){
   return h(React.Fragment,null,
     h(SectionTitle,null,'Weekly Insight \u2014 Variable Expenses'),
     h('div',{style:{padding:'0 16px',display:'flex',flexDirection:'column',gap:10}},
-      rows.map(r=>h('div',{key:r.sub.id,style:{background:C.card,borderRadius:14,padding:'10px 12px',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-        h('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:8}},
-          h('span',{style:{fontSize:'1.05rem'}},r.sub.icon),
+      rows.map(r=>h('div',{key:r.sub.id,style:{background:C.card,borderRadius:14,padding:'10px 12px',boxShadow:C.shadowSm,border:`1px solid ${C.border}`}},
+        h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:8}},
+          h('div',{style:{width:26,height:26,borderRadius:8,background:cat.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.95rem',flexShrink:0}},r.sub.icon),
           h('span',{style:{fontSize:12.5,fontWeight:700,color:C.text,flex:1}},r.sub.name),
           r.budget>0
             ?h('span',{style:{fontSize:10.5,color:C.text3,fontWeight:700,fontFamily:'monospace'}},fmtC(r.weeklyBudget)+'/wk')
@@ -600,11 +602,15 @@ function Dashboard({data,month,setMonth,setPage}){
         h('div',{style:{fontSize:19,fontWeight:800,color:leftColor(budgetLeft),fontFamily:'monospace'}},fmtC(Math.abs(budgetLeft)))
       )
     ),
-    catRows.length===0&&h('div',{style:{textAlign:'center',padding:'20px 0',color:C.text3,fontSize:13,fontWeight:600}},'No categorized spending yet'),
+    catRows.length===0&&h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',padding:'32px 20px',color:C.text3}},
+      h('div',{style:{fontSize:'2.2rem',marginBottom:8}},'\uD83E\uDDFE'),
+      h('div',{style:{fontWeight:700,color:C.text2,fontSize:14}},'No categorized spending yet'),
+      h('div',{style:{fontSize:11.5,marginTop:3}},'Add an expense to see it broken down here')
+    ),
     catRows.length>0&&h('div',{style:{padding:'0 16px'}},
       catRows.map(s=>h('div',{key:s.id,style:{marginBottom:14}},
-        h('div',{style:{display:'flex',alignItems:'center',gap:6,marginBottom:5}},
-          h('span',{style:{fontSize:14}},s.icon),
+        h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:5}},
+          h('div',{style:{width:24,height:24,borderRadius:8,background:s.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.8rem',flexShrink:0}},s.icon),
           h('span',{style:{fontSize:13,color:C.text,fontWeight:600,flex:1}},s.name),
           h('span',{style:{fontSize:12,color:C.text3,fontWeight:700,marginRight:8}},(catTotal?Math.round(s.v/catTotal*100):0)+'%'),
           h('span',{style:{fontSize:13,color:C.text,fontWeight:800,fontFamily:'monospace'}},fmtC(s.v))
@@ -645,8 +651,8 @@ function Dashboard({data,month,setMonth,setPage}){
       watchRows.length===0&&h('div',{style:{textAlign:'center',padding:'24px 0',color:C.text3,fontSize:13,fontWeight:600}},'Nothing in this bucket \uD83C\uDF89'),
       watchRows.map(r=>{
         const pctLabel=r.budget?Math.round(r.pct)+'%':(r.spent>0?'\u2014':'0%');
-        return h('div',{key:r.id,style:{display:'flex',alignItems:'center',gap:9,background:C.card,borderRadius:12,padding:'8px 11px',marginBottom:6,boxShadow:C.shadow,border:`1px solid ${C.border}`,borderLeft:`3px solid ${r.status.color}`}},
-          h('span',{style:{fontSize:'1.05rem',flexShrink:0}},r.icon),
+        return h('div',{key:r.id,style:{display:'flex',alignItems:'center',gap:9,background:C.card,borderRadius:12,padding:'8px 11px',marginBottom:6,boxShadow:C.shadowSm,border:`1px solid ${C.border}`,borderLeft:`3px solid ${r.status.color}`}},
+          h('div',{style:{width:28,height:28,borderRadius:9,background:r.status.color+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.95rem',flexShrink:0}},r.icon),
           h('div',{style:{flex:1,minWidth:0}},
             h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,marginBottom:3}},
               h('span',{style:{fontSize:12.5,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},r.name),
@@ -817,7 +823,7 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
         ),
         h('div',{style:{display:'flex',gap:8}},
           h('button',{onClick:()=>{setAdjDebit('0');setAdjSbi('0');setAdjYes('0')},style:{padding:'12px 14px',borderRadius:12,border:`1.5px solid ${C.border2}`,background:C.card2,color:C.text2,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}},'Fill \u20B90'),
-          h('button',{onClick:saveAdjust,style:{flex:1,padding:'12px',borderRadius:12,border:'none',background:adjSaved?C.green:C.grad,color:'#fff',fontWeight:800,fontSize:14,cursor:'pointer',fontFamily:'inherit'}},adjSaved?'\u2713 Adjusted':'Save Adjustment')
+          h('button',{onClick:saveAdjust,style:{flex:1,padding:'12px',borderRadius:12,border:'none',background:adjSaved?C.green:C.indigo,color:'#fff',fontWeight:800,fontSize:14,cursor:'pointer',fontFamily:'inherit'}},adjSaved?'\u2713 Adjusted':'Save Adjustment')
         )
       )
     ),
@@ -949,7 +955,7 @@ function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncate
         recent.map((t,i)=>{
           const sub=getSubFor(t.subId,data),src=getSrc(t.source);
           return h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:8,padding:'11px 14px',borderBottom:i<recent.length-1?`1px solid ${C.border}`:'none'}},
-            h('span',{style:{fontSize:'1.1rem'}},sub.icon),
+            h('div',{style:{width:32,height:32,borderRadius:10,background:sub.catColor+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',flexShrink:0}},sub.icon),
             h('div',{style:{flex:1,minWidth:0}},
               h('div',{style:{fontSize:13,fontWeight:700,color:C.text}},sub.name),
               h('div',{style:{fontSize:11,color:C.text3}},src.short+(t.desc?' \u00B7 '+t.desc:'')+' \u00B7 '+t.date)
@@ -1450,7 +1456,7 @@ function App(){
       page==='history'    &&h(HistoryPage,    {data,month,onEditTxn:editTxn,onDeleteTxn:deleteTxn}),
       page==='settings'   &&h(SettingsPage,   {data,month,onUpdate:settings=>updateSettings(month,settings),onResetIncomeAndBudgets:()=>resetIncomeAndBudgets(month),onResetEverything:resetEverything})
     ),
-    h('nav',{style:{display:'flex',background:C.nav,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom,0px)',flexShrink:0,boxShadow:'0 -2px 16px rgba(109,40,217,.08)'}},
+    h('nav',{style:{display:'flex',background:C.chrome,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom,0px)',flexShrink:0,boxShadow:'0 -2px 16px rgba(109,40,217,.08)'}},
       NAV.map(n=>{
         const on=page===n.id;
         return h('button',{key:n.id,onClick:()=>setPage(n.id),style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'9px 0 10px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:9.5,fontWeight:on?800:500,color:on?C.indigo:C.text3,position:'relative',transition:'color .15s'}},
