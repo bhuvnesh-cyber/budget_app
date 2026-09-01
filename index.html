@@ -278,6 +278,22 @@ function Sheet({onClose,children}){
 function SectionTitle({children}){
   return h('div',{style:{fontSize:11,fontWeight:600,letterSpacing:'.06em',textTransform:'uppercase',color:C.text3,margin:'20px 16px 9px',paddingTop:14,borderTop:`1px solid ${C.border}`}},children);
 }
+// A section that starts collapsed (or open, via defaultOpen) behind a tappable
+// card header — used for sections that are useful but not something people
+// need to see on every single visit (Payment Source Split, the full Budget
+// Watch list), so the page reads shortest-path-to-answer first.
+function CollapsibleSection({title,badge,defaultOpen,children}){
+  const[open,setOpen]=useState(!!defaultOpen);
+  return h('div',{style:{margin:'14px 16px 0'}},
+    h('button',{onClick:()=>setOpen(o=>!o),
+      style:{width:'100%',display:'flex',alignItems:'center',gap:8,padding:'13px 14px',background:C.card,borderRadius:open?'14px 14px 0 0':14,border:`1px solid ${C.border}`,cursor:'pointer',fontFamily:'inherit',textAlign:'left',boxShadow:C.shadowSm}},
+      h('span',{style:{flex:1,fontSize:13,fontWeight:700,color:C.text}},title),
+      badge!=null&&h('span',{style:{fontSize:11,fontWeight:700,color:C.text3,fontFamily:'monospace'}},badge),
+      h('span',{style:{fontSize:11,color:C.text3,display:'inline-block',transform:open?'rotate(180deg)':'none',transition:'transform .2s'}},'\u25BE')
+    ),
+    open&&h('div',{style:{background:C.card,borderRadius:'0 0 14px 14px',border:`1px solid ${C.border}`,borderTop:'none',padding:'10px 14px 14px'}},children)
+  );
+}
 // Formats a raw numeric string with Indian comma grouping (e.g. "12000" ->
 // "12,000") for DISPLAY only — the underlying value stays a plain number
 // string so every existing +value cast keeps working unchanged.
@@ -609,6 +625,15 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   const budgetLeft=budgetTot-catSpentOnly; // budget still available across all categories
   const budgetPct=budgetTot?catSpentOnly/budgetTot*100:0;
   const[watchFilter,setWatchFilter]=useState('all'); // all | over | near | under
+  const[expandedCats,setExpandedCats]=useState({}); // catId -> bool, drill into subcategories inline
+
+  // How far through the month "today" is — 0% for a future month, 100% for a
+  // finished one, otherwise today's actual position — shown as a slim pacing
+  // strip so there's a sense of time passing even with no budgets set at all.
+  const totalDaysInMonth=daysInMonth(month);
+  const dayOfMonth=month<curYm()?totalDaysInMonth:(month>curYm()?0:Number(today().slice(8,10)));
+  const monthProgressPct=totalDaysInMonth?dayOfMonth/totalDaysInMonth*100:0;
+  const monthProgressLabel=month>curYm()?'Upcoming month':month<curYm()?'Month complete':'Day '+dayOfMonth+' of '+totalDaysInMonth;
 
   // Every category that has a budget or some spending, with its own budget,
   // spend, and what's left of it.
@@ -650,6 +675,14 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
 
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h(MonthBar,{month,setMonth}),
+    /* Month pacing strip — always shown, independent of any budget being set */
+    h('div',{style:{padding:'12px 16px 0'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
+        h('span',{style:{fontSize:11,fontWeight:600,color:C.text3}},monthProgressLabel),
+        month===curYm()&&h('span',{style:{fontSize:11,fontWeight:700,color:C.indigo,fontFamily:'monospace'}},Math.round(monthProgressPct)+'%')
+      ),
+      h(Bar,{pct:monthProgressPct,color:C.indigo})
+    ),
     overspent>0.5 && h('div',{style:{margin:'12px 16px 0',padding:'14px 16px',borderRadius:16,background:C.redlt,border:`1.5px solid ${C.red}`,display:'flex',alignItems:'center',gap:12}},
       h('span',{style:{fontSize:'1.6rem'}},'\uD83D\uDD3A'),
       h('div',{style:{flex:1}},
@@ -665,6 +698,13 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
         h('div',{style:{fontSize:12,color:C.text2}},'Tap to categorize '+fmtC(uncatTotal))
       ),
       h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.orange,fontSize:16}},fmtC(uncatTotal))
+    ),
+    overspent<=0.5&&uncatTotal<=0.5&&h('div',{style:{margin:'12px 16px 0',padding:'12px 16px',borderRadius:16,background:C.greenlt,border:`1.5px solid ${C.green}`,display:'flex',alignItems:'center',gap:10}},
+      h('span',{style:{fontSize:'1.3rem'}},'\u2705'),
+      h('div',{style:{flex:1}},
+        h('div',{style:{fontWeight:700,color:C.green,fontSize:13}},'You\u2019re on track'),
+        h('div',{style:{fontSize:11.5,color:C.text2}},'Nothing overspent, everything categorized')
+      )
     ),
     /* Summary cards */
     h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,padding:'14px 16px 4px'}},
@@ -739,26 +779,41 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
       h('div',{style:{fontSize:11.5,marginTop:3}},'Add an expense to see it broken down here')
     ),
     catRows.length>0&&h('div',{style:{padding:'0 16px'}},
-      catRows.map(s=>h('div',{key:s.id,style:{marginBottom:14}},
-        h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:5}},
-          h('div',{style:{width:24,height:24,borderRadius:8,background:s.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.8rem',flexShrink:0}},s.icon),
-          h('span',{style:{fontSize:13,color:C.text,fontWeight:600,flex:1}},s.name),
-          h('span',{style:{fontSize:12,color:C.text3,fontWeight:700,marginRight:8}},(catTotal?Math.round(s.v/catTotal*100):0)+'%'),
-          h('span',{style:{fontSize:13,color:C.text,fontWeight:800,fontFamily:'monospace'}},fmtC(s.v))
-        ),
-        h(Bar,{pct:catTotal?s.v/catTotal*100:0,color:s.color}),
-        h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:5}},
-          h('span',{style:{fontSize:11.5,color:C.text3,fontWeight:600,fontFamily:'monospace'}},
-            s.budget>0?fmtC(s.v)+' of '+fmtC(s.budget)+' budget':'No budget set'),
-          s.budget>0&&h('span',{style:{fontSize:12,fontWeight:800,fontFamily:'monospace',color:leftColor(s.left)}},leftLabel(s.left))
-        )
-      ))
+      catRows.map(s=>{
+        const subRows=allRows.filter(r=>r.catId===s.id);
+        const expanded=!!expandedCats[s.id];
+        return h('div',{key:s.id,style:{marginBottom:14}},
+          h('div',{onClick:()=>subRows.length>0&&setExpandedCats(e=>({...e,[s.id]:!e[s.id]})),style:{display:'flex',alignItems:'center',gap:8,marginBottom:5,cursor:subRows.length>0?'pointer':undefined}},
+            h('div',{style:{width:24,height:24,borderRadius:8,background:s.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.8rem',flexShrink:0}},s.icon),
+            h('span',{style:{fontSize:13,color:C.text,fontWeight:600,flex:1}},s.name),
+            h('span',{style:{fontSize:12,color:C.text3,fontWeight:700,marginRight:8}},(catTotal?Math.round(s.v/catTotal*100):0)+'%'),
+            h('span',{style:{fontSize:13,color:C.text,fontWeight:800,fontFamily:'monospace'}},fmtC(s.v)),
+            subRows.length>0&&h('span',{style:{fontSize:10,color:C.text3,marginLeft:2,transform:expanded?'rotate(180deg)':'none',transition:'transform .2s',display:'inline-block'}},'\u25BE')
+          ),
+          h(Bar,{pct:catTotal?s.v/catTotal*100:0,color:s.color}),
+          h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:5}},
+            h('span',{style:{fontSize:11.5,color:C.text3,fontWeight:600,fontFamily:'monospace'}},
+              s.budget>0?fmtC(s.v)+' of '+fmtC(s.budget)+' budget':'No budget set'),
+            s.budget>0&&h('span',{style:{fontSize:12,fontWeight:800,fontFamily:'monospace',color:leftColor(s.left)}},leftLabel(s.left))
+          ),
+          expanded&&h('div',{style:{marginTop:10,marginLeft:8,paddingLeft:11,borderLeft:`2px solid ${C.border}`,display:'flex',flexDirection:'column',gap:8}},
+            subRows.map(r=>h('div',{key:r.id,onClick:()=>onQuickCategorize&&onQuickCategorize(r.id),style:{cursor:onQuickCategorize?'pointer':undefined}},
+              h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:3}},
+                h('span',{style:{fontSize:12,color:C.text2,fontWeight:600}},r.icon+' '+r.name),
+                h('span',{style:{fontSize:11,fontWeight:700,fontFamily:'monospace',color:r.status.color}},
+                  fmtC(r.spent)+(r.budget>0?' / '+fmtC(r.budget):''))
+              ),
+              h(Bar,{pct:r.budget?r.pct:(r.spent>0?100:0),color:r.status.color})
+            ))
+          )
+        );
+      })
     ),
     /* Weekly Insight — Variable Expenses only */
     h(WeeklyInsights,{data,md,month,onQuickCategorize}),
-    /* Payment source split */
-    h(SectionTitle,null,'Payment Source Split'),
-    h('div',{style:{padding:'0 16px'}},
+    /* Payment Source Split — demoted to collapsed-by-default: informative but
+       rarely the thing that prompts a decision day-to-day. */
+    h(CollapsibleSection,{title:'Payment Source Split'},
       srcSegs.map(s=>h('div',{key:s.name,style:{marginBottom:10}},
         h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:4}},
           h('span',{style:{fontSize:13,color:C.text2,fontWeight:600}},s.name),
@@ -767,23 +822,23 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
         h(Bar,{pct:catSpentOnly?s.v/catSpentOnly*100:0,color:s.color})
       ))
     ),
-    /* Budget Watch — cooler, filterable, shows everything */
-    allRows.length>0&&h(SectionTitle,null,'Budget Watch'),
-    allRows.length>0&&h('div',{style:{padding:'0 16px 6px',fontSize:10.5,color:C.text3,fontWeight:600,marginTop:-4}},'Tap a row to log an expense against it'),
-    allRows.length>0&&h('div',{style:{padding:'0 16px 10px'}},
-      h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:2}},
+    /* Budget Watch — filterable cross-category view; collapsed by default
+       since "Spending by Category" above already covers the same ground
+       per-category, this is for the flat "show me everything over budget"
+       view when someone wants it. */
+    allRows.length>0&&h(CollapsibleSection,{title:'Budget Watch',badge:overCount>0?overCount+' over':undefined},
+      h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:600,marginBottom:8,marginTop:-2}},'Tap a row to log an expense against it'),
+      h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:10}},
         [['all','All',allRows.length,C.indigo],['over','\uD83D\uDD34 Over',overCount,C.red],['near','\uD83D\uDFE0 Near',nearCount,C.orange],['under','\uD83D\uDFE2 Under',underCount,C.green]].map(([key,label,count,col])=>
           h('button',{key,onClick:()=>setWatchFilter(key),
             style:{flexShrink:0,padding:'7px 13px',borderRadius:99,border:`1.5px solid ${watchFilter===key?col:C.border}`,background:watchFilter===key?col+'18':C.card2,color:watchFilter===key?col:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},
             label+' ('+count+')')
         )
-      )
-    ),
-    allRows.length>0&&h('div',{style:{padding:'0 16px'}},
+      ),
       watchRows.length===0&&h('div',{style:{textAlign:'center',padding:'24px 0',color:C.text3,fontSize:13,fontWeight:600}},'Nothing in this bucket \uD83C\uDF89'),
       watchRows.map(r=>{
         const pctLabel=r.budget?Math.round(r.pct)+'%':(r.spent>0?'\u2014':'0%');
-        return h('div',{key:r.id,onClick:()=>onQuickCategorize&&onQuickCategorize(r.id),style:{display:'flex',alignItems:'center',gap:9,background:C.card,borderRadius:12,padding:'8px 11px',marginBottom:6,boxShadow:C.shadowSm,border:`1px solid ${C.border}`,borderLeft:`3px solid ${r.status.color}`,cursor:onQuickCategorize?'pointer':undefined}},
+        return h('div',{key:r.id,onClick:()=>onQuickCategorize&&onQuickCategorize(r.id),style:{display:'flex',alignItems:'center',gap:9,background:C.card2,borderRadius:12,padding:'8px 11px',marginBottom:6,border:`1px solid ${C.border}`,borderLeft:`3px solid ${r.status.color}`,cursor:onQuickCategorize?'pointer':undefined}},
           h('div',{style:{width:28,height:28,borderRadius:9,background:r.status.color+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.95rem',flexShrink:0}},r.icon),
           h('div',{style:{flex:1,minWidth:0}},
             h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,marginBottom:3}},
@@ -799,7 +854,12 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
           )
         );
       })
-    )
+    ),
+    /* Floating quick-add — the single most common action, one tap away from
+       anywhere on Home instead of requiring a trip through the bottom nav. */
+    h('button',{onClick:()=>{onQuickCategorize?onQuickCategorize(null):setPage('categorize')},
+      style:{position:'fixed',right:18,bottom:'calc(78px + env(safe-area-inset-bottom,0px))',width:54,height:54,borderRadius:99,border:'none',background:C.grad,color:'#fff',fontSize:26,fontWeight:700,cursor:'pointer',boxShadow:C.shadow2,zIndex:40,display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}},
+      '+')
   );
 }
 
