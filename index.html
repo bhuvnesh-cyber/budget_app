@@ -83,11 +83,24 @@ const CATEGORIES=[
   ]},
 ];
 const ALL_SUBS=CATEGORIES.flatMap(c=>c.subs.map(s=>({...s,catId:c.id,catName:c.name,catColor:c.color})));
-const getSub=id=>ALL_SUBS.find(s=>s.id===id)||{name:id,icon:'\uD83D\uDCB8',catColor:C.purple,catId:'',catName:''};
 const getCat=id=>CATEGORIES.find(c=>c.id===id)||{name:id,icon:'\uD83D\uDCB8',color:C.purple};
-function categoriesFor(){return CATEGORIES}
-function allSubsFor(){return ALL_SUBS}
-function getSubFor(id){return getSub(id)}
+// Category list merged with any user-added custom subcategories
+// (data.customSubs — added from Settings). Custom subs behave exactly like
+// built-in ones everywhere: picker, budgets, History, Budget Watch, etc, all
+// read through this function rather than the static CATEGORIES constant.
+function categoriesFor(data){
+  const customs=(data&&data.customSubs)||[];
+  if(!customs.length)return CATEGORIES;
+  return CATEGORIES.map(c=>({...c,subs:customs.filter(cs=>cs.catId===c.id).length
+    ?[...c.subs,...customs.filter(cs=>cs.catId===c.id).map(cs=>({id:cs.id,name:cs.name,icon:cs.icon||'\u2795'}))]
+    :c.subs}));
+}
+function allSubsFor(data){
+  return categoriesFor(data).flatMap(c=>c.subs.map(s=>({...s,catId:c.id,catName:c.name,catColor:c.color})));
+}
+function getSubFor(id,data){
+  return allSubsFor(data).find(s=>s.id===id)||{name:id,icon:'\uD83D\uDCB8',catColor:C.purple,catId:'',catName:''};
+}
 
 const SOURCES=[
   {id:'debit',name:'Debit Account',short:'Debit',color:'#4F46E5'},
@@ -119,7 +132,7 @@ function recentSubIds(data,limit,exclude){
 // one-tap prefill (category, subcategory, amount, and source).
 function lastMonthFixedEntries(data,month,md){
   const prevMd=getMonth(data,prevM(month));
-  const fixedIds=CATEGORIES.find(c=>c.id==='fixed').subs.map(s=>s.id);
+  const fixedIds=categoriesFor(data).find(c=>c.id==='fixed').subs.map(s=>s.id);
   const latest={};
   prevMd.transactions.forEach(t=>{
     if(!fixedIds.includes(t.subId))return;
@@ -134,6 +147,14 @@ const fmt2=n=>{const v=parseFloat(n)||0;return '\u20B9'+v.toLocaleString('en-IN'
 const fmtC=n=>{const v=Math.round(parseFloat(n)||0);return (v<0?'\u2212':'')+'\u20B9'+Math.abs(v).toLocaleString('en-IN')};
 const today=()=>new Date().toISOString().slice(0,10);
 const curYm=()=>today().slice(0,7);
+// "Today" / "Yesterday" / "Mon, 15 Aug" — used to group History into day
+// sections that read naturally instead of a flat undifferentiated list.
+function dayLabel(dateStr){
+  if(dateStr===today())return 'Today';
+  const y=new Date();y.setDate(y.getDate()-1);
+  if(dateStr===y.toISOString().slice(0,10))return 'Yesterday';
+  return new Date(dateStr+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+}
 const prevM=m=>monthFromIndex(monthIndex(m)-1);
 const nextM=m=>monthFromIndex(monthIndex(m)+1);
 const monthLabel=m=>{const[y,mo]=m.split('-');const N=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return N[+mo-1]+' '+y};
@@ -142,10 +163,10 @@ const monthIndex=m=>{const[y,mo]=m.split('-').map(Number);return y*12+(mo-1)};
 const monthFromIndex=idx=>{const y=Math.floor(idx/12),mo=(idx%12+12)%12+1;return y+'-'+String(mo).padStart(2,'0')};
 const genId=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
 
-function zeroBudgets(){const b={};ALL_SUBS.forEach(s=>b[s.id]=0);return b}
+function zeroBudgets(data){const b={};allSubsFor(data).forEach(s=>b[s.id]=0);return b}
 function defaultMonth(){return{income:{salary:0,other:0,extras:[]},uncategorized:{debit:0,sbi:0,yes:0},budgets:{},transactions:[],balances:null,lastCalc:null,balanceLog:[]}}
 function defaultData(){
-  return{budgetNotes:{},cardLimits:{sbi:0,yes:0},cardInputMode:'remaining',months:{}};
+  return{budgetNotes:{},cardLimits:{sbi:0,yes:0},cardInputMode:'remaining',months:{},customSubs:[]};
 }
 // Reads a month's data, normalizing legacy shapes (uncategorized used to be a
 // single number; it's now split per payment source; budgets used to be one
@@ -175,8 +196,8 @@ function cloneMonthEntry(data,months,ym){
 function uncategorizedTotal(md){return(+md.uncategorized.debit||0)+(+md.uncategorized.sbi||0)+(+md.uncategorized.yes||0)}
 function monthIncome(md){return (+md.income.salary||0)+(+md.income.other||0)+md.income.extras.reduce((s,e)=>s+(+e.amount||0),0)}
 function subBudget(md,subId){return +md.budgets[subId]||0}
-function catBudgetSum(md,catId){const cat=categoriesFor().find(c=>c.id===catId);return cat?cat.subs.reduce((s,sub)=>s+subBudget(md,sub.id),0):0}
-function totalBudget(md){return allSubsFor().reduce((s,sub)=>s+subBudget(md,sub.id),0)}
+function catBudgetSum(md,catId,data){const cat=categoriesFor(data).find(c=>c.id===catId);return cat?cat.subs.reduce((s,sub)=>s+subBudget(md,sub.id),0):0}
+function totalBudget(md,data){return allSubsFor(data).reduce((s,sub)=>s+subBudget(md,sub.id),0)}
 function subSpent(md,subId){return md.transactions.filter(t=>t.subId===subId).reduce((s,t)=>s+t.amount,0)}
 function catSpent(md,catId){return md.transactions.filter(t=>t.catId===catId).reduce((s,t)=>s+t.amount,0)}
 function totalSpent(md){return md.transactions.reduce((s,t)=>s+t.amount,0)}
@@ -566,7 +587,7 @@ function SaveBar({data,setData,month}){
 // Sun-ending: W1 = day 1 through the first Sunday, etc, with any trailing
 // days folded into the last week.
 function WeeklyInsights({data,md,month,onQuickCategorize}){
-  const cat=CATEGORIES.find(c=>c.id==='variable');
+  const cat=categoriesFor(data).find(c=>c.id==='variable');
   const weekRanges=weekRangesForMonth(month);
   const numWeeks=weekRanges.length;
 
@@ -621,7 +642,7 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   const savings=catSpent(md,'savings');
   const remaining=income-totalReal;
   const overspent=totalReal>income?totalReal-income:0;
-  const budgetTot=totalBudget(md);
+  const budgetTot=totalBudget(md,data);
   const budgetLeft=budgetTot-catSpentOnly; // budget still available across all categories
   const budgetPct=budgetTot?catSpentOnly/budgetTot*100:0;
   const[watchFilter,setWatchFilter]=useState('all'); // all | over | near | under
@@ -638,14 +659,14 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   // Every category that has a budget or some spending, with its own budget,
   // spend, and what's left of it.
   const catRows=categoriesFor(data).map(c=>{
-    const sp=catSpent(md,c.id),bd=catBudgetSum(md,c.id);
+    const sp=catSpent(md,c.id),bd=catBudgetSum(md,c.id,data);
     return{id:c.id,name:c.name,icon:c.icon,color:c.color,v:sp,budget:bd,left:bd-sp};
   }).filter(r=>r.v>0||r.budget>0).sort((a,b)=>b.v-a.v);
   const catTotal=catRows.reduce((s,c)=>s+c.v,0);
 
   // Pace the Variable Expenses budget across the rest of the month: what's
   // left, spread over the days that are actually still ahead of you.
-  const varBudget=catBudgetSum(md,'variable');
+  const varBudget=catBudgetSum(md,'variable',data);
   const varSpent=catSpent(md,'variable');
   const varLeft=varBudget-varSpent;
   const daysLeft=daysLeftIn(month);
@@ -889,10 +910,19 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
   const sbiLimit=+data.cardLimits.sbi||0, yesLimit=+data.cardLimits.yes||0;
   const initSbiDisplay=bal?(isRemaining?(sbiLimit-bal.sbi):bal.sbi):'';
   const initYesDisplay=bal?(isRemaining?(yesLimit-bal.yes):bal.yes):'';
+  // When there's no saved balance yet, default each field to the ASSUMED
+  // starting point instead of leaving it blank — Debit starts at total
+  // income, and each card starts fully available (full limit remaining / ₹0
+  // outstanding) — so the field shows a real number to review and edit
+  // rather than an empty box that gives no sense of scale.
+  function defaultFor(inc,isRem,sbiLim,yesLim){
+    return{debit:inc>0?String(inc):'',sbi:isRem?(sbiLim>0?String(sbiLim):''):'0',yes:isRem?(yesLim>0?String(yesLim):''):'0'};
+  }
+  const initDefaults=defaultFor(incomeTotal,isRemaining,sbiLimit,yesLimit);
 
-  const[debit,setDebit]=useState(bal?String(bal.debit):'');
-  const[sbiDisp,setSbiDisp]=useState(bal?String(initSbiDisplay):'');
-  const[yesDisp,setYesDisp]=useState(bal?String(initYesDisplay):'');
+  const[debit,setDebit]=useState(bal?String(bal.debit):initDefaults.debit);
+  const[sbiDisp,setSbiDisp]=useState(bal?String(initSbiDisplay):initDefaults.sbi);
+  const[yesDisp,setYesDisp]=useState(bal?String(initYesDisplay):initDefaults.yes);
 
   // Reload the input fields (and the adjust-buckets fields) whenever the
   // browsed month changes, so August never shows leftover text typed while
@@ -904,9 +934,10 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
     const bl=b||{debit:inc,sbi:0,yes:0};
     const curMode=data.cardInputMode||'remaining';
     const isRem=curMode==='remaining';
-    setDebit(b?String(b.debit):'');
-    setSbiDisp(b?String(isRem?(sbiLimit-b.sbi):b.sbi):'');
-    setYesDisp(b?String(isRem?(yesLimit-b.yes):b.yes):'');
+    const defaults=defaultFor(inc,isRem,sbiLimit,yesLimit);
+    setDebit(b?String(b.debit):defaults.debit);
+    setSbiDisp(b?String(isRem?(sbiLimit-b.sbi):b.sbi):defaults.sbi);
+    setYesDisp(b?String(isRem?(yesLimit-b.yes):b.yes):defaults.yes);
     setAdjDebit(String(m.uncategorized.debit));
     setAdjSbi(String(m.uncategorized.sbi));
     setAdjYes(String(m.uncategorized.yes));
@@ -960,7 +991,7 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
       h('div',{style:{fontSize:13,color:C.text2,marginTop:2}},'New spending is calculated automatically from the change since your last update, and is added to '+monthLabel(month)+'\u2019s uncategorized pool.')
     ),
     !bal&&h('div',{style:{margin:'12px 16px 0',padding:'12px 14px',borderRadius:12,background:C.orangelt,border:`1px solid ${C.orange}`,fontSize:12.5,color:C.orange,fontWeight:600}},
-      '\u26A0\uFE0F No previous balance saved yet. We\u2019ll assume your Debit account started this month at your total income ('+fmtC(incomeTotal)+') and both cards started at '+fmtC(0)+' outstanding, then calculate today\u2019s spend from that.'
+      '\u26A0\uFE0F No previous balance saved yet. The fields below are pre-filled with the starting assumption \u2014 Debit at your total income ('+fmtC(incomeTotal)+'), both cards at '+fmtC(0)+' outstanding \u2014 edit them to match your real balances, then Save.'
     ),
     bal&&h('div',{style:{margin:'12px 16px 0',padding:'10px 14px',borderRadius:12,background:C.card2,fontSize:12,color:C.text2}},
       'Last saved: Debit '+fmtC(bal.debit)+' \u00B7 SBI Outstanding '+fmtC(bal.sbi)+' \u00B7 YES Outstanding '+fmtC(bal.yes)
@@ -1320,15 +1351,14 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
   );
 }
 
-function HistoryPage({data,month,onEditTxn,onDeleteTxn}){
+function HistoryPage({data,month,setMonth,onEditTxn,onDeleteTxn}){
   const[filterCat,setFilterCat]=useState('all');
   const[filterSrc,setFilterSrc]=useState('all');
   const[search,setSearch]=useState('');
   const[editing,setEditing]=useState(null); // {ym,txn}
 
-  // History is locked to the month you're browsing on Home — it only ever
-  // shows that month's transactions, so switching months never leaks another
-  // month's history in. Change the month from Home to see a different one.
+  // History follows a month of its own now (via its own switcher below)
+  // rather than only ever mirroring whatever month Home happens to be on.
   let txns=(data.months[month]?data.months[month].transactions:[]).map(t=>({...t,ym:month}));
   txns=txns.filter(t=>
     (filterCat==='all'||t.catId===filterCat)&&
@@ -1337,13 +1367,33 @@ function HistoryPage({data,month,onEditTxn,onDeleteTxn}){
   ).sort((a,b)=>b.date.localeCompare(a.date)||(b.id>a.id?1:-1));
 
   const total=txns.reduce((s,t)=>s+t.amount,0);
+  const filtersActive=filterCat!=='all'||filterSrc!=='all'||search!=='';
+  function clearFilters(){setFilterCat('all');setFilterSrc('all');setSearch('')}
+
+  // Group consecutive same-date transactions into day sections with a small
+  // subtotal each — reads far more naturally than one flat undifferentiated
+  // list, and mirrors how most banking/expense apps present a ledger.
+  const groups=[];
+  txns.forEach(t=>{
+    const g=groups[groups.length-1];
+    if(g&&g.date===t.date){g.items.push(t);g.total+=t.amount}
+    else groups.push({date:t.date,items:[t],total:t.amount});
+  });
 
   const selStyle={padding:'8px 10px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:12,color:C.text,fontFamily:'inherit',outline:'none'};
 
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h('div',{style:{padding:'16px 16px 8px'}},
-      h('div',{style:{fontSize:20,fontWeight:800,color:C.text,marginBottom:2}},'Transaction History'),
-      h('div',{style:{fontSize:12.5,color:C.text3,marginBottom:10}},monthLabel(month)+' \u2014 switch months from Home to see a different one'),
+      h('div',{style:{fontSize:20,fontWeight:800,color:C.text,marginBottom:10}},'Transaction History'),
+      /* Compact month switcher, local to this page */
+      h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:12}},
+        h('button',{onClick:()=>setMonth(m=>prevM(m)),style:{background:C.card2,border:`1px solid ${C.border2}`,color:C.indigo,fontSize:16,cursor:'pointer',padding:'6px 14px',borderRadius:10,fontWeight:700}},'\u2039'),
+        h('div',{style:{flex:1,textAlign:'center'}},
+          h('div',{style:{fontSize:13.5,fontWeight:700,color:C.text}},monthLabel(month)),
+          month!==curYm()&&h('button',{onClick:()=>setMonth(curYm()),style:{border:'none',background:'none',color:C.indigo,fontSize:10.5,fontWeight:700,cursor:'pointer',padding:0,textDecoration:'underline'}},'Jump to This Month')
+        ),
+        h('button',{onClick:()=>setMonth(m=>nextM(m)),style:{background:C.card2,border:`1px solid ${C.border2}`,color:C.indigo,fontSize:16,cursor:'pointer',padding:'6px 14px',borderRadius:10,fontWeight:700}},'\u203A')
+      ),
       h('input',{value:search,onChange:e=>setSearch(e.target.value),placeholder:'\uD83D\uDD0D Search description or category',
         style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none',marginBottom:10}}),
       h('div',{style:{display:'flex',gap:8,overflowX:'auto'}},
@@ -1354,30 +1404,38 @@ function HistoryPage({data,month,onEditTxn,onDeleteTxn}){
         h('select',{value:filterSrc,onChange:e=>setFilterSrc(e.target.value),style:selStyle},
           h('option',{value:'all'},'All Sources'),
           SOURCES.map(s=>h('option',{key:s.id,value:s.id},s.short))
-        )
+        ),
+        filtersActive&&h('button',{onClick:clearFilters,style:{flexShrink:0,padding:'8px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card,color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},'\u2715 Clear')
       )
     ),
     h('div',{style:{padding:'0 16px 8px',fontSize:13,color:C.text2,fontWeight:600}},txns.length+' transactions \u00B7 Total '+fmtC(total)),
     txns.length===0&&h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',padding:'60px 20px',color:C.text3}},
       h('div',{style:{fontSize:'3rem',marginBottom:12}},'\uD83D\uDCCB'),
-      h('div',{style:{fontWeight:700,color:C.text2,fontSize:16}},'No transactions found')
+      h('div',{style:{fontWeight:700,color:C.text2,fontSize:16}},filtersActive?'No transactions match these filters':'No transactions found'),
+      filtersActive&&h('button',{onClick:clearFilters,style:{marginTop:10,border:'none',background:'none',color:C.indigo,fontWeight:700,fontSize:12.5,cursor:'pointer',textDecoration:'underline'}},'Clear filters')
     ),
     txns.length>0&&h('div',{style:{padding:'0 16px'}},
       h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
-        txns.map((t,i)=>{
-          const sub=getSubFor(t.subId,data),src=getSrc(t.source);
-          return h(SwipeRow,{key:t.id,onDelete:()=>{if(confirm('Delete this expense? '+fmtC(t.amount)+' will be added back to '+getSrc(t.source).short+'\u2019s uncategorized balance for '+monthLabel(t.originYm||t.ym)+'.'))onDeleteTxn(t.ym,t)}},
-            h('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'11px 14px',borderBottom:i<txns.length-1?`1px solid ${C.border}`:'none'}},
-              h('div',{style:{width:36,height:36,borderRadius:11,background:sub.catColor+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.05rem',flexShrink:0}},sub.icon),
-              h('div',{style:{flex:1,minWidth:0}},
-                h('div',{style:{fontSize:13,fontWeight:700,color:C.text}},sub.name),
-                h('div',{style:{fontSize:11,color:C.text3}},t.date+' \u00B7 '+src.short+(t.desc?' \u00B7 '+t.desc:''))
-              ),
-              h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.red,fontSize:13,marginRight:2}},'\u2212'+fmt(t.amount)),
-              h('button',{onClick:()=>setEditing({ym:t.ym,txn:t}),style:{border:'none',background:C.card2,color:C.text2,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\u270F\uFE0F')
-            )
-          );
-        })
+        groups.map((g,gi)=>h(React.Fragment,{key:g.date},
+          h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',padding:'9px 14px 6px',background:C.card2,borderTop:gi>0?`1px solid ${C.border}`:'none'}},
+            h('span',{style:{fontSize:11,fontWeight:700,color:C.text2,textTransform:'uppercase',letterSpacing:'.03em'}},dayLabel(g.date)),
+            h('span',{style:{fontSize:11,fontWeight:700,color:C.text3,fontFamily:'monospace'}},fmtC(g.total))
+          ),
+          g.items.map((t,i)=>{
+            const sub=getSubFor(t.subId,data),src=getSrc(t.source);
+            return h(SwipeRow,{key:t.id,onDelete:()=>{if(confirm('Delete this expense? '+fmtC(t.amount)+' will be added back to '+getSrc(t.source).short+'\u2019s uncategorized balance for '+monthLabel(t.originYm||t.ym)+'.'))onDeleteTxn(t.ym,t)}},
+              h('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'11px 14px',borderBottom:i<g.items.length-1?`1px solid ${C.border}`:'none'}},
+                h('div',{style:{width:36,height:36,borderRadius:11,background:sub.catColor+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.05rem',flexShrink:0}},sub.icon),
+                h('div',{style:{flex:1,minWidth:0}},
+                  h('div',{style:{fontSize:13,fontWeight:700,color:C.text}},sub.name),
+                  h('div',{style:{fontSize:11,color:C.text3}},src.short+(t.desc?' \u00B7 '+t.desc:''))
+                ),
+                h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.red,fontSize:13,marginRight:2}},'\u2212'+fmt(t.amount)),
+                h('button',{onClick:()=>setEditing({ym:t.ym,txn:t}),style:{border:'none',background:C.card2,color:C.text2,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\u270F\uFE0F')
+              )
+            );
+          })
+        ))
       ),
       h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:600,textAlign:'center',marginTop:6}},'\u2190 Swipe a row to delete')
     ),
@@ -1389,7 +1447,7 @@ function HistoryPage({data,month,onEditTxn,onDeleteTxn}){
 }
 
 /* ══════════════════════════ SETTINGS PAGE ══════════════════════════ */
-function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEverything}){
+function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEverything,onAddCustomSub,onRemoveCustomSub}){
   const md=getMonth(data,month);
   const[salary,setSalary]=useState(String(md.income.salary||''));
   const[other,setOther]=useState(String(md.income.other||''));
@@ -1398,6 +1456,11 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
   const[yesLimit,setYesLimit]=useState(String(data.cardLimits.yes||''));
   const[budgets,setBudgets]=useState({...md.budgets});
   const[saved,setSaved]=useState(false);
+  const[showAddSub,setShowAddSub]=useState(false);
+  const[newSubCat,setNewSubCat]=useState(CATEGORIES[0].id);
+  const[newSubName,setNewSubName]=useState('');
+  const[newSubIcon,setNewSubIcon]=useState('');
+  const customIds=(data.customSubs||[]).map(s=>s.id);
 
   // Whenever the selected month changes, reload the fields from that month's
   // own data instead of continuing to show the previous month's values.
@@ -1418,7 +1481,7 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
   // does NOT save automatically, "Save Settings" below still applies it.
   const prevYm=prevM(month);
   const prevMd=getMonth(data,prevYm);
-  const prevHasData=monthIncome(prevMd)>0||totalBudget(prevMd)>0;
+  const prevHasData=monthIncome(prevMd)>0||totalBudget(prevMd,data)>0;
   function copyFromPrevious(){
     setSalary(String(prevMd.income.salary||''));
     setOther(String(prevMd.income.other||''));
@@ -1449,6 +1512,20 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
     setSbiLimit('');setYesLimit('');
     const zeroed={};allSubsFor(data).forEach(s=>zeroed[s.id]=0);
     setBudgets(zeroed);
+  }
+
+  function addSub(){
+    const name=newSubName.trim();
+    if(!name)return;
+    const id='custom_'+genId();
+    onAddCustomSub({id,catId:newSubCat,name,icon:newSubIcon.trim()||undefined});
+    setBudgets(b=>({...b,[id]:0}));
+    setNewSubName('');setNewSubIcon('');setShowAddSub(false);
+  }
+  function removeSub(sub){
+    if(!confirm('Remove "'+sub.name+'"? Any past expenses logged under it stay in History, just without this label going forward.'))return;
+    onRemoveCustomSub(sub.id);
+    setBudgets(b=>{const nb={...b};delete nb[sub.id];return nb});
   }
 
   // Live totals while you type, so you can see how much of your income the
@@ -1482,7 +1559,24 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
       h('div',null,h('div',{style:{fontSize:12,color:C.text2,fontWeight:600,marginBottom:4}},'YES Limit'),h(NumField,{value:yesLimit,onChange:setYesLimit}))
     ),
     h(SectionTitle,null,'Category Budgets \u2014 '+monthLabel(month)),
-    h('div',{style:{padding:'0 16px 12px'}},
+    h('div',{style:{padding:'0 16px 10px'}},
+      h('button',{onClick:()=>setShowAddSub(v=>!v),style:{width:'100%',padding:'9px',borderRadius:10,border:`1.5px dashed ${C.border2}`,background:showAddSub?C.indigolt:'transparent',color:C.indigo,fontWeight:700,fontSize:12.5,cursor:'pointer',fontFamily:'inherit'}},
+        showAddSub?'\u2715 Cancel':'+ Add Subcategory'),
+      showAddSub&&h('div',{style:{marginTop:8,padding:'12px',borderRadius:12,background:C.card,border:`1px solid ${C.border}`,boxShadow:C.shadowSm}},
+        h('div',{style:{display:'flex',gap:8,marginBottom:8}},
+          h('select',{value:newSubCat,onChange:e=>setNewSubCat(e.target.value),
+            style:{flex:1,padding:'8px 10px',borderRadius:9,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:12.5,color:C.text,fontFamily:'inherit',outline:'none'}},
+            CATEGORIES.map(c=>h('option',{key:c.id,value:c.id},c.icon+' '+c.name))
+          ),
+          h('input',{value:newSubIcon,onChange:e=>setNewSubIcon(e.target.value),placeholder:'\uD83C\uDFF7\uFE0F',maxLength:2,
+            style:{width:46,padding:'8px 6px',borderRadius:9,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:14,textAlign:'center',fontFamily:'inherit',outline:'none'}})
+        ),
+        h('input',{value:newSubName,onChange:e=>setNewSubName(e.target.value),placeholder:'Subcategory name',
+          style:{width:'100%',padding:'9px 10px',borderRadius:9,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none',marginBottom:8}}),
+        h('button',{onClick:addSub,disabled:!newSubName.trim(),style:{width:'100%',padding:'11px',borderRadius:10,border:'none',background:newSubName.trim()?C.grad:C.border,color:'#fff',fontWeight:700,fontSize:13,cursor:newSubName.trim()?'pointer':'default',fontFamily:'inherit'}},'Add')
+      )
+    ),
+    h('div',{style:{padding:'0 16px'}},
       h('div',{style:{padding:'12px 14px',borderRadius:14,background:C.card,boxShadow:C.shadow,border:`1px solid ${C.border}`}},
         h('div',{style:{display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:4}},
           h('span',{style:{color:C.text2,fontWeight:700}},'Budgeted'),
@@ -1502,9 +1596,11 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
             h('div',{style:{fontFamily:'monospace',fontWeight:700,color:cat.color,fontSize:13}},fmtC(catSum))
           ),
           cat.subs.map(sub=>h('div',{key:sub.id,style:{display:'flex',alignItems:'center',gap:8,marginBottom:8}},
-            h('span',{style:{fontSize:13,color:C.text2,flex:1}},sub.icon+' '+sub.name),
+            h('span',{style:{fontSize:13,color:C.text2,flex:1}},sub.icon+' '+sub.name,
+              customIds.includes(sub.id)&&h('span',{style:{fontSize:9,fontWeight:700,color:C.indigo,background:C.indigolt,padding:'1px 5px',borderRadius:6,marginLeft:6,verticalAlign:'middle'}},'CUSTOM')),
             h('input',{type:'number',value:budgets[sub.id]??0,onChange:e=>setBudgets(b=>({...b,[sub.id]:e.target.value})),
-              style:{width:100,padding:'7px 9px',borderRadius:9,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,fontFamily:'monospace',fontWeight:700,color:C.text,textAlign:'right',outline:'none'}})
+              style:{width:100,padding:'7px 9px',borderRadius:9,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,fontFamily:'monospace',fontWeight:700,color:C.text,textAlign:'right',outline:'none'}}),
+            customIds.includes(sub.id)&&h('button',{onClick:()=>removeSub(sub),style:{border:'none',background:C.redlt,color:C.red,borderRadius:8,width:26,height:26,fontSize:13,cursor:'pointer',flexShrink:0,fontWeight:700}},'\u00D7')
           ))
         );
       })
@@ -1700,13 +1796,25 @@ function App(){
       return{...d,months};
     });
   }
+  // Adds a user-defined subcategory under an existing category — it behaves
+  // exactly like a built-in one everywhere (picker, budgets, History, Budget
+  // Watch) since every read path goes through categoriesFor(data)/allSubsFor(data).
+  function addCustomSub(sub){
+    setData(d=>({...d,customSubs:[...(d.customSubs||[]),sub]}));
+  }
+  // Removes a custom subcategory definition only — any transactions or
+  // budget numbers already recorded against it are left untouched (they'll
+  // just show under a generic fallback icon/name if you ever look them up).
+  function removeCustomSub(id){
+    setData(d=>({...d,customSubs:(d.customSubs||[]).filter(s=>s.id!==id)}));
+  }
   // Zeroes out the browsed month's income and every category/subcategory budget.
   function resetIncomeAndBudgets(ym){
     setData(d=>{
       const months={...d.months};
       const md=cloneMonthEntry(d,months,ym);
       md.income={salary:0,other:0,extras:[]};
-      md.budgets=zeroBudgets();
+      md.budgets=zeroBudgets(d);
       return{...d,months};
     });
   }
@@ -1754,8 +1862,8 @@ function App(){
       page==='dash'       &&h(Dashboard,      {data,month,setMonth,setPage,onQuickCategorize:subId=>{setPrefillSubId(subId);setPage('categorize')}}),
       page==='balances'   &&h(BalancesPage,   {data,month,onSave:(newBal,spendDelta,calc)=>saveBalances(month,newBal,spendDelta,calc),onModeChange:setCardInputMode,onDeleteLog:id=>deleteLogEntry(id,month),onAdjustBuckets:newBuckets=>adjustBuckets(month,newBuckets),onResetBalances:()=>resetBalances(month)}),
       page==='categorize' &&h(CategorizePage, {data,month,prefillSubId,onAddTxn:txn=>addTxn(txn,month),onEditTxn:editTxn,onDeleteTxn:deleteTxn,onResetUncategorized:()=>resetUncategorized(month)}),
-      page==='history'    &&h(HistoryPage,    {data,month,onEditTxn:editTxn,onDeleteTxn:deleteTxn}),
-      page==='settings'   &&h(SettingsPage,   {data,month,onUpdate:settings=>updateSettings(month,settings),onResetIncomeAndBudgets:()=>resetIncomeAndBudgets(month),onResetEverything:resetEverything})
+      page==='history'    &&h(HistoryPage,    {data,month,setMonth,onEditTxn:editTxn,onDeleteTxn:deleteTxn}),
+      page==='settings'   &&h(SettingsPage,   {data,month,onUpdate:settings=>updateSettings(month,settings),onResetIncomeAndBudgets:()=>resetIncomeAndBudgets(month),onResetEverything:resetEverything,onAddCustomSub:addCustomSub,onRemoveCustomSub:removeCustomSub})
     ),
     h('nav',{style:{display:'flex',background:C.chrome,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom,0px)',flexShrink:0,boxShadow:'0 -2px 16px rgba(109,40,217,.08)'}},
       NAV.map(n=>{
