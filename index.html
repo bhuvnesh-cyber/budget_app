@@ -645,7 +645,6 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   const budgetTot=totalBudget(md,data);
   const budgetLeft=budgetTot-catSpentOnly; // budget still available across all categories
   const budgetPct=budgetTot?catSpentOnly/budgetTot*100:0;
-  const[watchFilter,setWatchFilter]=useState('all'); // all | over | near | under
   const[expandedCats,setExpandedCats]=useState({}); // catId -> bool, drill into subcategories inline
 
   // How far through the month "today" is — 0% for a future month, 100% for a
@@ -684,15 +683,16 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
     return{...s,budget:b,spent:sp,left:b-sp,status:statusFor(sp,b),pct:b?sp/b*100:(sp>0?101:0)};
   }).filter(r=>r.budget>0||r.spent>0)
     .sort((a,b)=>b.pct-a.pct);
-  const overCount=allRows.filter(r=>r.status.label==='Over Budget').length;
-  const nearCount=allRows.filter(r=>r.status.label==='Near Budget').length;
-  const underCount=allRows.filter(r=>r.status.label==='Under Budget').length;
-  const watchRows=allRows.filter(r=>
-    watchFilter==='all'?true:
-    watchFilter==='over'?r.status.label==='Over Budget':
-    watchFilter==='near'?r.status.label==='Near Budget':
-    r.status.label==='Under Budget'
-  );
+  // Over Budget: spent at or past its budget (or spent at all with no budget
+  // set — every rupee of that is "extra" since nothing was allocated).
+  // Under Budget: has spending, has a budget, and hasn't reached it yet —
+  // the gap is money still available in that budget.
+  // Categories with ₹0 spent so far are left out of both — nothing to report yet.
+  const overRows=allRows.filter(r=>r.status.label==='Over Budget');
+  const underRows=allRows.filter(r=>r.budget>0&&r.spent>0&&r.spent<r.budget);
+  const totalOverspent=overRows.reduce((s,r)=>s+(r.budget>0?(r.spent-r.budget):r.spent),0);
+  const totalSurplus=underRows.reduce((s,r)=>s+(r.budget-r.spent),0);
+  const netPosition=totalSurplus-totalOverspent;
 
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h(MonthBar,{month,setMonth}),
@@ -843,38 +843,55 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
         h(Bar,{pct:catSpentOnly?s.v/catSpentOnly*100:0,color:s.color})
       ))
     ),
-    /* Budget Watch — filterable cross-category view; collapsed by default
-       since "Spending by Category" above already covers the same ground
-       per-category, this is for the flat "show me everything over budget"
-       view when someone wants it. */
-    allRows.length>0&&h(CollapsibleSection,{title:'Budget Watch',badge:overCount>0?overCount+' over':undefined},
-      h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:600,marginBottom:8,marginTop:-2}},'Tap a row to log an expense against it'),
-      h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:10}},
-        [['all','All',allRows.length,C.indigo],['over','\uD83D\uDD34 Over',overCount,C.red],['near','\uD83D\uDFE0 Near',nearCount,C.orange],['under','\uD83D\uDFE2 Under',underCount,C.green]].map(([key,label,count,col])=>
-          h('button',{key,onClick:()=>setWatchFilter(key),
-            style:{flexShrink:0,padding:'7px 13px',borderRadius:99,border:`1.5px solid ${watchFilter===key?col:C.border}`,background:watchFilter===key?col+'18':C.card2,color:watchFilter===key?col:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},
-            label+' ('+count+')')
+    /* Budget Status — only the categories that actually need attention:
+       what's over budget (so you know how much extra you've spent) and
+       what's under budget but already has spending in it (so you know how
+       much room is genuinely still left). Replaces the old catch-all
+       Budget Watch list. */
+    (overRows.length>0||underRows.length>0)&&h(SectionTitle,null,'Budget Status'),
+    (overRows.length>0||underRows.length>0)&&h('div',{style:{padding:'0 16px'}},
+      h('div',{style:{display:'flex',gap:10,marginBottom:14}},
+        h('div',{style:{flex:1,textAlign:'center',padding:'10px 6px',borderRadius:14,background:C.redlt,border:`1px solid ${C.red}33`}},
+          h('div',{style:{fontSize:10,color:C.red,fontWeight:600,letterSpacing:'.05em'}},'OVERSPENT'),
+          h(AnimatedNumber,{key:month,value:totalOverspent,style:{display:'block',fontSize:19,fontWeight:800,color:C.red,fontFamily:'monospace',letterSpacing:'-.01em'}})
+        ),
+        h('div',{style:{flex:1,textAlign:'center',padding:'10px 6px',borderRadius:14,background:C.greenlt,border:`1px solid ${C.green}33`}},
+          h('div',{style:{fontSize:10,color:C.green,fontWeight:600,letterSpacing:'.05em'}},'STILL AVAILABLE'),
+          h(AnimatedNumber,{key:month,value:totalSurplus,style:{display:'block',fontSize:19,fontWeight:800,color:C.green,fontFamily:'monospace',letterSpacing:'-.01em'}})
         )
       ),
-      watchRows.length===0&&h('div',{style:{textAlign:'center',padding:'24px 0',color:C.text3,fontSize:13,fontWeight:600}},'Nothing in this bucket \uD83C\uDF89'),
-      watchRows.map(r=>{
-        const pctLabel=r.budget?Math.round(r.pct)+'%':(r.spent>0?'\u2014':'0%');
-        return h('div',{key:r.id,onClick:()=>onQuickCategorize&&onQuickCategorize(r.id),style:{display:'flex',alignItems:'center',gap:9,background:C.card2,borderRadius:12,padding:'8px 11px',marginBottom:6,border:`1px solid ${C.border}`,borderLeft:`3px solid ${r.status.color}`,cursor:onQuickCategorize?'pointer':undefined}},
-          h('div',{style:{width:28,height:28,borderRadius:9,background:r.status.color+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.95rem',flexShrink:0}},r.icon),
-          h('div',{style:{flex:1,minWidth:0}},
-            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,marginBottom:3}},
-              h('span',{style:{fontSize:12.5,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},r.name),
-              h('span',{style:{fontSize:11,fontWeight:800,color:r.status.color,flexShrink:0}},pctLabel)
-            ),
-            h(Bar,{pct:r.budget?r.pct:100,color:r.status.color})
+      h('div',{style:{textAlign:'center',fontSize:11.5,fontWeight:700,color:leftColor(netPosition),marginBottom:14}},
+        netPosition>=0?fmtC(netPosition)+' net still within budget overall':fmtC(-netPosition)+' net over budget overall'),
+      overRows.length>0&&h('div',{style:{fontSize:11,fontWeight:700,color:C.red,letterSpacing:'.04em',marginBottom:8}},'\uD83D\uDD34 OVER BUDGET ('+overRows.length+')'),
+      overRows.map(r=>h('div',{key:r.id,onClick:()=>onQuickCategorize&&onQuickCategorize(r.id),style:{display:'flex',alignItems:'center',gap:9,background:C.card,borderRadius:12,padding:'8px 11px',marginBottom:6,boxShadow:C.shadowSm,border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.red}`,cursor:onQuickCategorize?'pointer':undefined}},
+        h('div',{style:{width:28,height:28,borderRadius:9,background:C.red+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.95rem',flexShrink:0}},r.icon),
+        h('div',{style:{flex:1,minWidth:0}},
+          h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,marginBottom:3}},
+            h('span',{style:{fontSize:12.5,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},r.name),
+            h('span',{style:{fontSize:11,fontWeight:800,color:C.red,flexShrink:0}},r.budget>0?fmtC(r.spent-r.budget)+' extra':'no budget set')
           ),
-          h('div',{style:{textAlign:'right',flexShrink:0,minWidth:58}},
-            h('div',{style:{fontSize:11,fontWeight:800,fontFamily:'monospace',color:C.text}},fmtC(r.spent)),
-            h('div',{style:{fontSize:9,fontWeight:700,fontFamily:'monospace',color:r.budget>0?leftColor(r.left):C.text3}},
-              r.budget>0?(r.left>=0?fmtC(r.left)+' left':fmtC(-r.left)+' over'):'no budget')
-          )
-        );
-      })
+          h(Bar,{pct:r.budget?r.pct:100,color:C.red})
+        ),
+        h('div',{style:{textAlign:'right',flexShrink:0,minWidth:50}},
+          h('div',{style:{fontSize:11,fontWeight:800,fontFamily:'monospace',color:C.text}},fmtC(r.spent)),
+          r.budget>0&&h('div',{style:{fontSize:9,fontWeight:700,fontFamily:'monospace',color:C.text3}},'of '+fmtC(r.budget))
+        )
+      )),
+      underRows.length>0&&h('div',{style:{fontSize:11,fontWeight:700,color:C.green,letterSpacing:'.04em',margin:overRows.length>0?'14px 0 8px':'0 0 8px'}},'\uD83D\uDFE2 UNDER BUDGET ('+underRows.length+')'),
+      underRows.map(r=>h('div',{key:r.id,onClick:()=>onQuickCategorize&&onQuickCategorize(r.id),style:{display:'flex',alignItems:'center',gap:9,background:C.card,borderRadius:12,padding:'8px 11px',marginBottom:6,boxShadow:C.shadowSm,border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.green}`,cursor:onQuickCategorize?'pointer':undefined}},
+        h('div',{style:{width:28,height:28,borderRadius:9,background:C.green+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.95rem',flexShrink:0}},r.icon),
+        h('div',{style:{flex:1,minWidth:0}},
+          h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,marginBottom:3}},
+            h('span',{style:{fontSize:12.5,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},r.name),
+            h('span',{style:{fontSize:11,fontWeight:800,color:C.green,flexShrink:0}},fmtC(r.budget-r.spent)+' left')
+          ),
+          h(Bar,{pct:r.pct,color:C.green})
+        ),
+        h('div',{style:{textAlign:'right',flexShrink:0,minWidth:50}},
+          h('div',{style:{fontSize:11,fontWeight:800,fontFamily:'monospace',color:C.text}},fmtC(r.spent)),
+          h('div',{style:{fontSize:9,fontWeight:700,fontFamily:'monospace',color:C.text3}},'of '+fmtC(r.budget))
+        )
+      ))
     ),
     /* Floating quick-add — the single most common action, one tap away from
        anywhere on Home instead of requiring a trip through the bottom nav. */
