@@ -694,6 +694,35 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   const totalSurplus=underRows.reduce((s,r)=>s+(r.budget-r.spent),0);
   const netPosition=totalSurplus-totalOverspent;
 
+  // A short list of derived, genuinely-useful one-liners rather than raw
+  // numbers — each just {icon, before, value, after, color} so the number in
+  // the middle can be bolded separately from the surrounding sentence.
+  const insights=[];
+  if(overRows.length>0||underRows.length>0){
+    insights.push(netPosition>=0
+      ?{icon:'\u2705',before:'You\u2019re ',value:fmtC(netPosition),after:' net under budget across categories with spending.',color:C.green}
+      :{icon:'\u26A0\uFE0F',before:'You\u2019re ',value:fmtC(-netPosition),after:' net over budget across categories with spending.',color:C.red});
+  }
+  if(overRows.length>0){
+    const worst=overRows.map(r=>({...r,extra:r.budget>0?r.spent-r.budget:r.spent})).sort((a,b)=>b.extra-a.extra)[0];
+    insights.push({icon:worst.icon,before:worst.name+' is your biggest overspend \u2014 ',value:fmtC(worst.extra),after:' extra.',color:C.red});
+  }
+  if(underRows.length>0){
+    const roomiest=underRows.map(r=>({...r,room:r.budget-r.spent})).sort((a,b)=>b.room-a.room)[0];
+    insights.push({icon:roomiest.icon,before:roomiest.name+' has the most room left \u2014 ',value:fmtC(roomiest.room),after:' of '+fmtC(roomiest.budget)+' unused.',color:C.green});
+  }
+  if(month===curYm()&&budgetTot>0&&dayOfMonth>0){
+    const projectedTotal=(catSpentOnly/dayOfMonth)*totalDaysInMonth;
+    const projectedDelta=budgetTot-projectedTotal;
+    insights.push(projectedDelta>=0
+      ?{icon:'\uD83D\uDCC8',before:'At your current pace, you\u2019ll finish the month ',value:fmtC(projectedDelta),after:' under your total budget.',color:C.green}
+      :{icon:'\uD83D\uDCC9',before:'At your current pace, you\u2019ll finish the month ',value:fmtC(-projectedDelta),after:' over your total budget.',color:C.red});
+  }
+  if(income>0){
+    const savingsRate=savings/income*100;
+    insights.push({icon:'\uD83D\uDCB0',before:'You\u2019re putting ',value:Math.round(savingsRate)+'%',after:' of this month\u2019s income ('+fmtC(savings)+') into savings.',color:C.purple});
+  }
+
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h(MonthBar,{month,setMonth}),
     /* Month pacing strip — always shown, independent of any budget being set */
@@ -726,6 +755,19 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
         h('div',{style:{fontWeight:700,color:C.green,fontSize:13}},'You\u2019re on track'),
         h('div',{style:{fontSize:11.5,color:C.text2}},'Nothing overspent, everything categorized')
       )
+    ),
+    /* Insights — derived one-liners, led by the net budget position, shown
+       near the top since this is the "so what does it all mean" summary. */
+    insights.length>0&&h('div',{style:{margin:'12px 16px 0',background:C.card,borderRadius:16,boxShadow:C.shadow,border:`1px solid ${C.border}`,overflow:'hidden'}},
+      h('div',{style:{padding:'12px 16px 6px',fontSize:11,fontWeight:700,color:C.text3,letterSpacing:'.05em',textTransform:'uppercase'}},'\uD83D\uDCA1 Insights'),
+      insights.map((ins,i)=>h('div',{key:i,style:{display:'flex',alignItems:'flex-start',gap:9,padding:'7px 16px',paddingBottom:i===insights.length-1?12:7,borderTop:i>0?`1px solid ${C.border}`:'none',marginTop:i>0?4:0}},
+        h('span',{style:{fontSize:'0.95rem',flexShrink:0,lineHeight:1.5}},ins.icon),
+        h('span',{style:{fontSize:12.5,color:C.text2,fontWeight:600,lineHeight:1.5}},
+          ins.before,
+          h('span',{style:{fontWeight:800,color:ins.color,fontFamily:'monospace'}},ins.value),
+          ins.after
+        )
+      ))
     ),
     /* Summary cards */
     h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,padding:'14px 16px 4px'}},
