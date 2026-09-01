@@ -94,6 +94,38 @@ const SOURCES=[
   {id:'yes',  name:'YES Credit Card',short:'YES',  color:'#D97706'},
 ];
 const getSrc=id=>SOURCES.find(s=>s.id===id)||SOURCES[0];
+// The subcategory ids used most recently across ALL months (not just the one
+// you're browsing), most-recent-first with duplicates collapsed — powers the
+// "Recently Used" quick-pick chips on Categorize.
+function recentSubIds(data,limit,exclude){
+  const ex=exclude||[];
+  const all=[];
+  Object.keys(data.months).forEach(ym=>{
+    (data.months[ym].transactions||[]).forEach(t=>all.push(t));
+  });
+  all.sort((a,b)=>b.date.localeCompare(a.date)||(b.id>a.id?1:-1));
+  const seen=[];
+  for(const t of all){
+    if(ex.includes(t.subId))continue;
+    if(!seen.includes(t.subId))seen.push(t.subId);
+    if(seen.length>=limit)break;
+  }
+  return seen;
+}
+// The most recent transaction logged last month for each Fixed Expenses
+// subcategory (Rent, WiFi, Milk, etc) that hasn't already been logged THIS
+// month — these are the recurring bills a "Repeat from Last Month" chip can
+// one-tap prefill (category, subcategory, amount, and source).
+function lastMonthFixedEntries(data,month,md){
+  const prevMd=getMonth(data,prevM(month));
+  const fixedIds=CATEGORIES.find(c=>c.id==='fixed').subs.map(s=>s.id);
+  const latest={};
+  prevMd.transactions.forEach(t=>{
+    if(!fixedIds.includes(t.subId))return;
+    if(!latest[t.subId]||t.date>latest[t.subId].date)latest[t.subId]=t;
+  });
+  return Object.values(latest).filter(t=>subSpent(md,t.subId)<=0);
+}
 
 /* ══════════════════════════ HELPERS ══════════════════════════ */
 const fmt=n=>'\u20B9'+Math.round((parseFloat(n)||0)*100)/100;
@@ -245,9 +277,78 @@ function Sheet({onClose,children}){
 function SectionTitle({children}){
   return h('div',{style:{fontSize:11,fontWeight:600,letterSpacing:'.06em',textTransform:'uppercase',color:C.text3,margin:'20px 16px 9px',paddingTop:14,borderTop:`1px solid ${C.border}`}},children);
 }
+// Formats a raw numeric string with Indian comma grouping (e.g. "12000" ->
+// "12,000") for DISPLAY only — the underlying value stays a plain number
+// string so every existing +value cast keeps working unchanged.
+function fmtInputIN(v){
+  if(v===''||v===null||v===undefined)return '';
+  const n=parseFloat(v);
+  if(isNaN(n))return v;
+  return n.toLocaleString('en-IN',{maximumFractionDigits:2});
+}
+// Amount input that shows comma-grouped digits when idle (₹12,000) but
+// switches to the raw editable string the instant you tap in, so typing
+// never fights a cursor jump caused by punctuation being inserted mid-edit.
 function NumField({value,onChange,placeholder}){
-  return h('input',{type:'number',inputMode:'decimal',value,onChange:e=>onChange(e.target.value),placeholder:placeholder||'0',
+  const[focused,setFocused]=useState(false);
+  const display=focused?value:fmtInputIN(value);
+  return h('input',{type:'text',inputMode:'decimal',value:display,
+    onFocus:()=>setFocused(true),
+    onBlur:()=>setFocused(false),
+    onChange:e=>{
+      let raw=e.target.value.replace(/[^0-9.]/g,'');
+      const parts=raw.split('.');
+      if(parts.length>2)raw=parts[0]+'.'+parts.slice(1).join('');
+      onChange(raw);
+    },
+    placeholder:placeholder||'0',
     style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,fontSize:15,fontFamily:'monospace',fontWeight:700,color:C.text,background:C.card2,outline:'none'}});
+}
+// Wraps a transaction row so dragging it left reveals a Delete action —
+// the standard mobile swipe-to-delete pattern. Uses Pointer Events (covers
+// touch AND mouse, so it also works while previewing on desktop). A small
+// movement threshold means normal taps on the Edit button inside still work
+// fine — we only "steal" the gesture once it's clearly a horizontal drag,
+// and bail out immediately if the drag turns out to be a vertical scroll.
+function SwipeRow({onDelete,children}){
+  const[dx,setDx]=useState(0);
+  const drag=useRef({active:false,swiping:false,startX:0,startY:0,startDx:0});
+  function onDown(e){
+    drag.current={active:true,swiping:false,startX:e.clientX,startY:e.clientY,startDx:dx};
+  }
+  function onMove(e){
+    const d=drag.current;
+    if(!d.active)return;
+    const deltaX=e.clientX-d.startX, deltaY=e.clientY-d.startY;
+    if(!d.swiping){
+      if(Math.abs(deltaX)>10&&Math.abs(deltaX)>Math.abs(deltaY)*1.3){d.swiping=true}
+      else if(Math.abs(deltaY)>10){d.active=false;return}
+      else return;
+    }
+    setDx(Math.max(-160,Math.min(0,d.startDx+deltaX)));
+  }
+  function onUp(){
+    const d=drag.current;
+    if(!d.active){return}
+    const wasSwiping=d.swiping;
+    d.active=false;d.swiping=false;
+    if(!wasSwiping)return;
+    setDx(cur=>{
+      if(cur<-120){onDelete();return 0}
+      if(cur<-40)return -84;
+      return 0;
+    });
+  }
+  return h('div',{style:{position:'relative',overflow:'hidden'}},
+    h('div',{style:{position:'absolute',inset:0,display:'flex',justifyContent:'flex-end'}},
+      h('button',{onClick:onDelete,
+        style:{width:84,border:'none',background:C.red,color:'#fff',fontWeight:700,fontSize:10.5,cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3}},
+        h('span',{style:{fontSize:16}},'\uD83D\uDDD1\uFE0F'),'Delete')
+    ),
+    h('div',{onPointerDown:onDown,onPointerMove:onMove,onPointerUp:onUp,onPointerLeave:onUp,
+      style:{position:'relative',background:C.card,transform:`translateX(${dx}px)`,transition:drag.current.swiping?'none':'transform .25s',touchAction:'pan-y'}},
+      children)
+  );
 }
 
 /* ══════════════════════════ SAVE & BACKUP ══════════════════════════ */
@@ -418,7 +519,7 @@ function SaveBar({data,setData,month}){
 // per-week figure as a compact row of color-coded chips. Weeks run
 // Sun-ending: W1 = day 1 through the first Sunday, etc, with any trailing
 // days folded into the last week.
-function WeeklyInsights({data,md,month}){
+function WeeklyInsights({data,md,month,onQuickCategorize}){
   const cat=CATEGORIES.find(c=>c.id==='variable');
   const weekRanges=weekRangesForMonth(month);
   const numWeeks=weekRanges.length;
@@ -443,7 +544,7 @@ function WeeklyInsights({data,md,month}){
   return h(React.Fragment,null,
     h(SectionTitle,null,'Weekly Insight \u2014 Variable Expenses'),
     h('div',{style:{padding:'0 16px',display:'flex',flexDirection:'column',gap:10}},
-      rows.map(r=>h('div',{key:r.sub.id,style:{background:C.card,borderRadius:14,padding:'10px 12px',boxShadow:C.shadowSm,border:`1px solid ${C.border}`}},
+      rows.map(r=>h('div',{key:r.sub.id,onClick:()=>onQuickCategorize&&onQuickCategorize(r.sub.id),style:{background:C.card,borderRadius:14,padding:'10px 12px',boxShadow:C.shadowSm,border:`1px solid ${C.border}`,cursor:onQuickCategorize?'pointer':undefined}},
         h('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:8}},
           h('div',{style:{width:26,height:26,borderRadius:8,background:cat.color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.95rem',flexShrink:0}},r.sub.icon),
           h('span',{style:{fontSize:12.5,fontWeight:700,color:C.text,flex:1}},r.sub.name),
@@ -465,7 +566,7 @@ function WeeklyInsights({data,md,month}){
 }
 
 /* ══════════════════════════ DASHBOARD ══════════════════════════ */
-function Dashboard({data,month,setMonth,setPage}){
+function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   const md=getMonth(data,month);
   const income=monthIncome(md);
   const catSpentOnly=totalSpent(md); // what you've actually categorized as an expense
@@ -527,7 +628,7 @@ function Dashboard({data,month,setMonth,setPage}){
       ),
       h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.red,fontSize:16}},'+'+fmtC(overspent))
     ),
-    uncatTotal>0.5 && h('div',{onClick:()=>setPage('categorize'),style:{margin:'12px 16px 0',padding:'14px 16px',borderRadius:16,background:C.orangelt,border:`1.5px solid ${C.orange}`,display:'flex',alignItems:'center',gap:12,cursor:'pointer'}},
+    uncatTotal>0.5 && h('div',{onClick:()=>{onQuickCategorize?onQuickCategorize(null):setPage('categorize')},style:{margin:'12px 16px 0',padding:'14px 16px',borderRadius:16,background:C.orangelt,border:`1.5px solid ${C.orange}`,display:'flex',alignItems:'center',gap:12,cursor:'pointer'}},
       h('span',{style:{fontSize:'1.6rem'}},'\u26A0\uFE0F'),
       h('div',{style:{flex:1}},
         h('div',{style:{fontWeight:800,color:C.orange,fontSize:14}},'Uncategorized Spending'),
@@ -624,7 +725,7 @@ function Dashboard({data,month,setMonth,setPage}){
       ))
     ),
     /* Weekly Insight — Variable Expenses only */
-    h(WeeklyInsights,{data,md,month}),
+    h(WeeklyInsights,{data,md,month,onQuickCategorize}),
     /* Payment source split */
     h(SectionTitle,null,'Payment Source Split'),
     h('div',{style:{padding:'0 16px'}},
@@ -638,6 +739,7 @@ function Dashboard({data,month,setMonth,setPage}){
     ),
     /* Budget Watch — cooler, filterable, shows everything */
     allRows.length>0&&h(SectionTitle,null,'Budget Watch'),
+    allRows.length>0&&h('div',{style:{padding:'0 16px 6px',fontSize:10.5,color:C.text3,fontWeight:600,marginTop:-4}},'Tap a row to log an expense against it'),
     allRows.length>0&&h('div',{style:{padding:'0 16px 10px'}},
       h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:2}},
         [['all','All',allRows.length,C.indigo],['over','\uD83D\uDD34 Over',overCount,C.red],['near','\uD83D\uDFE0 Near',nearCount,C.orange],['under','\uD83D\uDFE2 Under',underCount,C.green]].map(([key,label,count,col])=>
@@ -651,7 +753,7 @@ function Dashboard({data,month,setMonth,setPage}){
       watchRows.length===0&&h('div',{style:{textAlign:'center',padding:'24px 0',color:C.text3,fontSize:13,fontWeight:600}},'Nothing in this bucket \uD83C\uDF89'),
       watchRows.map(r=>{
         const pctLabel=r.budget?Math.round(r.pct)+'%':(r.spent>0?'\u2014':'0%');
-        return h('div',{key:r.id,style:{display:'flex',alignItems:'center',gap:9,background:C.card,borderRadius:12,padding:'8px 11px',marginBottom:6,boxShadow:C.shadowSm,border:`1px solid ${C.border}`,borderLeft:`3px solid ${r.status.color}`}},
+        return h('div',{key:r.id,onClick:()=>onQuickCategorize&&onQuickCategorize(r.id),style:{display:'flex',alignItems:'center',gap:9,background:C.card,borderRadius:12,padding:'8px 11px',marginBottom:6,boxShadow:C.shadowSm,border:`1px solid ${C.border}`,borderLeft:`3px solid ${r.status.color}`,cursor:onQuickCategorize?'pointer':undefined}},
           h('div',{style:{width:28,height:28,borderRadius:9,background:r.status.color+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.95rem',flexShrink:0}},r.icon),
           h('div',{style:{flex:1,minWidth:0}},
             h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,marginBottom:3}},
@@ -866,18 +968,24 @@ function BalancesPage({data,month,onSave,onModeChange,onDeleteLog,onAdjustBucket
 }
 
 /* ══════════════════════════ CATEGORIZE PAGE ══════════════════════════ */
-function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncategorized}){
+function CategorizePage({data,month,prefillSubId,onAddTxn,onEditTxn,onDeleteTxn,onResetUncategorized}){
   const md=getMonth(data,month);
   const buckets=md.uncategorized;
   const total=uncategorizedTotal(md);
+  const prefillSub=prefillSubId?getSubFor(prefillSubId,data):null;
   const[amount,setAmount]=useState('');
-  const[catId,setCatId]=useState('');
-  const[subId,setSubId]=useState('');
+  const[catId,setCatId]=useState(prefillSub?prefillSub.catId:'');
+  const[subId,setSubId]=useState(prefillSubId||'');
   const[source,setSource]=useState('debit');
   const[desc,setDesc]=useState('');
   const[date,setDate]=useState(month===curYm()?today():month+'-01');
   const[err,setErr]=useState('');
+  const[errField,setErrField]=useState(null); // 'amount' | 'cat' | 'sub' | null
   const[editing,setEditing]=useState(null); // {ym,txn}
+
+  const amountWrapRef=useRef(null);
+  const catRowRef=useRef(null);
+  const subGridRef=useRef(null);
 
   const cat=categoriesFor(data).find(c=>c.id===catId);
   const availForSource=buckets[source]||0;
@@ -885,16 +993,33 @@ function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncate
   // of this expense before you file it.
   const subLeft=subId?subBudget(md,subId)-subSpent(md,subId):null;
 
+  // Scrolls to and briefly highlights whichever field caused a validation
+  // error, instead of leaving the person to hunt for a small red line of text.
+  function flagField(field,ref){
+    setErrField(field);
+    ref.current&&ref.current.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>setErrField(f=>f===field?null:f),1600);
+  }
+  const ringStyle=on=>on?{boxShadow:`0 0 0 3px ${C.red}33`,borderRadius:14}:null;
+
   function save(){
     const amt=+amount;
-    if(!amt||amt<=0){setErr('Enter a valid amount');return}
-    if(!subId){setErr('Pick a category & subcategory');return}
-    if(amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s uncategorized balance ('+fmtC(availForSource)+')');return}
+    if(!amt||amt<=0){setErr('Enter a valid amount');flagField('amount',amountWrapRef);return}
+    if(!subId){
+      setErr('Pick a category & subcategory');
+      if(!catId)flagField('cat',catRowRef);else flagField('sub',subGridRef);
+      return;
+    }
+    if(amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s uncategorized balance ('+fmtC(availForSource)+')');flagField('amount',amountWrapRef);return}
     onAddTxn({id:genId(),date,amount:amt,catId,subId,source,desc:desc.trim()});
-    setAmount('');setCatId('');setSubId('');setDesc('');setErr('');
+    setAmount('');setCatId('');setSubId('');setDesc('');setErr('');setErrField(null);
   }
 
+  function pickSub(sub){setCatId(sub.catId);setSubId(sub.id)}
+
   const recent=md.transactions.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.id>a.id?1:-1)).slice(0,8);
+  const repeatEntries=lastMonthFixedEntries(data,month,md);
+  const recentIds=recentSubIds(data,5,repeatEntries.map(t=>t.subId));
 
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h('div',{style:{padding:'16px 16px 0'}},
@@ -912,23 +1037,54 @@ function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncate
       total>0.5&&h('button',{onClick:()=>{if(confirm('Reset all uncategorized amounts (Debit/SBI/YES) to \u20B90 for '+monthLabel(month)+'? Already-categorized expenses are NOT affected \u2014 this just clears the pending pool.'))onResetUncategorized()},
         style:{width:'100%',marginTop:10,padding:'9px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:'transparent',color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}},'Reset Uncategorized to \u20B90')
     ),
+    /* Repeat from Last Month — recurring fixed bills, one tap prefills category, sub AND amount */
+    repeatEntries.length>0&&h(SectionTitle,null,'Repeat from Last Month'),
+    repeatEntries.length>0&&h('div',{style:{padding:'0 16px'}},
+      h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
+        repeatEntries.map(t=>{
+          const sub=getSubFor(t.subId,data);
+          return h('button',{key:t.subId,onClick:()=>{pickSub(sub);setAmount(String(t.amount));setSource(t.source)},
+            style:{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'flex-start',gap:2,padding:'8px 12px',borderRadius:12,border:`1.5px solid ${C.border2}`,background:C.card,cursor:'pointer',fontFamily:'inherit',boxShadow:C.shadowSm}},
+            h('span',{style:{fontSize:11.5,fontWeight:700,color:C.text,whiteSpace:'nowrap'}},sub.icon+' '+sub.name),
+            h('span',{style:{fontSize:11,fontWeight:800,fontFamily:'monospace',color:C.indigo}},fmtC(t.amount))
+          );
+        })
+      )
+    ),
+    /* Recently Used — one tap just picks the category/subcategory */
+    recentIds.length>0&&h(SectionTitle,null,'Recently Used'),
+    recentIds.length>0&&h('div',{style:{padding:'0 16px'}},
+      h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
+        recentIds.map(id=>{
+          const sub=getSubFor(id,data);
+          return h('button',{key:id,onClick:()=>pickSub(sub),
+            style:{flexShrink:0,display:'flex',alignItems:'center',gap:6,padding:'8px 12px',borderRadius:99,border:`1.5px solid ${subId===id?sub.catColor:C.border}`,background:subId===id?sub.catColor+'18':C.card2,color:subId===id?sub.catColor:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},
+            sub.icon+' '+sub.name);
+        })
+      )
+    ),
     h(SectionTitle,null,'Add Expense'),
     h('div',{style:{padding:'0 16px'}},
-      h('div',{style:{marginBottom:6}},h(NumField,{value:amount,onChange:setAmount,placeholder:'Amount'})),
+      h('div',{ref:amountWrapRef,style:{marginBottom:6,transition:'box-shadow .2s',...ringStyle(errField==='amount')}},h(NumField,{value:amount,onChange:setAmount,placeholder:'Amount'})),
       h('div',{style:{fontSize:11.5,color:C.text3,marginBottom:12}},'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
-      h('div',{style:{marginBottom:12}},
+      h('div',{ref:catRowRef,style:{marginBottom:12,transition:'box-shadow .2s',padding:errField==='cat'?4:0,...ringStyle(errField==='cat')}},
         h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
           CATEGORIES.map(c=>h('button',{key:c.id,onClick:()=>{setCatId(c.id);setSubId('')},
             style:{flexShrink:0,padding:'8px 12px',borderRadius:10,border:`1.5px solid ${catId===c.id?c.color:C.border}`,background:catId===c.id?c.color+'18':C.card2,color:catId===c.id?c.color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},
             c.icon+' '+c.name))
         )
       ),
-      cat&&h('div',{style:{marginBottom:12,display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}},
-        cat.subs.map(s=>h('button',{key:s.id,onClick:()=>setSubId(s.id),
-          style:{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'9px 4px',borderRadius:12,border:`1.5px solid ${subId===s.id?cat.color:C.border}`,background:subId===s.id?cat.color+'18':C.card2,cursor:'pointer',fontFamily:'inherit'}},
-          h('span',{style:{fontSize:'1.15rem'}},s.icon),
-          h('span',{style:{fontSize:10,fontWeight:700,color:subId===s.id?cat.color:C.text2,textAlign:'center',lineHeight:1.2}},s.name)
-        ))
+      cat&&h('div',{ref:subGridRef,style:{marginBottom:12,display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,transition:'box-shadow .2s',padding:errField==='sub'?4:0,...ringStyle(errField==='sub')}},
+        cat.subs.map(s=>{
+          const sBudget=subBudget(md,s.id);
+          const sStatus=sBudget>0?statusFor(subSpent(md,s.id),sBudget):null;
+          return h('button',{key:s.id,onClick:()=>setSubId(s.id),
+            style:{position:'relative',display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'9px 4px',borderRadius:12,border:`1.5px solid ${subId===s.id?cat.color:C.border}`,background:subId===s.id?cat.color+'18':C.card2,cursor:'pointer',fontFamily:'inherit'}},
+            sStatus&&h('span',{style:{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:99,background:sStatus.color,border:'1.5px solid #fff'}}),
+            h('span',{style:{fontSize:'1.15rem'}},s.icon),
+            h('span',{style:{fontSize:10,fontWeight:700,color:subId===s.id?cat.color:C.text2,textAlign:'center',lineHeight:1.2}},s.name)
+          );
+        })
       ),
       subId&&h('div',{style:{fontSize:11.5,fontWeight:700,fontFamily:'monospace',color:subLeft>=0?C.green:C.red,marginBottom:12,marginTop:-2}},
         subBudget(md,subId)>0
@@ -943,6 +1099,7 @@ function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncate
       ),
       h('div',{style:{display:'flex',gap:8,marginBottom:12}},
         h('input',{type:'date',value:date,onChange:e=>setDate(e.target.value),style:{flex:1,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none'}}),
+        date!==today()&&h('button',{onClick:()=>setDate(today()),style:{padding:'0 16px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,color:C.indigo,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},'Today')
       ),
       h('input',{value:desc,onChange:e=>setDesc(e.target.value),placeholder:'\uD83D\uDCDD Description (optional)',
         style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:14,color:C.text,fontFamily:'inherit',outline:'none',marginBottom:12}}),
@@ -954,19 +1111,20 @@ function CategorizePage({data,month,onAddTxn,onEditTxn,onDeleteTxn,onResetUncate
       h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
         recent.map((t,i)=>{
           const sub=getSubFor(t.subId,data),src=getSrc(t.source);
-          return h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:8,padding:'11px 14px',borderBottom:i<recent.length-1?`1px solid ${C.border}`:'none'}},
-            h('div',{style:{width:32,height:32,borderRadius:10,background:sub.catColor+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',flexShrink:0}},sub.icon),
-            h('div',{style:{flex:1,minWidth:0}},
-              h('div',{style:{fontSize:13,fontWeight:700,color:C.text}},sub.name),
-              h('div',{style:{fontSize:11,color:C.text3}},src.short+(t.desc?' \u00B7 '+t.desc:'')+' \u00B7 '+t.date)
-            ),
-            h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.red,fontSize:14,marginRight:2}},'\u2212'+fmt(t.amount)),
-            h('button',{onClick:()=>setEditing({ym:month,txn:t}),style:{border:'none',background:C.card2,color:C.text2,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\u270F\uFE0F'),
-            h('button',{onClick:()=>{if(confirm('Delete this expense? '+fmtC(t.amount)+' will be added back to '+src.short+'\u2019s uncategorized balance for '+monthLabel(t.originYm||month)+'.'))onDeleteTxn(month,t)},
-              style:{border:'none',background:C.redlt,color:C.red,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\uD83D\uDDD1\uFE0F')
+          return h(SwipeRow,{key:t.id,onDelete:()=>{if(confirm('Delete this expense? '+fmtC(t.amount)+' will be added back to '+src.short+'\u2019s uncategorized balance for '+monthLabel(t.originYm||month)+'.'))onDeleteTxn(month,t)}},
+            h('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'11px 14px',borderBottom:i<recent.length-1?`1px solid ${C.border}`:'none'}},
+              h('div',{style:{width:32,height:32,borderRadius:10,background:sub.catColor+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',flexShrink:0}},sub.icon),
+              h('div',{style:{flex:1,minWidth:0}},
+                h('div',{style:{fontSize:13,fontWeight:700,color:C.text}},sub.name),
+                h('div',{style:{fontSize:11,color:C.text3}},src.short+(t.desc?' \u00B7 '+t.desc:'')+' \u00B7 '+t.date)
+              ),
+              h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.red,fontSize:14,marginRight:2}},'\u2212'+fmt(t.amount)),
+              h('button',{onClick:()=>setEditing({ym:month,txn:t}),style:{border:'none',background:C.card2,color:C.text2,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\u270F\uFE0F')
+            )
           );
         })
-      )
+      ),
+      h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:600,textAlign:'center',marginTop:6}},'\u2190 Swipe a row to delete')
     ),
     editing&&h(Sheet,{onClose:()=>setEditing(null)},
       h(EditTxnSheet,{data,ym:editing.ym,txn:editing.txn,onClose:()=>setEditing(null),
@@ -984,6 +1142,11 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
   const[desc,setDesc]=useState(txn.desc||'');
   const[date,setDate]=useState(txn.date);
   const[err,setErr]=useState('');
+  const[errField,setErrField]=useState(null);
+
+  const amountWrapRef=useRef(null);
+  const catRowRef=useRef(null);
+  const subGridRef=useRef(null);
 
   const cat=categoriesFor(data).find(c=>c.id===catId);
   const originYm=txn.originYm||ym;
@@ -992,11 +1155,22 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
   // amount were already given back (since editing may keep or change source).
   const availForSource=(originMd.uncategorized[source]||0)+(source===txn.source?txn.amount:0);
 
+  function flagField(field,ref){
+    setErrField(field);
+    ref.current&&ref.current.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>setErrField(f=>f===field?null:f),1600);
+  }
+  const ringStyle=on=>on?{boxShadow:`0 0 0 3px ${C.red}33`,borderRadius:14}:null;
+
   function save(){
     const amt=+amount;
-    if(!amt||amt<=0){setErr('Enter a valid amount');return}
-    if(!subId){setErr('Pick a category & subcategory');return}
-    if(amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s available balance ('+fmtC(availForSource)+')');return}
+    if(!amt||amt<=0){setErr('Enter a valid amount');flagField('amount',amountWrapRef);return}
+    if(!subId){
+      setErr('Pick a category & subcategory');
+      if(!catId)flagField('cat',catRowRef);else flagField('sub',subGridRef);
+      return;
+    }
+    if(amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s available balance ('+fmtC(availForSource)+')');flagField('amount',amountWrapRef);return}
     onSave({amount:amt,catId,subId,source,desc:desc.trim(),date});
     onClose();
   }
@@ -1006,28 +1180,36 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
       h('div',{style:{width:40,height:4,borderRadius:99,background:C.border2}})
     ),
     h('div',{style:{padding:'14px 20px 0',fontSize:17,fontWeight:800,color:C.text}},'Edit Expense'),
-    h('div',{style:{padding:'12px 20px 0'}},h(NumField,{value:amount,onChange:setAmount,placeholder:'Amount'})),
+    h('div',{ref:amountWrapRef,style:{padding:'12px 20px 0',transition:'box-shadow .2s',...ringStyle(errField==='amount')}},h(NumField,{value:amount,onChange:setAmount,placeholder:'Amount'})),
     h('div',{style:{padding:'6px 20px 12px',fontSize:11.5,color:C.text3}},'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
-    h('div',{style:{padding:'0 20px 12px'}},
+    h('div',{ref:catRowRef,style:{padding:'0 20px 12px',transition:'box-shadow .2s',...ringStyle(errField==='cat')}},
       h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
         CATEGORIES.map(c=>h('button',{key:c.id,onClick:()=>{setCatId(c.id);if(c.id!==catId)setSubId('')},
           style:{flexShrink:0,padding:'8px 12px',borderRadius:10,border:`1.5px solid ${catId===c.id?c.color:C.border}`,background:catId===c.id?c.color+'18':C.card2,color:catId===c.id?c.color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},
           c.icon+' '+c.name))
       )
     ),
-    cat&&h('div',{style:{padding:'0 20px 12px',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}},
-      cat.subs.map(s=>h('button',{key:s.id,onClick:()=>setSubId(s.id),
-        style:{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'9px 4px',borderRadius:12,border:`1.5px solid ${subId===s.id?cat.color:C.border}`,background:subId===s.id?cat.color+'18':C.card2,cursor:'pointer',fontFamily:'inherit'}},
-        h('span',{style:{fontSize:'1.15rem'}},s.icon),
-        h('span',{style:{fontSize:10,fontWeight:700,color:subId===s.id?cat.color:C.text2,textAlign:'center',lineHeight:1.2}},s.name)
-      ))
+    cat&&h('div',{ref:subGridRef,style:{padding:'0 20px 12px',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,transition:'box-shadow .2s',...ringStyle(errField==='sub')}},
+      cat.subs.map(s=>{
+        const sBudget=subBudget(originMd,s.id);
+        const sStatus=sBudget>0?statusFor(subSpent(originMd,s.id),sBudget):null;
+        return h('button',{key:s.id,onClick:()=>setSubId(s.id),
+          style:{position:'relative',display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'9px 4px',borderRadius:12,border:`1.5px solid ${subId===s.id?cat.color:C.border}`,background:subId===s.id?cat.color+'18':C.card2,cursor:'pointer',fontFamily:'inherit'}},
+          sStatus&&h('span',{style:{position:'absolute',top:5,right:5,width:8,height:8,borderRadius:99,background:sStatus.color,border:'1.5px solid #fff'}}),
+          h('span',{style:{fontSize:'1.15rem'}},s.icon),
+          h('span',{style:{fontSize:10,fontWeight:700,color:subId===s.id?cat.color:C.text2,textAlign:'center',lineHeight:1.2}},s.name)
+        );
+      })
     ),
     h('div',{style:{display:'flex',gap:8,padding:'0 20px 12px'}},
       SOURCES.map(s=>h('button',{key:s.id,onClick:()=>setSource(s.id),
         style:{flex:1,padding:'9px',borderRadius:10,border:`1.5px solid ${source===s.id?s.color:C.border}`,background:source===s.id?s.color+'18':C.card2,color:source===s.id?s.color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}},s.short))
     ),
     h('div',{style:{padding:'0 20px 12px'}},
-      h('input',{type:'date',value:date,onChange:e=>setDate(e.target.value),style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none'}})
+      h('div',{style:{display:'flex',gap:8}},
+        h('input',{type:'date',value:date,onChange:e=>setDate(e.target.value),style:{flex:1,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none'}}),
+        date!==today()&&h('button',{onClick:()=>setDate(today()),style:{padding:'0 16px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:C.card2,color:C.indigo,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},'Today')
+      )
     ),
     h('div',{style:{padding:'0 20px 12px'}},
       h('input',{value:desc,onChange:e=>setDesc(e.target.value),placeholder:'\uD83D\uDCDD Description (optional)',
@@ -1087,19 +1269,20 @@ function HistoryPage({data,month,onEditTxn,onDeleteTxn}){
       h('div',{style:{background:C.card,borderRadius:14,overflow:'hidden',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
         txns.map((t,i)=>{
           const sub=getSubFor(t.subId,data),src=getSrc(t.source);
-          return h('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:8,padding:'11px 14px',borderBottom:i<txns.length-1?`1px solid ${C.border}`:'none'}},
-            h('div',{style:{width:36,height:36,borderRadius:11,background:sub.catColor+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.05rem',flexShrink:0}},sub.icon),
-            h('div',{style:{flex:1,minWidth:0}},
-              h('div',{style:{fontSize:13,fontWeight:700,color:C.text}},sub.name),
-              h('div',{style:{fontSize:11,color:C.text3}},t.date+' \u00B7 '+src.short+(t.desc?' \u00B7 '+t.desc:''))
-            ),
-            h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.red,fontSize:13,marginRight:2}},'\u2212'+fmt(t.amount)),
-            h('button',{onClick:()=>setEditing({ym:t.ym,txn:t}),style:{border:'none',background:C.card2,color:C.text2,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\u270F\uFE0F'),
-            h('button',{onClick:()=>{if(confirm('Delete this expense? '+fmtC(t.amount)+' will be added back to '+getSrc(t.source).short+'\u2019s uncategorized balance for '+monthLabel(t.originYm||t.ym)+'.'))onDeleteTxn(t.ym,t)},
-              style:{border:'none',background:C.redlt,color:C.red,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\uD83D\uDDD1\uFE0F')
+          return h(SwipeRow,{key:t.id,onDelete:()=>{if(confirm('Delete this expense? '+fmtC(t.amount)+' will be added back to '+getSrc(t.source).short+'\u2019s uncategorized balance for '+monthLabel(t.originYm||t.ym)+'.'))onDeleteTxn(t.ym,t)}},
+            h('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'11px 14px',borderBottom:i<txns.length-1?`1px solid ${C.border}`:'none'}},
+              h('div',{style:{width:36,height:36,borderRadius:11,background:sub.catColor+'20',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.05rem',flexShrink:0}},sub.icon),
+              h('div',{style:{flex:1,minWidth:0}},
+                h('div',{style:{fontSize:13,fontWeight:700,color:C.text}},sub.name),
+                h('div',{style:{fontSize:11,color:C.text3}},t.date+' \u00B7 '+src.short+(t.desc?' \u00B7 '+t.desc:''))
+              ),
+              h('span',{style:{fontFamily:'monospace',fontWeight:800,color:C.red,fontSize:13,marginRight:2}},'\u2212'+fmt(t.amount)),
+              h('button',{onClick:()=>setEditing({ym:t.ym,txn:t}),style:{border:'none',background:C.card2,color:C.text2,borderRadius:9,width:30,height:30,fontSize:13,cursor:'pointer',flexShrink:0}},'\u270F\uFE0F')
+            )
           );
         })
-      )
+      ),
+      h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:600,textAlign:'center',marginTop:6}},'\u2190 Swipe a row to delete')
     ),
     editing&&h(Sheet,{onClose:()=>setEditing(null)},
       h(EditTxnSheet,{data,ym:editing.ym,txn:editing.txn,onClose:()=>setEditing(null),
@@ -1132,6 +1315,19 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
   function addExtra(){setExtras(e=>[...e,{id:genId(),name:'',amount:''}])}
   function updExtra(id,field,val){setExtras(e=>e.map(x=>x.id===id?{...x,[field]:val}:x))}
   function delExtra(id){setExtras(e=>e.filter(x=>x.id!==id))}
+
+  // Pulls the previous month's income & budget numbers into these fields so
+  // they can be reviewed and tweaked instead of retyped from scratch — this
+  // does NOT save automatically, "Save Settings" below still applies it.
+  const prevYm=prevM(month);
+  const prevMd=getMonth(data,prevYm);
+  const prevHasData=monthIncome(prevMd)>0||totalBudget(prevMd)>0;
+  function copyFromPrevious(){
+    setSalary(String(prevMd.income.salary||''));
+    setOther(String(prevMd.income.other||''));
+    setExtras(prevMd.income.extras.map(e=>({...e})));
+    setBudgets({...prevMd.budgets});
+  }
 
   function saveAll(){
     onUpdate({
@@ -1167,7 +1363,10 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
     h('div',{style:{padding:'16px 16px 0'}},
       h('div',{style:{fontSize:20,fontWeight:800,color:C.text}},'Settings'),
-      h('div',{style:{fontSize:12.5,color:C.text3,marginTop:2}},'Editing income & budgets for '+monthLabel(month)+'. Switch months from Home to edit a different month.')
+      h('div',{style:{fontSize:12.5,color:C.text3,marginTop:2}},'Editing income & budgets for '+monthLabel(month)+'. Switch months from Home to edit a different month.'),
+      prevHasData&&h('button',{onClick:()=>{if(confirm('Copy income and every category budget from '+monthLabel(prevYm)+' into '+monthLabel(month)+'\u2019s form below? Nothing is saved until you tap Save Settings, so you can review or tweak first.'))copyFromPrevious()},
+        style:{width:'100%',marginTop:10,padding:'10px',borderRadius:10,border:`1.5px dashed ${C.border2}`,background:C.indigolt,color:C.indigo,fontWeight:700,fontSize:12.5,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}},
+        '\u21BB Copy Income & Budgets from '+monthLabel(prevYm))
     ),
     h(SectionTitle,null,'Income \u2014 '+monthLabel(month)),
     h('div',{style:{padding:'0 16px'}},
@@ -1278,6 +1477,11 @@ function App(){
   });
   const[page,setPage]=useState('dash');
   const[month,setMonth]=useState(curYm());
+  // Set only by the Dashboard's "tap a row to log an expense" shortcut, so
+  // Categorize opens pre-filled with that subcategory already picked. Cleared
+  // whenever the person navigates to Categorize any other way, so it never
+  // lingers and silently pre-fills a later, unrelated visit.
+  const[prefillSubId,setPrefillSubId]=useState(null);
 
   useEffect(()=>{lsSave(SK,data)},[data]);
 
@@ -1450,16 +1654,16 @@ function App(){
   return h('div',{style:{height:'100dvh',display:'flex',flexDirection:'column',background:C.bg,color:C.text,fontFamily:"system-ui,-apple-system,sans-serif",overflow:'hidden'}},
     h(SaveBar,{data,setData,month}),
     h('div',{style:{flex:1,display:'flex',flexDirection:'column',minHeight:0,overflow:'hidden'}},
-      page==='dash'       &&h(Dashboard,      {data,month,setMonth,setPage}),
+      page==='dash'       &&h(Dashboard,      {data,month,setMonth,setPage,onQuickCategorize:subId=>{setPrefillSubId(subId);setPage('categorize')}}),
       page==='balances'   &&h(BalancesPage,   {data,month,onSave:(newBal,spendDelta,calc)=>saveBalances(month,newBal,spendDelta,calc),onModeChange:setCardInputMode,onDeleteLog:id=>deleteLogEntry(id,month),onAdjustBuckets:newBuckets=>adjustBuckets(month,newBuckets),onResetBalances:()=>resetBalances(month)}),
-      page==='categorize' &&h(CategorizePage, {data,month,onAddTxn:txn=>addTxn(txn,month),onEditTxn:editTxn,onDeleteTxn:deleteTxn,onResetUncategorized:()=>resetUncategorized(month)}),
+      page==='categorize' &&h(CategorizePage, {data,month,prefillSubId,onAddTxn:txn=>addTxn(txn,month),onEditTxn:editTxn,onDeleteTxn:deleteTxn,onResetUncategorized:()=>resetUncategorized(month)}),
       page==='history'    &&h(HistoryPage,    {data,month,onEditTxn:editTxn,onDeleteTxn:deleteTxn}),
       page==='settings'   &&h(SettingsPage,   {data,month,onUpdate:settings=>updateSettings(month,settings),onResetIncomeAndBudgets:()=>resetIncomeAndBudgets(month),onResetEverything:resetEverything})
     ),
     h('nav',{style:{display:'flex',background:C.chrome,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom,0px)',flexShrink:0,boxShadow:'0 -2px 16px rgba(109,40,217,.08)'}},
       NAV.map(n=>{
         const on=page===n.id;
-        return h('button',{key:n.id,onClick:()=>setPage(n.id),style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'9px 0 10px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:9.5,fontWeight:on?800:500,color:on?C.indigo:C.text3,position:'relative',transition:'color .15s'}},
+        return h('button',{key:n.id,onClick:()=>{setPrefillSubId(null);setPage(n.id)},style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'9px 0 10px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:9.5,fontWeight:on?800:500,color:on?C.indigo:C.text3,position:'relative',transition:'color .15s'}},
           on&&h('div',{style:{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:24,height:3,borderRadius:99,background:C.grad}}),
           h('span',{style:{fontSize:'1.25rem',position:'relative'}},n.em,
             n.badge&&h('span',{style:{position:'absolute',top:-2,right:-4,width:8,height:8,borderRadius:99,background:C.red,border:`1.5px solid ${C.nav}`}})
