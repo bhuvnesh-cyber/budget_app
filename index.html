@@ -15,7 +15,8 @@ input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 ::-webkit-scrollbar{display:none}
 *{scrollbar-width:none}
-button{-webkit-user-select:none;user-select:none;touch-action:manipulation}
+button{-webkit-user-select:none;user-select:none;touch-action:manipulation;transition:transform .12s cubic-bezier(.4,0,.2,1);}
+button:active{transform:scale(.96);}
 </style>
 </head>
 <body>
@@ -350,6 +351,35 @@ function SwipeRow({onDelete,children}){
       children)
   );
 }
+// Tweens a number from its previous value to its new one over ~500ms
+// (ease-out) whenever `value` changes, instead of the figure just snapping —
+// used for the hero currency figures people actually watch move (income,
+// expenses, safe-to-spend, uncategorized remaining). Pass a `resetKey` that
+// changes when the context itself changes (e.g. the browsed month) so a
+// context switch shows the new figure instantly rather than counting through
+// an unrelated number.
+function AnimatedNumber({value,format,style}){
+  const fmt2=format||fmtC;
+  const[display,setDisplay]=useState(value);
+  const prevRef=useRef(value);
+  const rafRef=useRef(null);
+  useEffect(()=>{
+    const from=prevRef.current, to=value;
+    cancelAnimationFrame(rafRef.current);
+    if(from===to){setDisplay(to);return}
+    const start=performance.now(), duration=550;
+    function tick(now){
+      const t=Math.min(1,(now-start)/duration);
+      const eased=1-Math.pow(1-t,3);
+      setDisplay(from+(to-from)*eased);
+      if(t<1)rafRef.current=requestAnimationFrame(tick);
+      else prevRef.current=to;
+    }
+    rafRef.current=requestAnimationFrame(tick);
+    return()=>cancelAnimationFrame(rafRef.current);
+  },[value]);
+  return h('span',{style},fmt2(display));
+}
 
 /* ══════════════════════════ SAVE & BACKUP ══════════════════════════ */
 // Everything still saves to browser storage instantly, exactly as before —
@@ -642,24 +672,24 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
        ['Savings',savings,C.purple,'\uD83D\uDCC8'],['Remaining',remaining,remaining>=0?C.green:C.red,'\uD83E\uDE99']].map(([l,v,col,ic])=>
         h('div',{key:l,style:{background:C.card,borderRadius:16,padding:'14px',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
           h('div',{style:{fontSize:18,marginBottom:4}},ic),
-          h('div',{style:{fontSize:11,color:C.text3,fontWeight:600,marginBottom:2}},l),
-          h('div',{style:{fontFamily:'monospace',fontWeight:800,color:col,fontSize:16}},fmtC(v)),
-          l==='Expenses'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.orange,fontWeight:700,marginTop:2}},'+ '+fmtC(uncatTotal)+' uncategorized'),
-          l==='Remaining'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.text3,fontWeight:600,marginTop:2}},'accounts for uncategorized too')
+          h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:600,marginBottom:3,letterSpacing:'.02em'}},l),
+          h(AnimatedNumber,{key:month,value:v,style:{display:'block',fontFamily:'monospace',fontWeight:800,color:col,fontSize:20,letterSpacing:'-.02em'}}),
+          l==='Expenses'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.orange,fontWeight:600,marginTop:3}},'+ '+fmtC(uncatTotal)+' uncategorized'),
+          l==='Remaining'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.text3,fontWeight:500,marginTop:3}},'accounts for uncategorized too')
         )
       )
     ),
     /* Budget overview bar — now also shows what's left of the total budget */
     h('div',{style:{margin:'10px 16px',padding:'14px 16px',background:C.card,borderRadius:16,boxShadow:C.shadow,border:`1px solid ${C.border}`}},
       h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:6}},
-        h('span',{style:{fontSize:13,fontWeight:700,color:C.text}},'Total Budget Used'),
+        h('span',{style:{fontSize:12.5,fontWeight:600,color:C.text}},'Total Budget Used'),
         h('span',{style:{fontSize:13,fontWeight:700,color:C.text2,fontFamily:'monospace'}},fmtC(catSpentOnly)+' / '+fmtC(budgetTot))
       ),
       h(Bar,{pct:budgetPct,color:statusFor(catSpentOnly,budgetTot).color}),
       h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8}},
-        h('span',{style:{fontSize:11.5,fontWeight:700,color:C.text3}},budgetTot>0?Math.round(budgetPct)+'% used':'No budget set yet'),
-        budgetTot>0&&h('span',{style:{fontSize:13.5,fontWeight:800,fontFamily:'monospace',color:leftColor(budgetLeft)}},
-          budgetLeft>=0?fmtC(budgetLeft)+' left to spend':fmtC(-budgetLeft)+' over budget')
+        h('span',{style:{fontSize:11,fontWeight:500,color:C.text3}},budgetTot>0?Math.round(budgetPct)+'% used':'No budget set yet'),
+        budgetTot>0&&h('div',{style:{display:'flex',alignItems:'baseline',gap:3,fontSize:15,fontWeight:800,fontFamily:'monospace',color:leftColor(budgetLeft),letterSpacing:'-.01em'}},
+          h(AnimatedNumber,{key:month,value:Math.abs(budgetLeft)}),h('span',{style:{fontSize:11,fontWeight:600}},budgetLeft>=0?'left to spend':'over budget'))
       )
     ),
     /* Safe to spend — paces what's left of Variable Expenses over the days ahead */
@@ -678,8 +708,8 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
       varBudget>0&&varLeft>0&&daysLeft>0&&h('div',{style:{display:'flex',gap:10,marginTop:11}},
         [[daysLeft>=7?'PER WEEK':'LEFT THIS WEEK',safeWeek],['PER DAY',safeDay]].map(([l,v])=>
           h('div',{key:l,style:{flex:1,textAlign:'center',padding:'9px 6px',borderRadius:14,background:C.greenlt}},
-            h('div',{style:{fontSize:10,color:C.green,fontWeight:700,letterSpacing:'.06em'}},l),
-            h('div',{style:{fontSize:19,fontWeight:800,color:C.green,fontFamily:'monospace'}},fmtC(v))
+            h('div',{style:{fontSize:10,color:C.green,fontWeight:600,letterSpacing:'.06em'}},l),
+            h(AnimatedNumber,{key:month,value:v,style:{display:'block',fontSize:21,fontWeight:800,color:C.green,fontFamily:'monospace',letterSpacing:'-.01em'}})
           ))
       ),
       varBudget>0&&varLeft>0&&daysLeft>0&&h('div',{style:{fontSize:11.5,color:C.text3,fontWeight:600,marginTop:7,textAlign:'center'}},
@@ -695,12 +725,12 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
     h(SectionTitle,null,'Spending by Category'),
     catRows.length>0&&h('div',{style:{display:'flex',justifyContent:'center',gap:14,padding:'0 16px 12px'}},
       h('div',{style:{flex:1,textAlign:'center',padding:'8px 6px',borderRadius:14,background:C.card2}},
-        h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:700,letterSpacing:'.06em'}},'SPENT'),
-        h('div',{style:{fontSize:19,fontWeight:800,color:C.text,fontFamily:'monospace'}},fmtC(catTotal))
+        h('div',{style:{fontSize:10,color:C.text3,fontWeight:600,letterSpacing:'.06em'}},'SPENT'),
+        h(AnimatedNumber,{key:month,value:catTotal,style:{display:'block',fontSize:21,fontWeight:800,color:C.text,fontFamily:'monospace',letterSpacing:'-.01em'}})
       ),
       h('div',{style:{flex:1,textAlign:'center',padding:'8px 6px',borderRadius:14,background:budgetLeft>=0?C.greenlt:C.redlt}},
-        h('div',{style:{fontSize:10.5,color:leftColor(budgetLeft),fontWeight:700,letterSpacing:'.06em'}},budgetLeft>=0?'BUDGET LEFT':'OVER BUDGET'),
-        h('div',{style:{fontSize:19,fontWeight:800,color:leftColor(budgetLeft),fontFamily:'monospace'}},fmtC(Math.abs(budgetLeft)))
+        h('div',{style:{fontSize:10,color:leftColor(budgetLeft),fontWeight:600,letterSpacing:'.06em'}},budgetLeft>=0?'BUDGET LEFT':'OVER BUDGET'),
+        h(AnimatedNumber,{key:month,value:Math.abs(budgetLeft),style:{display:'block',fontSize:21,fontWeight:800,color:leftColor(budgetLeft),fontFamily:'monospace',letterSpacing:'-.01em'}})
       )
     ),
     catRows.length===0&&h('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',padding:'32px 20px',color:C.text3}},
@@ -1025,40 +1055,47 @@ function CategorizePage({data,month,prefillSubId,onAddTxn,onEditTxn,onDeleteTxn,
     h('div',{style:{padding:'16px 16px 0'}},
       h('div',{style:{fontSize:12,fontWeight:700,color:C.text3,marginBottom:8,textTransform:'uppercase',letterSpacing:'.05em'}},'Categorizing for '+monthLabel(month)),
       h('div',{style:{padding:'16px 18px',borderRadius:18,background:total>0.5?C.orangelt:C.greenlt,border:`1.5px solid ${total>0.5?C.orange:C.green}`,textAlign:'center'}},
-        h('div',{style:{fontSize:12,fontWeight:700,color:total>0.5?C.orange:C.green,textTransform:'uppercase',letterSpacing:'.06em'}},'Uncategorized Remaining'),
-        h('div',{style:{fontSize:32,fontWeight:900,color:total>0.5?C.orange:C.green,fontFamily:'monospace',marginTop:4}},fmtC(total)),
+        h('div',{style:{fontSize:11.5,fontWeight:600,color:total>0.5?C.orange:C.green,textTransform:'uppercase',letterSpacing:'.06em'}},'Uncategorized Remaining'),
+        h(AnimatedNumber,{value:total,style:{display:'block',fontSize:34,fontWeight:900,color:total>0.5?C.orange:C.green,fontFamily:'monospace',marginTop:4,letterSpacing:'-.02em'}}),
         h('div',{style:{display:'flex',justifyContent:'center',gap:14,marginTop:10}},
           SOURCES.map(s=>h('div',{key:s.id,style:{textAlign:'center'}},
-            h('div',{style:{fontSize:10,fontWeight:700,color:C.text3,textTransform:'uppercase'}},s.short),
-            h('div',{style:{fontSize:14,fontWeight:800,color:s.color,fontFamily:'monospace'}},fmtC(buckets[s.id]||0))
+            h('div',{style:{fontSize:10,fontWeight:600,color:C.text3,textTransform:'uppercase'}},s.short),
+            h(AnimatedNumber,{value:buckets[s.id]||0,style:{display:'block',fontSize:14,fontWeight:800,color:s.color,fontFamily:'monospace'}})
           ))
         )
       ),
       total>0.5&&h('button',{onClick:()=>{if(confirm('Reset all uncategorized amounts (Debit/SBI/YES) to \u20B90 for '+monthLabel(month)+'? Already-categorized expenses are NOT affected \u2014 this just clears the pending pool.'))onResetUncategorized()},
         style:{width:'100%',marginTop:10,padding:'9px',borderRadius:10,border:`1.5px solid ${C.border2}`,background:'transparent',color:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}},'Reset Uncategorized to \u20B90')
     ),
-    /* Repeat from Last Month — recurring fixed bills, one tap prefills category, sub AND amount */
+    /* Repeat from Last Month — recurring fixed bills, one tap prefills category, sub AND amount.
+       Given a tinted gradient card + a small repeat glyph so it visually reads
+       as a "shortcut" rather than another picker button. */
     repeatEntries.length>0&&h(SectionTitle,null,'Repeat from Last Month'),
     repeatEntries.length>0&&h('div',{style:{padding:'0 16px'}},
       h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
         repeatEntries.map(t=>{
           const sub=getSubFor(t.subId,data);
           return h('button',{key:t.subId,onClick:()=>{pickSub(sub);setAmount(String(t.amount));setSource(t.source)},
-            style:{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'flex-start',gap:2,padding:'8px 12px',borderRadius:12,border:`1.5px solid ${C.border2}`,background:C.card,cursor:'pointer',fontFamily:'inherit',boxShadow:C.shadowSm}},
+            style:{position:'relative',flexShrink:0,display:'flex',flexDirection:'column',alignItems:'flex-start',gap:2,padding:'8px 20px 7px 12px',borderRadius:12,border:`1px solid ${C.border2}`,background:`linear-gradient(135deg, ${C.indigolt} 0%, ${C.purplelt} 100%)`,cursor:'pointer',fontFamily:'inherit',boxShadow:C.shadowSm}},
+            h('span',{style:{position:'absolute',top:6,right:7,fontSize:10,color:C.indigo,opacity:.6}},'\u21BB'),
             h('span',{style:{fontSize:11.5,fontWeight:700,color:C.text,whiteSpace:'nowrap'}},sub.icon+' '+sub.name),
             h('span',{style:{fontSize:11,fontWeight:800,fontFamily:'monospace',color:C.indigo}},fmtC(t.amount))
           );
         })
       )
     ),
-    /* Recently Used — one tap just picks the category/subcategory */
+    /* Recently Used — one tap just picks the category/subcategory. Dashed
+       outline + a small category-colored dot marks these as quick shortcuts,
+       distinct from the solid boxed buttons in the full picker below. */
     recentIds.length>0&&h(SectionTitle,null,'Recently Used'),
     recentIds.length>0&&h('div',{style:{padding:'0 16px'}},
       h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
         recentIds.map(id=>{
           const sub=getSubFor(id,data);
+          const sel=subId===id;
           return h('button',{key:id,onClick:()=>pickSub(sub),
-            style:{flexShrink:0,display:'flex',alignItems:'center',gap:6,padding:'8px 12px',borderRadius:99,border:`1.5px solid ${subId===id?sub.catColor:C.border}`,background:subId===id?sub.catColor+'18':C.card2,color:subId===id?sub.catColor:C.text2,fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}},
+            style:{flexShrink:0,display:'flex',alignItems:'center',gap:6,padding:'7px 12px 7px 10px',borderRadius:99,border:`1.5px ${sel?'solid':'dashed'} ${sel?sub.catColor:C.border2}`,background:sel?sub.catColor+'18':C.card,color:sel?sub.catColor:C.text2,fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',boxShadow:sel?'none':C.shadowSm}},
+            h('span',{style:{width:6,height:6,borderRadius:99,background:sub.catColor,flexShrink:0}}),
             sub.icon+' '+sub.name);
         })
       )
@@ -1413,7 +1450,7 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
       })
     ),
     h('div',{style:{padding:'8px 16px 20px'}},
-      h('button',{onClick:saveAll,style:{width:'100%',padding:'15px',borderRadius:14,border:'none',background:saved?C.green:C.grad,color:'#fff',fontWeight:800,fontSize:16,cursor:'pointer',fontFamily:'inherit',transition:'background .2s'}},saved?'\u2713 Saved':'Save Settings')
+      h('button',{onClick:saveAll,style:{width:'100%',padding:'15px',borderRadius:14,border:'none',background:saved?C.green:C.grad,color:'#fff',fontWeight:800,fontSize:16,cursor:'pointer',fontFamily:'inherit',transition:'background .2s, transform .12s cubic-bezier(.4,0,.2,1)'}},saved?'\u2713 Saved':'Save Settings')
     ),
     h(SectionTitle,null,'Danger Zone'),
     h('div',{style:{padding:'0 16px 24px'}},
@@ -1663,7 +1700,7 @@ function App(){
     h('nav',{style:{display:'flex',background:C.chrome,borderTop:`1px solid ${C.border}`,paddingBottom:'env(safe-area-inset-bottom,0px)',flexShrink:0,boxShadow:'0 -2px 16px rgba(109,40,217,.08)'}},
       NAV.map(n=>{
         const on=page===n.id;
-        return h('button',{key:n.id,onClick:()=>{setPrefillSubId(null);setPage(n.id)},style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'9px 0 10px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:9.5,fontWeight:on?800:500,color:on?C.indigo:C.text3,position:'relative',transition:'color .15s'}},
+        return h('button',{key:n.id,onClick:()=>{setPrefillSubId(null);setPage(n.id)},style:{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'9px 0 10px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:9.5,fontWeight:on?800:500,color:on?C.indigo:C.text3,position:'relative',transition:'color .15s, transform .12s cubic-bezier(.4,0,.2,1)'}},
           on&&h('div',{style:{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',width:24,height:3,borderRadius:99,background:C.grad}}),
           h('span',{style:{fontSize:'1.25rem',position:'relative'}},n.em,
             n.badge&&h('span',{style:{position:'absolute',top:-2,right:-4,width:8,height:8,borderRadius:99,background:C.red,border:`1.5px solid ${C.nav}`}})
