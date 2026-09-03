@@ -65,6 +65,11 @@ const CATEGORIES=[
     {id:'mf',name:'Mutual Fund',icon:'\uD83D\uDCC8'},
     {id:'rd',name:'RD',icon:'\uD83C\uDFE6'},
   ]},
+  {id:'credit',name:'Credit / Cashback',icon:'\uD83D\uDCB3',color:'#F59E0B',subs:[
+    {id:'cash',name:'Cash',icon:'\uD83D\uDCB5'},
+    {id:'cardcashback',name:'Card Cashback',icon:'\uD83D\uDCB3'},
+    {id:'amazoncashback',name:'Amazon Cashback',icon:'\uD83D\uDECD\uFE0F'},
+  ]},
   {id:'variable',name:'Variable Expenses',icon:'\uD83D\uDED2',color:'#7E57C2',subs:[
     {id:'vegetable',name:'Vegetable',icon:'\uD83E\uDD66'},
     {id:'entertainment',name:'Entertainment',icon:'\uD83C\uDFAC'},
@@ -197,7 +202,10 @@ function uncategorizedTotal(md){return(+md.uncategorized.debit||0)+(+md.uncatego
 function monthIncome(md){return (+md.income.salary||0)+(+md.income.other||0)+md.income.extras.reduce((s,e)=>s+(+e.amount||0),0)}
 function subBudget(md,subId){return +md.budgets[subId]||0}
 function catBudgetSum(md,catId,data){const cat=categoriesFor(data).find(c=>c.id===catId);return cat?cat.subs.reduce((s,sub)=>s+subBudget(md,sub.id),0):0}
-function totalBudget(md,data){return allSubsFor(data).reduce((s,sub)=>s+subBudget(md,sub.id),0)}
+// Excludes the Credit/Cashback category — that's an income source, not
+// something you'd budget an expense limit for, so it shouldn't count toward
+// the overall spending budget total.
+function totalBudget(md,data){return allSubsFor(data).filter(s=>s.catId!=='credit').reduce((s,sub)=>s+subBudget(md,sub.id),0)}
 function subSpent(md,subId){return md.transactions.filter(t=>t.subId===subId).reduce((s,t)=>s+t.amount,0)}
 function catSpent(md,catId){return md.transactions.filter(t=>t.catId===catId).reduce((s,t)=>s+t.amount,0)}
 function totalSpent(md){return md.transactions.reduce((s,t)=>s+t.amount,0)}
@@ -635,8 +643,9 @@ function WeeklyInsights({data,md,month,onQuickCategorize}){
 /* ══════════════════════════ DASHBOARD ══════════════════════════ */
 function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   const md=getMonth(data,month);
-  const income=monthIncome(md);
-  const catSpentOnly=totalSpent(md); // what you've actually categorized as an expense
+  const creditTotal=catSpent(md,'credit'); // cashback/cash credits — added to income, not counted as spend
+  const income=monthIncome(md)+creditTotal;
+  const catSpentOnly=totalSpent(md)-creditTotal; // what you've actually categorized as an expense (Credit excluded)
   const uncatTotal=uncategorizedTotal(md); // money spent but not yet sorted into a category
   const totalReal=catSpentOnly+uncatTotal; // true total that's left your accounts this month
   const savings=catSpent(md,'savings');
@@ -656,8 +665,9 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   const monthProgressLabel=month>curYm()?'Upcoming month':month<curYm()?'Month complete':'Day '+dayOfMonth+' of '+totalDaysInMonth;
 
   // Every category that has a budget or some spending, with its own budget,
-  // spend, and what's left of it.
-  const catRows=categoriesFor(data).map(c=>{
+  // spend, and what's left of it. Credit/Cashback is excluded — it's income,
+  // not a spending category, so it doesn't belong in a spending breakdown.
+  const catRows=categoriesFor(data).filter(c=>c.id!=='credit').map(c=>{
     const sp=catSpent(md,c.id),bd=catBudgetSum(md,c.id,data);
     return{id:c.id,name:c.name,icon:c.icon,color:c.color,v:sp,budget:bd,left:bd-sp};
   }).filter(r=>r.v>0||r.budget>0).sort((a,b)=>b.v-a.v);
@@ -675,21 +685,25 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   // so the weekly figure never promises more than the money that remains.
   const safeWeek=Math.min(Math.max(0,varLeft),safeDay*7);
 
-  const srcSegs=SOURCES.map(s=>({v:md.transactions.filter(t=>t.source===s.id).reduce((a,t)=>a+t.amount,0),color:s.color,name:s.short}));
+  // Credit/Cashback transactions never came out of a payment source in the
+  // "money spent" sense, so they're excluded from the source split too.
+  const srcSegs=SOURCES.map(s=>({v:md.transactions.filter(t=>t.source===s.id&&t.catId!=='credit').reduce((a,t)=>a+t.amount,0),color:s.color,name:s.short}));
 
-  // Every subcategory with a budget or spend, with full status info
-  const allRows=allSubsFor(data).map(s=>{
+  // Every subcategory with a budget or spend, with full status info. Credit
+  // is excluded here too — cashback isn't something you'd track against a
+  // spending budget.
+  const allRows=allSubsFor(data).filter(s=>s.catId!=='credit').map(s=>{
     const b=subBudget(md,s.id),sp=subSpent(md,s.id);
     return{...s,budget:b,spent:sp,left:b-sp,status:statusFor(sp,b),pct:b?sp/b*100:(sp>0?101:0)};
   }).filter(r=>r.budget>0||r.spent>0)
     .sort((a,b)=>b.pct-a.pct);
-  // Over Budget: spent at or past its budget (or spent at all with no budget
-  // set — every rupee of that is "extra" since nothing was allocated).
-  // Under Budget: has spending, has a budget, and hasn't reached it yet —
-  // the gap is money still available in that budget.
-  // Categories with ₹0 spent so far are left out of both — nothing to report yet.
-  const overRows=allRows.filter(r=>r.status.label==='Over Budget');
-  const underRows=allRows.filter(r=>r.budget>0&&r.spent>0&&r.spent<r.budget);
+  // Over Budget is scoped to Variable Expenses — that's where overspending
+  // risk actually concentrates (food, entertainment, uber...). Under Budget
+  // is scoped to Fixed Expenses — those bills are normally constant, so
+  // coming in under budget there is the meaningful "extra room" signal
+  // (a lower electricity bill, a WiFi discount, etc).
+  const overRows=allRows.filter(r=>r.catId==='variable'&&r.status.label==='Over Budget');
+  const underRows=allRows.filter(r=>r.catId==='fixed'&&r.budget>0&&r.spent>0&&r.spent<r.budget);
   const totalOverspent=overRows.reduce((s,r)=>s+(r.budget>0?(r.spent-r.budget):r.spent),0);
   const totalSurplus=underRows.reduce((s,r)=>s+(r.budget-r.spent),0);
   const netPosition=totalSurplus-totalOverspent;
@@ -700,8 +714,8 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   const insights=[];
   if(overRows.length>0||underRows.length>0){
     insights.push(netPosition>=0
-      ?{icon:'\u2705',before:'You\u2019re ',value:fmtC(netPosition),after:' net under budget across categories with spending.',color:C.green}
-      :{icon:'\u26A0\uFE0F',before:'You\u2019re ',value:fmtC(-netPosition),after:' net over budget across categories with spending.',color:C.red});
+      ?{icon:'\u2705',before:'You\u2019re ',value:fmtC(netPosition),after:' net under budget (Fixed surplus vs Variable overspend).',color:C.green}
+      :{icon:'\u26A0\uFE0F',before:'You\u2019re ',value:fmtC(-netPosition),after:' net over budget (Fixed surplus vs Variable overspend).',color:C.red});
   }
   if(overRows.length>0){
     const worst=overRows.map(r=>({...r,extra:r.budget>0?r.spent-r.budget:r.spent})).sort((a,b)=>b.extra-a.extra)[0];
@@ -717,6 +731,14 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
     insights.push(projectedDelta>=0
       ?{icon:'\uD83D\uDCC8',before:'At your current pace, you\u2019ll finish the month ',value:fmtC(projectedDelta),after:' under your total budget.',color:C.green}
       :{icon:'\uD83D\uDCC9',before:'At your current pace, you\u2019ll finish the month ',value:fmtC(-projectedDelta),after:' over your total budget.',color:C.red});
+  }
+  // If every category used its ENTIRE allocated budget (not just current
+  // pace) — the planned best/worst case for the month as a whole.
+  if(budgetTot>0){
+    const ifFullyUsed=income-budgetTot;
+    insights.push(ifFullyUsed>=0
+      ?{icon:'\uD83E\uDDEE',before:'If you use your entire budget ('+fmtC(budgetTot)+'), you\u2019ll have ',value:fmtC(ifFullyUsed),after:' left over.',color:C.green}
+      :{icon:'\uD83E\uDDEE',before:'If you use your entire budget ('+fmtC(budgetTot)+'), you\u2019ll be ',value:fmtC(-ifFullyUsed),after:' short.',color:C.red});
   }
   if(income>0){
     const savingsRate=savings/income*100;
@@ -778,6 +800,7 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
           h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:600,marginBottom:3,letterSpacing:'.02em'}},l),
           h(AnimatedNumber,{key:month,value:v,style:{display:'block',fontFamily:'monospace',fontWeight:800,color:col,fontSize:20,letterSpacing:'-.02em'}}),
           l==='Expenses'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.orange,fontWeight:600,marginTop:3}},'+ '+fmtC(uncatTotal)+' uncategorized'),
+          l==='Income'&&creditTotal>0.5&&h('div',{style:{fontSize:10,color:C.text3,fontWeight:600,marginTop:3}},'incl. '+fmtC(creditTotal)+' credits/cashback'),
           l==='Remaining'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.text3,fontWeight:500,marginTop:3}},'accounts for uncategorized too')
         )
       )
@@ -885,26 +908,26 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
         h(Bar,{pct:catSpentOnly?s.v/catSpentOnly*100:0,color:s.color})
       ))
     ),
-    /* Budget Status — only the categories that actually need attention:
-       what's over budget (so you know how much extra you've spent) and
-       what's under budget but already has spending in it (so you know how
-       much room is genuinely still left). Replaces the old catch-all
-       Budget Watch list. */
+    /* Budget Status — scoped on purpose: Over Budget only looks at Variable
+       Expenses (where overspending risk actually concentrates), Under Budget
+       only looks at Fixed Expenses (constant bills coming in lower than
+       planned is the meaningful "extra room" signal there). Replaces the old
+       catch-all Budget Watch list. */
     (overRows.length>0||underRows.length>0)&&h(SectionTitle,null,'Budget Status'),
     (overRows.length>0||underRows.length>0)&&h('div',{style:{padding:'0 16px'}},
       h('div',{style:{display:'flex',gap:10,marginBottom:14}},
         h('div',{style:{flex:1,textAlign:'center',padding:'10px 6px',borderRadius:14,background:C.redlt,border:`1px solid ${C.red}33`}},
-          h('div',{style:{fontSize:10,color:C.red,fontWeight:600,letterSpacing:'.05em'}},'OVERSPENT'),
+          h('div',{style:{fontSize:10,color:C.red,fontWeight:600,letterSpacing:'.05em'}},'OVERSPENT (VARIABLE)'),
           h(AnimatedNumber,{key:month,value:totalOverspent,style:{display:'block',fontSize:19,fontWeight:800,color:C.red,fontFamily:'monospace',letterSpacing:'-.01em'}})
         ),
         h('div',{style:{flex:1,textAlign:'center',padding:'10px 6px',borderRadius:14,background:C.greenlt,border:`1px solid ${C.green}33`}},
-          h('div',{style:{fontSize:10,color:C.green,fontWeight:600,letterSpacing:'.05em'}},'STILL AVAILABLE'),
+          h('div',{style:{fontSize:10,color:C.green,fontWeight:600,letterSpacing:'.05em'}},'AVAILABLE (FIXED)'),
           h(AnimatedNumber,{key:month,value:totalSurplus,style:{display:'block',fontSize:19,fontWeight:800,color:C.green,fontFamily:'monospace',letterSpacing:'-.01em'}})
         )
       ),
       h('div',{style:{textAlign:'center',fontSize:11.5,fontWeight:700,color:leftColor(netPosition),marginBottom:14}},
         netPosition>=0?fmtC(netPosition)+' net still within budget overall':fmtC(-netPosition)+' net over budget overall'),
-      overRows.length>0&&h('div',{style:{fontSize:11,fontWeight:700,color:C.red,letterSpacing:'.04em',marginBottom:8}},'\uD83D\uDD34 OVER BUDGET ('+overRows.length+')'),
+      overRows.length>0&&h('div',{style:{fontSize:11,fontWeight:700,color:C.red,letterSpacing:'.04em',marginBottom:8}},'\uD83D\uDD34 VARIABLE \u2014 OVER BUDGET ('+overRows.length+')'),
       overRows.map(r=>h('div',{key:r.id,onClick:()=>onQuickCategorize&&onQuickCategorize(r.id),style:{display:'flex',alignItems:'center',gap:9,background:C.card,borderRadius:12,padding:'8px 11px',marginBottom:6,boxShadow:C.shadowSm,border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.red}`,cursor:onQuickCategorize?'pointer':undefined}},
         h('div',{style:{width:28,height:28,borderRadius:9,background:C.red+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.95rem',flexShrink:0}},r.icon),
         h('div',{style:{flex:1,minWidth:0}},
@@ -919,7 +942,7 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
           r.budget>0&&h('div',{style:{fontSize:9,fontWeight:700,fontFamily:'monospace',color:C.text3}},'of '+fmtC(r.budget))
         )
       )),
-      underRows.length>0&&h('div',{style:{fontSize:11,fontWeight:700,color:C.green,letterSpacing:'.04em',margin:overRows.length>0?'14px 0 8px':'0 0 8px'}},'\uD83D\uDFE2 UNDER BUDGET ('+underRows.length+')'),
+      underRows.length>0&&h('div',{style:{fontSize:11,fontWeight:700,color:C.green,letterSpacing:'.04em',margin:overRows.length>0?'14px 0 8px':'0 0 8px'}},'\uD83D\uDFE2 FIXED \u2014 UNDER BUDGET ('+underRows.length+')'),
       underRows.map(r=>h('div',{key:r.id,onClick:()=>onQuickCategorize&&onQuickCategorize(r.id),style:{display:'flex',alignItems:'center',gap:9,background:C.card,borderRadius:12,padding:'8px 11px',marginBottom:6,boxShadow:C.shadowSm,border:`1px solid ${C.border}`,borderLeft:`3px solid ${C.green}`,cursor:onQuickCategorize?'pointer':undefined}},
         h('div',{style:{width:28,height:28,borderRadius:9,background:C.green+'15',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.95rem',flexShrink:0}},r.icon),
         h('div',{style:{flex:1,minWidth:0}},
@@ -1168,6 +1191,7 @@ function CategorizePage({data,month,prefillSubId,onAddTxn,onEditTxn,onDeleteTxn,
   const subGridRef=useRef(null);
 
   const cat=categoriesFor(data).find(c=>c.id===catId);
+  const isCredit=catId==='credit';
   const availForSource=buckets[source]||0;
   // What's left of the chosen subcategory's budget, so you can see the impact
   // of this expense before you file it.
@@ -1190,7 +1214,10 @@ function CategorizePage({data,month,prefillSubId,onAddTxn,onEditTxn,onDeleteTxn,
       if(!catId)flagField('cat',catRowRef);else flagField('sub',subGridRef);
       return;
     }
-    if(amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s uncategorized balance ('+fmtC(availForSource)+')');flagField('amount',amountWrapRef);return}
+    // Credit/Cashback doesn't draw from the uncategorized pool at all — it's
+    // logged directly as extra income, so there's no "available balance" to
+    // exceed.
+    if(!isCredit&&amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s uncategorized balance ('+fmtC(availForSource)+')');flagField('amount',amountWrapRef);return}
     onAddTxn({id:genId(),date,amount:amt,catId,subId,source,desc:desc.trim()});
     setAmount('');setCatId('');setSubId('');setDesc('');setErr('');setErrField(null);
   }
@@ -1253,7 +1280,8 @@ function CategorizePage({data,month,prefillSubId,onAddTxn,onEditTxn,onDeleteTxn,
     h(SectionTitle,null,'Add Expense'),
     h('div',{style:{padding:'0 16px'}},
       h('div',{ref:amountWrapRef,style:{marginBottom:6,transition:'box-shadow .2s',...ringStyle(errField==='amount')}},h(NumField,{value:amount,onChange:setAmount,placeholder:'Amount'})),
-      h('div',{style:{fontSize:11.5,color:C.text3,marginBottom:12}},'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
+      h('div',{style:{fontSize:11.5,color:isCredit?C.indigo:C.text3,fontWeight:isCredit?700:400,marginBottom:12}},
+        isCredit?'\uD83D\uDCB0 Adds directly to this month\u2019s income \u2014 no pool limit':'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
       h('div',{ref:catRowRef,style:{marginBottom:12,transition:'box-shadow .2s',padding:errField==='cat'?4:0,...ringStyle(errField==='cat')}},
         h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
           CATEGORIES.map(c=>h('button',{key:c.id,onClick:()=>{setCatId(c.id);setSubId('')},
@@ -1273,7 +1301,7 @@ function CategorizePage({data,month,prefillSubId,onAddTxn,onEditTxn,onDeleteTxn,
           );
         })
       ),
-      subId&&h('div',{style:{fontSize:11.5,fontWeight:700,fontFamily:'monospace',color:subLeft>=0?C.green:C.red,marginBottom:12,marginTop:-2}},
+      subId&&!isCredit&&h('div',{style:{fontSize:11.5,fontWeight:700,fontFamily:'monospace',color:subLeft>=0?C.green:C.red,marginBottom:12,marginTop:-2}},
         subBudget(md,subId)>0
           ?getSubFor(subId,data).name+': '+(subLeft>=0?fmtC(subLeft)+' of budget left':fmtC(-subLeft)+' over budget')
           :getSubFor(subId,data).name+': no budget set'
@@ -1336,6 +1364,7 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
   const subGridRef=useRef(null);
 
   const cat=categoriesFor(data).find(c=>c.id===catId);
+  const isCredit=catId==='credit';
   const originYm=txn.originYm||ym;
   const originMd=getMonth(data,originYm);
   // Available for the currently-selected source, as if this transaction's old
@@ -1357,7 +1386,7 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
       if(!catId)flagField('cat',catRowRef);else flagField('sub',subGridRef);
       return;
     }
-    if(amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s available balance ('+fmtC(availForSource)+')');flagField('amount',amountWrapRef);return}
+    if(!isCredit&&amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s available balance ('+fmtC(availForSource)+')');flagField('amount',amountWrapRef);return}
     onSave({amount:amt,catId,subId,source,desc:desc.trim(),date});
     onClose();
   }
@@ -1368,7 +1397,8 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
     ),
     h('div',{style:{padding:'14px 20px 0',fontSize:17,fontWeight:800,color:C.text}},'Edit Expense'),
     h('div',{ref:amountWrapRef,style:{padding:'12px 20px 0',transition:'box-shadow .2s',...ringStyle(errField==='amount')}},h(NumField,{value:amount,onChange:setAmount,placeholder:'Amount'})),
-    h('div',{style:{padding:'6px 20px 12px',fontSize:11.5,color:C.text3}},'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
+    h('div',{style:{padding:'6px 20px 12px',fontSize:11.5,color:isCredit?C.indigo:C.text3,fontWeight:isCredit?700:400}},
+      isCredit?'\uD83D\uDCB0 Adds directly to this month\u2019s income \u2014 no pool limit':'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
     h('div',{ref:catRowRef,style:{padding:'0 20px 12px',transition:'box-shadow .2s',...ringStyle(errField==='cat')}},
       h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
         CATEGORIES.map(c=>h('button',{key:c.id,onClick:()=>{setCatId(c.id);if(c.id!==catId)setSubId('')},
@@ -1588,8 +1618,9 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
   }
 
   // Live totals while you type, so you can see how much of your income the
-  // budget you're setting actually uses.
-  const budgetTotalTyped=allSubsFor(data).reduce((s,sub)=>s+(+budgets[sub.id]||0),0);
+  // budget you're setting actually uses. Credit/Cashback excluded — that's
+  // an income category, not something you'd set a spending limit on.
+  const budgetTotalTyped=allSubsFor(data).filter(sub=>sub.catId!=='credit').reduce((s,sub)=>s+(+budgets[sub.id]||0),0);
   const incomeTyped=(+salary||0)+(+other||0)+extras.reduce((s,e)=>s+(+e.amount||0),0);
   const unbudgeted=incomeTyped-budgetTotalTyped;
 
@@ -1647,7 +1678,7 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
       )
     ),
     h('div',{style:{padding:'0 16px'}},
-      categoriesFor(data).map(cat=>{
+      categoriesFor(data).filter(cat=>cat.id!=='credit').map(cat=>{
         const catSum=cat.subs.reduce((s,sub)=>s+(+budgets[sub.id]||0),0);
         return h('div',{key:cat.id,style:{marginBottom:14,background:C.card,borderRadius:14,padding:'12px 14px',boxShadow:C.shadow,border:`1px solid ${C.border}`}},
           h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}},
@@ -1790,8 +1821,11 @@ function App(){
       // The uncategorized pool being drawn down is the BROWSED month's pool
       // for the chosen payment source (that's what's shown on the
       // Categorize screen), regardless of what date the expense is filed under.
+      // Credit/Cashback entries are the one exception — they're logged
+      // directly as extra income rather than drawn from the pool, so they
+      // never touch the uncategorized buckets at all.
       const curMd=cloneMonthEntry(d,months,ym);
-      curMd.uncategorized[txn.source]=Math.max(0,(curMd.uncategorized[txn.source]||0)-txn.amount);
+      if(txn.catId!=='credit')curMd.uncategorized[txn.source]=Math.max(0,(curMd.uncategorized[txn.source]||0)-txn.amount);
       const finalTxn={...txn,originYm:ym};
       // The transaction record itself is filed under its own date's month, so
       // History and per-month budget analytics stay accurate.
@@ -1806,10 +1840,13 @@ function App(){
       // Remove the record from wherever it's filed...
       const dateMd=cloneMonthEntry(d,months,ym);
       dateMd.transactions=dateMd.transactions.filter(t=>t.id!==txn.id);
-      // ...and give the money back to the bucket it was originally drawn from.
-      const originYm=txn.originYm||ym;
-      const originMd=cloneMonthEntry(d,months,originYm);
-      originMd.uncategorized[txn.source]=(originMd.uncategorized[txn.source]||0)+txn.amount;
+      // ...and give the money back to the bucket it was originally drawn from
+      // (Credit/Cashback never drew from a bucket, so there's nothing to return).
+      if(txn.catId!=='credit'){
+        const originYm=txn.originYm||ym;
+        const originMd=cloneMonthEntry(d,months,originYm);
+        originMd.uncategorized[txn.source]=(originMd.uncategorized[txn.source]||0)+txn.amount;
+      }
       return{...d,months};
     });
   }
@@ -1817,15 +1854,19 @@ function App(){
     setData(d=>{
       const months={...d.months};
       const originYm=oldTxn.originYm||ym;
-      // 1. give back the old amount to its original source bucket
-      const originMd=cloneMonthEntry(d,months,originYm);
-      originMd.uncategorized[oldTxn.source]=(originMd.uncategorized[oldTxn.source]||0)+oldTxn.amount;
+      // 1. give back the old amount to its original source bucket (skip for Credit)
+      if(oldTxn.catId!=='credit'){
+        const originMd=cloneMonthEntry(d,months,originYm);
+        originMd.uncategorized[oldTxn.source]=(originMd.uncategorized[oldTxn.source]||0)+oldTxn.amount;
+      }
       // 2. remove the old record from wherever it was filed
       const oldDateMd=cloneMonthEntry(d,months,ym);
       oldDateMd.transactions=oldDateMd.transactions.filter(t=>t.id!==oldTxn.id);
-      // 3. draw the new amount from the (possibly new) source, same origin month
-      const originMd2=cloneMonthEntry(d,months,originYm);
-      originMd2.uncategorized[updates.source]=(originMd2.uncategorized[updates.source]||0)-updates.amount;
+      // 3. draw the new amount from the (possibly new) source, same origin month (skip for Credit)
+      if(updates.catId!=='credit'){
+        const originMd2=cloneMonthEntry(d,months,originYm);
+        originMd2.uncategorized[updates.source]=(originMd2.uncategorized[updates.source]||0)-updates.amount;
+      }
       // 4. file the updated record under its (possibly new) date's month
       const newDateYm=updates.date.slice(0,7);
       const newTxn={...oldTxn,...updates,originYm};
