@@ -728,67 +728,47 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   const totalSurplus=underRows.reduce((s,r)=>s+(r.budget-r.spent),0);
   const netPosition=totalSurplus-totalOverspent;
 
-  // A short list of derived, genuinely-useful one-liners rather than raw
-  // numbers — each just {icon, before, value, after, color} so the number in
-  // the middle can be bolded separately from the surrounding sentence.
+  // Exactly three insights, nothing else:
+  // 1. Every Variable Expenses subcategory over its pro-rated share of THIS
+  //    WEEK's budget (monthly budget ÷ number of Sundays in the month, same
+  //    split the Weekly Insight cards use) — one line per offending category.
+  // 2. If every category used its ENTIRE allocated monthly budget — the
+  //    planned best/worst case cash position for the month as a whole.
+  // 3. This week's total Variable spend vs. this week's expected Variable
+  //    spend (monthly Variable budget ÷ number of weeks).
   const insights=[];
-  if(overRows.length>0||underRows.length>0){
-    insights.push(netPosition>=0
-      ?{icon:'\u2705',before:'You\u2019re ',value:fmtC(netPosition),after:' net under budget (Fixed surplus vs Variable overspend).',color:C.green}
-      :{icon:'\u26A0\uFE0F',before:'You\u2019re ',value:fmtC(-netPosition),after:' net over budget (Fixed surplus vs Variable overspend).',color:C.red});
-  }
-  if(overRows.length>0){
-    const worst=overRows.map(r=>({...r,extra:r.budget>0?r.spent-r.budget:r.spent})).sort((a,b)=>b.extra-a.extra)[0];
-    insights.push({icon:worst.icon,before:worst.name+' is your biggest overspend \u2014 ',value:fmtC(worst.extra),after:' extra.',color:C.red});
-  }
-  if(underRows.length>0){
-    const roomiest=underRows.map(r=>({...r,room:r.budget-r.spent})).sort((a,b)=>b.room-a.room)[0];
-    insights.push({icon:roomiest.icon,before:roomiest.name+' has the most room left \u2014 ',value:fmtC(roomiest.room),after:' of '+fmtC(roomiest.budget)+' unused.',color:C.green});
-  }
-  if(month===curYm()&&budgetTot>0&&dayOfMonth>0){
-    const projectedTotal=(catSpentOnly/dayOfMonth)*totalDaysInMonth;
-    const projectedDelta=budgetTot-projectedTotal;
-    insights.push(projectedDelta>=0
-      ?{icon:'\uD83D\uDCC8',before:'At your current pace, you\u2019ll finish the month ',value:fmtC(projectedDelta),after:' under your total budget.',color:C.green}
-      :{icon:'\uD83D\uDCC9',before:'At your current pace, you\u2019ll finish the month ',value:fmtC(-projectedDelta),after:' over your total budget.',color:C.red});
-  }
-  // If every category used its ENTIRE allocated budget (not just current
-  // pace) — the planned best/worst case for the month as a whole.
-  if(budgetTot>0){
-    const ifFullyUsed=income-budgetTot;
-    insights.push(ifFullyUsed>=0
-      ?{icon:'\uD83E\uDDEE',before:'If you use your entire budget ('+fmtC(budgetTot)+'), you\u2019ll have ',value:fmtC(ifFullyUsed),after:' left over.',color:C.green}
-      :{icon:'\uD83E\uDDEE',before:'If you use your entire budget ('+fmtC(budgetTot)+'), you\u2019ll be ',value:fmtC(-ifFullyUsed),after:' short.',color:C.red});
-  }
-  // Which Variable Expenses subcategory has overspent THIS WEEK's pro-rated
-  // slice of its monthly budget (same weekly split used by the Weekly Insight
-  // cards: monthly budget ÷ number of Sundays in the month) — a much more
-  // immediate signal than "over budget for the whole month," since it flags
-  // a bad week while there's still time to correct it before month-end.
   if(month===curYm()){
     const weekRanges=weekRangesForMonth(month);
     const curWeekRange=weekRanges.find(r=>dayOfMonth>=r.start&&dayOfMonth<=r.end);
     if(curWeekRange){
       const variableCat=categoriesFor(data).find(c=>c.id==='variable');
-      const weeklyOffenders=(variableCat?variableCat.subs:[]).map(sub=>{
+      (variableCat?variableCat.subs:[]).forEach(sub=>{
         const budget=subBudget(md,sub.id);
-        if(budget<=0)return null;
+        if(budget<=0)return;
         const weeklyBudget=budget/weekRanges.length;
         const weekSpent=md.transactions.filter(t=>t.subId===sub.id)
           .filter(t=>{const day=+t.date.slice(8,10);return day>=curWeekRange.start&&day<=curWeekRange.end})
           .reduce((s,t)=>s+t.amount,0);
-        return weekSpent>weeklyBudget?{icon:sub.icon,name:sub.name,over:weekSpent-weeklyBudget,weekSpent,weeklyBudget}:null;
-      }).filter(Boolean).sort((a,b)=>b.over-a.over);
-      if(weeklyOffenders.length>0){
-        const worst=weeklyOffenders[0];
-        const more=weeklyOffenders.length>1?' (+'+(weeklyOffenders.length-1)+' more this week)':'';
-        insights.push({icon:worst.icon,before:worst.name+' is over its budget for this week \u2014 ',value:fmtC(worst.over),after:' extra ('+fmtC(worst.weekSpent)+' of '+fmtC(worst.weeklyBudget)+')'+more+'.',color:C.red});
+        if(weekSpent>weeklyBudget){
+          insights.push({icon:sub.icon,before:sub.name+' is over its budget for this week \u2014 ',value:fmtC(weekSpent-weeklyBudget),after:' extra ('+fmtC(weekSpent)+' of '+fmtC(weeklyBudget)+').',color:C.red});
+        }
+      });
+      const weeklyVarBudget=varBudget/weekRanges.length;
+      const weekVarSpent=md.transactions.filter(t=>t.catId==='variable')
+        .filter(t=>{const day=+t.date.slice(8,10);return day>=curWeekRange.start&&day<=curWeekRange.end})
+        .reduce((s,t)=>s+t.amount,0);
+      if(varBudget>0){
+        insights.push(weekVarSpent<=weeklyVarBudget
+          ?{icon:'\uD83D\uDED2',before:'This week\u2019s Variable spend is ',value:fmtC(weekVarSpent),after:' of '+fmtC(weeklyVarBudget)+' expected.',color:C.green}
+          :{icon:'\uD83D\uDED2',before:'This week\u2019s Variable spend is ',value:fmtC(weekVarSpent),after:' \u2014 '+fmtC(weekVarSpent-weeklyVarBudget)+' over the '+fmtC(weeklyVarBudget)+' expected.',color:C.red});
       }
     }
   }
-  if(income>0){
-    const savingsRate=savings/income*100;
-    insights.push({icon:'\uD83D\uDCB0',before:'You\u2019re putting ',value:Math.round(savingsRate)+'%',after:' of this month\u2019s income ('+fmtC(savings)+') into savings.',color:C.purple});
+  if(budgetTot>0){
+    const ifFullyUsed=income-budgetTot;
+    insights.push(ifFullyUsed>=0
+      ?{icon:'\uD83E\uDDEE',before:'If you use your entire budget ('+fmtC(budgetTot)+'), you\u2019ll have ',value:fmtC(ifFullyUsed),after:' left over.',color:C.green}
+      :{icon:'\uD83E\uDDEE',before:'If you use your entire budget ('+fmtC(budgetTot)+'), you\u2019ll be ',value:fmtC(-ifFullyUsed),after:' short.',color:C.red});
   }
 
   return h('div',{style:{flex:1,overflowY:'auto',paddingBottom:90}},
