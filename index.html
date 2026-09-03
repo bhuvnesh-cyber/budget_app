@@ -66,9 +66,15 @@ const CATEGORIES=[
     {id:'rd',name:'RD',icon:'\uD83C\uDFE6'},
   ]},
   {id:'credit',name:'Credit / Cashback',icon:'\uD83D\uDCB3',color:'#F59E0B',subs:[
-    {id:'cash',name:'Cash',icon:'\uD83D\uDCB5'},
-    {id:'cardcashback',name:'Card Cashback',icon:'\uD83D\uDCB3'},
-    {id:'amazoncashback',name:'Amazon Cashback',icon:'\uD83D\uDECD\uFE0F'},
+    // 'transfer': money you already had, just moved into a different form
+    // (ATM withdrawal) — draws from the source's uncategorized pool like a
+    // normal expense (clearing the pending amount), but isn't counted as
+    // spending or added to income, since it's not gone or new.
+    // 'income': genuinely new money (cashback, rewards) — added to income,
+    // never drawn from any pool.
+    {id:'cash',name:'Cash',icon:'\uD83D\uDCB5',kind:'transfer'},
+    {id:'cardcashback',name:'Card Cashback',icon:'\uD83D\uDCB3',kind:'income'},
+    {id:'amazoncashback',name:'Amazon Cashback',icon:'\uD83D\uDECD\uFE0F',kind:'income'},
   ]},
   {id:'variable',name:'Variable Expenses',icon:'\uD83D\uDED2',color:'#7E57C2',subs:[
     {id:'vegetable',name:'Vegetable',icon:'\uD83E\uDD66'},
@@ -97,7 +103,7 @@ function categoriesFor(data){
   const customs=(data&&data.customSubs)||[];
   if(!customs.length)return CATEGORIES;
   return CATEGORIES.map(c=>({...c,subs:customs.filter(cs=>cs.catId===c.id).length
-    ?[...c.subs,...customs.filter(cs=>cs.catId===c.id).map(cs=>({id:cs.id,name:cs.name,icon:cs.icon||'\u2795'}))]
+    ?[...c.subs,...customs.filter(cs=>cs.catId===c.id).map(cs=>({id:cs.id,name:cs.name,icon:cs.icon||'\u2795',kind:cs.kind}))]
     :c.subs}));
 }
 function allSubsFor(data){
@@ -105,6 +111,14 @@ function allSubsFor(data){
 }
 function getSubFor(id,data){
   return allSubsFor(data).find(s=>s.id===id)||{name:id,icon:'\uD83D\uDCB8',catColor:C.purple,catId:'',catName:''};
+}
+// True only for subcategories explicitly marked kind:'income' (genuinely new
+// money — cashback, rewards). Everything else, including kind:'transfer'
+// (e.g. Cash from an ATM withdrawal) and every ordinary expense subcategory,
+// draws from/returns to the uncategorized pool exactly as before.
+function isIncomeSub(subId,data){
+  const sub=getSubFor(subId,data);
+  return !!(sub&&sub.kind==='income');
 }
 
 const SOURCES=[
@@ -643,9 +657,15 @@ function WeeklyInsights({data,md,month,onQuickCategorize}){
 /* ══════════════════════════ DASHBOARD ══════════════════════════ */
 function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
   const md=getMonth(data,month);
-  const creditTotal=catSpent(md,'credit'); // cashback/cash credits — added to income, not counted as spend
-  const income=monthIncome(md)+creditTotal;
-  const catSpentOnly=totalSpent(md)-creditTotal; // what you've actually categorized as an expense (Credit excluded)
+  // Split the Credit/Cashback category by kind: 'income' subs (genuine new
+  // money — cashback, rewards) get added to income; 'transfer' subs (Cash —
+  // e.g. an ATM withdrawal) are excluded from spending totals too, but are
+  // NOT new money, so they don't inflate income either.
+  const creditTxns=md.transactions.filter(t=>t.catId==='credit');
+  const incomeAdditions=creditTxns.filter(t=>isIncomeSub(t.subId,data)).reduce((s,t)=>s+t.amount,0);
+  const transferAmount=creditTxns.filter(t=>!isIncomeSub(t.subId,data)).reduce((s,t)=>s+t.amount,0);
+  const income=monthIncome(md)+incomeAdditions;
+  const catSpentOnly=totalSpent(md)-incomeAdditions-transferAmount; // what you've actually categorized as an expense
   const uncatTotal=uncategorizedTotal(md); // money spent but not yet sorted into a category
   const totalReal=catSpentOnly+uncatTotal; // true total that's left your accounts this month
   const savings=catSpent(md,'savings');
@@ -740,6 +760,32 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
       ?{icon:'\uD83E\uDDEE',before:'If you use your entire budget ('+fmtC(budgetTot)+'), you\u2019ll have ',value:fmtC(ifFullyUsed),after:' left over.',color:C.green}
       :{icon:'\uD83E\uDDEE',before:'If you use your entire budget ('+fmtC(budgetTot)+'), you\u2019ll be ',value:fmtC(-ifFullyUsed),after:' short.',color:C.red});
   }
+  // Which Variable Expenses subcategory has overspent THIS WEEK's pro-rated
+  // slice of its monthly budget (same weekly split used by the Weekly Insight
+  // cards: monthly budget ÷ number of Sundays in the month) — a much more
+  // immediate signal than "over budget for the whole month," since it flags
+  // a bad week while there's still time to correct it before month-end.
+  if(month===curYm()){
+    const weekRanges=weekRangesForMonth(month);
+    const curWeekRange=weekRanges.find(r=>dayOfMonth>=r.start&&dayOfMonth<=r.end);
+    if(curWeekRange){
+      const variableCat=categoriesFor(data).find(c=>c.id==='variable');
+      const weeklyOffenders=(variableCat?variableCat.subs:[]).map(sub=>{
+        const budget=subBudget(md,sub.id);
+        if(budget<=0)return null;
+        const weeklyBudget=budget/weekRanges.length;
+        const weekSpent=md.transactions.filter(t=>t.subId===sub.id)
+          .filter(t=>{const day=+t.date.slice(8,10);return day>=curWeekRange.start&&day<=curWeekRange.end})
+          .reduce((s,t)=>s+t.amount,0);
+        return weekSpent>weeklyBudget?{icon:sub.icon,name:sub.name,over:weekSpent-weeklyBudget,weekSpent,weeklyBudget}:null;
+      }).filter(Boolean).sort((a,b)=>b.over-a.over);
+      if(weeklyOffenders.length>0){
+        const worst=weeklyOffenders[0];
+        const more=weeklyOffenders.length>1?' (+'+(weeklyOffenders.length-1)+' more this week)':'';
+        insights.push({icon:worst.icon,before:worst.name+' is over its budget for this week \u2014 ',value:fmtC(worst.over),after:' extra ('+fmtC(worst.weekSpent)+' of '+fmtC(worst.weeklyBudget)+')'+more+'.',color:C.red});
+      }
+    }
+  }
   if(income>0){
     const savingsRate=savings/income*100;
     insights.push({icon:'\uD83D\uDCB0',before:'You\u2019re putting ',value:Math.round(savingsRate)+'%',after:' of this month\u2019s income ('+fmtC(savings)+') into savings.',color:C.purple});
@@ -800,7 +846,7 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
           h('div',{style:{fontSize:10.5,color:C.text3,fontWeight:600,marginBottom:3,letterSpacing:'.02em'}},l),
           h(AnimatedNumber,{key:month,value:v,style:{display:'block',fontFamily:'monospace',fontWeight:800,color:col,fontSize:20,letterSpacing:'-.02em'}}),
           l==='Expenses'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.orange,fontWeight:600,marginTop:3}},'+ '+fmtC(uncatTotal)+' uncategorized'),
-          l==='Income'&&creditTotal>0.5&&h('div',{style:{fontSize:10,color:C.text3,fontWeight:600,marginTop:3}},'incl. '+fmtC(creditTotal)+' credits/cashback'),
+          l==='Income'&&incomeAdditions>0.5&&h('div',{style:{fontSize:10,color:C.text3,fontWeight:600,marginTop:3}},'incl. '+fmtC(incomeAdditions)+' credits/cashback'),
           l==='Remaining'&&uncatTotal>0.5&&h('div',{style:{fontSize:10,color:C.text3,fontWeight:500,marginTop:3}},'accounts for uncategorized too')
         )
       )
@@ -1191,7 +1237,7 @@ function CategorizePage({data,month,prefillSubId,onAddTxn,onEditTxn,onDeleteTxn,
   const subGridRef=useRef(null);
 
   const cat=categoriesFor(data).find(c=>c.id===catId);
-  const isCredit=catId==='credit';
+  const isIncomeKind=subId?isIncomeSub(subId,data):false;
   const availForSource=buckets[source]||0;
   // What's left of the chosen subcategory's budget, so you can see the impact
   // of this expense before you file it.
@@ -1217,7 +1263,7 @@ function CategorizePage({data,month,prefillSubId,onAddTxn,onEditTxn,onDeleteTxn,
     // Credit/Cashback doesn't draw from the uncategorized pool at all — it's
     // logged directly as extra income, so there's no "available balance" to
     // exceed.
-    if(!isCredit&&amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s uncategorized balance ('+fmtC(availForSource)+')');flagField('amount',amountWrapRef);return}
+    if(!isIncomeKind&&amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s uncategorized balance ('+fmtC(availForSource)+')');flagField('amount',amountWrapRef);return}
     onAddTxn({id:genId(),date,amount:amt,catId,subId,source,desc:desc.trim()});
     setAmount('');setCatId('');setSubId('');setDesc('');setErr('');setErrField(null);
   }
@@ -1280,8 +1326,8 @@ function CategorizePage({data,month,prefillSubId,onAddTxn,onEditTxn,onDeleteTxn,
     h(SectionTitle,null,'Add Expense'),
     h('div',{style:{padding:'0 16px'}},
       h('div',{ref:amountWrapRef,style:{marginBottom:6,transition:'box-shadow .2s',...ringStyle(errField==='amount')}},h(NumField,{value:amount,onChange:setAmount,placeholder:'Amount'})),
-      h('div',{style:{fontSize:11.5,color:isCredit?C.indigo:C.text3,fontWeight:isCredit?700:400,marginBottom:12}},
-        isCredit?'\uD83D\uDCB0 Adds directly to this month\u2019s income \u2014 no pool limit':'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
+      h('div',{style:{fontSize:11.5,color:isIncomeKind?C.indigo:C.text3,fontWeight:isIncomeKind?700:400,marginBottom:12}},
+        isIncomeKind?'\uD83D\uDCB0 Adds directly to this month\u2019s income \u2014 no pool limit':'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
       h('div',{ref:catRowRef,style:{marginBottom:12,transition:'box-shadow .2s',padding:errField==='cat'?4:0,...ringStyle(errField==='cat')}},
         h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
           CATEGORIES.map(c=>h('button',{key:c.id,onClick:()=>{setCatId(c.id);setSubId('')},
@@ -1301,7 +1347,7 @@ function CategorizePage({data,month,prefillSubId,onAddTxn,onEditTxn,onDeleteTxn,
           );
         })
       ),
-      subId&&!isCredit&&h('div',{style:{fontSize:11.5,fontWeight:700,fontFamily:'monospace',color:subLeft>=0?C.green:C.red,marginBottom:12,marginTop:-2}},
+      subId&&!isIncomeKind&&h('div',{style:{fontSize:11.5,fontWeight:700,fontFamily:'monospace',color:subLeft>=0?C.green:C.red,marginBottom:12,marginTop:-2}},
         subBudget(md,subId)>0
           ?getSubFor(subId,data).name+': '+(subLeft>=0?fmtC(subLeft)+' of budget left':fmtC(-subLeft)+' over budget')
           :getSubFor(subId,data).name+': no budget set'
@@ -1364,7 +1410,7 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
   const subGridRef=useRef(null);
 
   const cat=categoriesFor(data).find(c=>c.id===catId);
-  const isCredit=catId==='credit';
+  const isIncomeKind=subId?isIncomeSub(subId,data):false;
   const originYm=txn.originYm||ym;
   const originMd=getMonth(data,originYm);
   // Available for the currently-selected source, as if this transaction's old
@@ -1386,7 +1432,7 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
       if(!catId)flagField('cat',catRowRef);else flagField('sub',subGridRef);
       return;
     }
-    if(!isCredit&&amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s available balance ('+fmtC(availForSource)+')');flagField('amount',amountWrapRef);return}
+    if(!isIncomeKind&&amt>availForSource+0.01){setErr('Amount exceeds '+getSrc(source).short+'\u2019s available balance ('+fmtC(availForSource)+')');flagField('amount',amountWrapRef);return}
     onSave({amount:amt,catId,subId,source,desc:desc.trim(),date});
     onClose();
   }
@@ -1397,8 +1443,8 @@ function EditTxnSheet({data,ym,txn,onSave,onClose}){
     ),
     h('div',{style:{padding:'14px 20px 0',fontSize:17,fontWeight:800,color:C.text}},'Edit Expense'),
     h('div',{ref:amountWrapRef,style:{padding:'12px 20px 0',transition:'box-shadow .2s',...ringStyle(errField==='amount')}},h(NumField,{value:amount,onChange:setAmount,placeholder:'Amount'})),
-    h('div',{style:{padding:'6px 20px 12px',fontSize:11.5,color:isCredit?C.indigo:C.text3,fontWeight:isCredit?700:400}},
-      isCredit?'\uD83D\uDCB0 Adds directly to this month\u2019s income \u2014 no pool limit':'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
+    h('div',{style:{padding:'6px 20px 12px',fontSize:11.5,color:isIncomeKind?C.indigo:C.text3,fontWeight:isIncomeKind?700:400}},
+      isIncomeKind?'\uD83D\uDCB0 Adds directly to this month\u2019s income \u2014 no pool limit':'Max from '+getSrc(source).short+': '+fmtC(availForSource)),
     h('div',{ref:catRowRef,style:{padding:'0 20px 12px',transition:'box-shadow .2s',...ringStyle(errField==='cat')}},
       h('div',{style:{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}},
         CATEGORIES.map(c=>h('button',{key:c.id,onClick:()=>{setCatId(c.id);if(c.id!==catId)setSubId('')},
@@ -1549,6 +1595,7 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
   const[newSubCat,setNewSubCat]=useState(CATEGORIES[0].id);
   const[newSubName,setNewSubName]=useState('');
   const[newSubIcon,setNewSubIcon]=useState('');
+  const[newSubKind,setNewSubKind]=useState('income'); // only relevant when newSubCat==='credit'
   const customIds=(data.customSubs||[]).map(s=>s.id);
 
   // Whenever the selected month changes, reload the fields from that month's
@@ -1607,9 +1654,9 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
     const name=newSubName.trim();
     if(!name)return;
     const id='custom_'+genId();
-    onAddCustomSub({id,catId:newSubCat,name,icon:newSubIcon.trim()||undefined});
+    onAddCustomSub({id,catId:newSubCat,name,icon:newSubIcon.trim()||undefined,kind:newSubCat==='credit'?newSubKind:undefined});
     setBudgets(b=>({...b,[id]:0}));
-    setNewSubName('');setNewSubIcon('');setShowAddSub(false);
+    setNewSubName('');setNewSubIcon('');setNewSubKind('income');setShowAddSub(false);
   }
   function removeSub(sub){
     if(!confirm('Remove "'+sub.name+'"? Any past expenses logged under it stay in History, just without this label going forward.'))return;
@@ -1663,6 +1710,15 @@ function SettingsPage({data,month,onUpdate,onResetIncomeAndBudgets,onResetEveryt
         ),
         h('input',{value:newSubName,onChange:e=>setNewSubName(e.target.value),placeholder:'Subcategory name',
           style:{width:'100%',padding:'9px 10px',borderRadius:9,border:`1.5px solid ${C.border2}`,background:C.card2,fontSize:13,color:C.text,fontFamily:'inherit',outline:'none',marginBottom:8}}),
+        newSubCat==='credit'&&h('div',{style:{marginBottom:8}},
+          h('div',{style:{fontSize:11,color:C.text3,fontWeight:600,marginBottom:5}},'Treat this as:'),
+          h('div',{style:{display:'flex',gap:8}},
+            [['income','Income \u2014 genuinely new money'],['transfer','Transfer \u2014 e.g. ATM cash withdrawal']].map(([val,label])=>
+              h('button',{key:val,onClick:()=>setNewSubKind(val),
+                style:{flex:1,padding:'8px 6px',borderRadius:9,border:`1.5px solid ${newSubKind===val?C.indigo:C.border2}`,background:newSubKind===val?C.indigolt:C.card2,color:newSubKind===val?C.indigo:C.text2,fontWeight:700,fontSize:10.5,cursor:'pointer',fontFamily:'inherit',lineHeight:1.3}},label)
+            )
+          )
+        ),
         h('button',{onClick:addSub,disabled:!newSubName.trim(),style:{width:'100%',padding:'11px',borderRadius:10,border:'none',background:newSubName.trim()?C.grad:C.border,color:'#fff',fontWeight:700,fontSize:13,cursor:newSubName.trim()?'pointer':'default',fontFamily:'inherit'}},'Add')
       )
     ),
@@ -1821,11 +1877,11 @@ function App(){
       // The uncategorized pool being drawn down is the BROWSED month's pool
       // for the chosen payment source (that's what's shown on the
       // Categorize screen), regardless of what date the expense is filed under.
-      // Credit/Cashback entries are the one exception — they're logged
-      // directly as extra income rather than drawn from the pool, so they
-      // never touch the uncategorized buckets at all.
+      // Only kind:'income' subcategories (genuine new money) skip the pool —
+      // a Cash withdrawal still draws from it normally, since that money
+      // really did leave the account.
       const curMd=cloneMonthEntry(d,months,ym);
-      if(txn.catId!=='credit')curMd.uncategorized[txn.source]=Math.max(0,(curMd.uncategorized[txn.source]||0)-txn.amount);
+      if(!isIncomeSub(txn.subId,d))curMd.uncategorized[txn.source]=Math.max(0,(curMd.uncategorized[txn.source]||0)-txn.amount);
       const finalTxn={...txn,originYm:ym};
       // The transaction record itself is filed under its own date's month, so
       // History and per-month budget analytics stay accurate.
@@ -1841,8 +1897,8 @@ function App(){
       const dateMd=cloneMonthEntry(d,months,ym);
       dateMd.transactions=dateMd.transactions.filter(t=>t.id!==txn.id);
       // ...and give the money back to the bucket it was originally drawn from
-      // (Credit/Cashback never drew from a bucket, so there's nothing to return).
-      if(txn.catId!=='credit'){
+      // (income-kind entries never drew from a bucket, so there's nothing to return).
+      if(!isIncomeSub(txn.subId,d)){
         const originYm=txn.originYm||ym;
         const originMd=cloneMonthEntry(d,months,originYm);
         originMd.uncategorized[txn.source]=(originMd.uncategorized[txn.source]||0)+txn.amount;
@@ -1854,16 +1910,16 @@ function App(){
     setData(d=>{
       const months={...d.months};
       const originYm=oldTxn.originYm||ym;
-      // 1. give back the old amount to its original source bucket (skip for Credit)
-      if(oldTxn.catId!=='credit'){
+      // 1. give back the old amount to its original source bucket (skip for income-kind)
+      if(!isIncomeSub(oldTxn.subId,d)){
         const originMd=cloneMonthEntry(d,months,originYm);
         originMd.uncategorized[oldTxn.source]=(originMd.uncategorized[oldTxn.source]||0)+oldTxn.amount;
       }
       // 2. remove the old record from wherever it was filed
       const oldDateMd=cloneMonthEntry(d,months,ym);
       oldDateMd.transactions=oldDateMd.transactions.filter(t=>t.id!==oldTxn.id);
-      // 3. draw the new amount from the (possibly new) source, same origin month (skip for Credit)
-      if(updates.catId!=='credit'){
+      // 3. draw the new amount from the (possibly new) source, same origin month (skip for income-kind)
+      if(!isIncomeSub(updates.subId,d)){
         const originMd2=cloneMonthEntry(d,months,originYm);
         originMd2.uncategorized[updates.source]=(originMd2.uncategorized[updates.source]||0)-updates.amount;
       }
