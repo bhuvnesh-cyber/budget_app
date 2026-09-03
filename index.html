@@ -764,6 +764,12 @@ function Dashboard({data,month,setMonth,setPage,onQuickCategorize}){
       }
     }
   }
+  if(transferAmount>0.5){
+    insights.push({icon:'\uD83D\uDCB5',before:'You have ',value:fmtC(transferAmount),after:' in cash this month (from ATM/withdrawals).',color:C.indigo});
+  }
+  if(incomeAdditions>0.5){
+    insights.push({icon:'\uD83C\uDF81',before:'You\u2019ve received ',value:fmtC(incomeAdditions),after:' extra from cashback/credits this month.',color:C.purple});
+  }
   if(budgetTot>0){
     const ifFullyUsed=income-budgetTot;
     insights.push(ifFullyUsed>=0
